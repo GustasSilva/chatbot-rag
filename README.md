@@ -87,16 +87,24 @@ Wilcoxon+Holm tem poder real.
 **Portão:** BM25 recall@10 = **0.90**, batendo o paper (BM25 > 90% para k≥6) — confirma que
 o corpus e a tokenização estão corretos.
 
-**Q1 (agora com discriminação):**
-- **híbrida > densa** em recall@5 (p_holm = 0.0001, efeito +0.71) — forte e significativo.
-- **esparsa (BM25) > densa** em recall@5 (p_holm = 0.025) — **replica o achado do paper de que
-  o BM25 supera o denso no Pirá**. Domínio técnico/científico favorece o casamento léxico, e
-  o e5 zero-shot ainda trunca abstracts longos (>512 subtokens).
-- híbrida ≥ esparsa (numérico, não significativo em recall@5; p_holm = 0.18).
-- Em MRR nenhuma diferença sobrevive a Holm (efeitos menores).
+**Q1 — direção, tamanho de efeito (rank-biserial pareado) e p_holm:**
 
-Leitura: no corpus difícil, **híbrida ≥ esparsa > densa** — a híbrida entrega o melhor
-recall e o BM25 é surpreendentemente forte, coerente com a literatura do Pirá.
+| métrica | comparação | efeito | magnitude | p_holm | significativo |
+|---|---|---|---|---|---|
+| recall@5 | híbrida > densa | +0.71 | grande | 0.0001 | ✅ |
+| recall@5 | esparsa > densa | +0.35 | médio | 0.025 | ✅ |
+| recall@5 | híbrida > esparsa | +0.26 | pequeno-médio | 0.178 | ❌ |
+| MRR | híbrida > densa | +0.25 | pequeno-médio | 0.115 | ❌ |
+| MRR | esparsa > densa | +0.22 | pequeno | 0.115 | ❌ |
+| MRR | esparsa > híbrida | −0.13 | pequeno | 0.348 | ❌ |
+
+Efeito calculado sobre os pares discordantes (`n_efetivo`); em recall@5 muitos pares
+empatam. **Leitura de fechamento:** o efeito robusto é **híbrida > densa (grande)**;
+**esparsa > densa (médio)** também se sustenta — **replica o achado do paper de que o BM25
+supera o denso no Pirá** (domínio técnico favorece o casamento léxico, e o e5 zero-shot
+trunca abstracts >512 subtokens). Já **híbrida ≈ esparsa** (efeito pequeno, não
+significativo): não dá para afirmar que a híbrida bate o BM25 aqui. Conclusão precisa:
+**híbrida > densa e esparsa > densa; híbrida e esparsa empatam estatisticamente.**
 
 ## Como rodar
 
