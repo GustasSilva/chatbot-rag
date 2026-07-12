@@ -1,0 +1,11 @@
+# Núcleo (leve, sem torch): chunking, BM25 do zero, métricas, estatística.
+numpy>=1.24
+scipy>=1.10
+pyyaml>=6.0
+pymupdf>=1.23        # extração de PDF (corpus do Marco 1)
+
+# Recuperação densa + reranker (puxa torch/transformers).
+sentence-transformers>=2.2
+
+# Geração (Q3/Marco 3) — adiada; adicionar o backend escolhido aqui quando chegar a hora.
+# anthropic>=0.39   # (exemplo, se for Claude API)

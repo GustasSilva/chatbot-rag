@@ -1,0 +1,49 @@
+# Parâmetros FIXOS do experimento.
+# Só a estratégia de recuperação varia entre as comparações de Q1/Q2 — embedding,
+# chunking e LLM ficam constantes para isolar o efeito da busca (protocolo §7).
+
+seed: 42
+
+chunking:
+  # Chunking não é eixo de comparação (protocolo §3); fica fixo em todo o experimento.
+  # Tamanho medido em "tokens" de espaço em branco (tokenizador simples e determinístico,
+  # não o subword do modelo) — reprodutível e sem dependência extra.
+  tamanho_tokens: 180
+  sobreposicao_tokens: 45
+
+embeddings:
+  # Modelo de embedding FIXO para as 3 estratégias (protocolo §3: isolar busca, não embedding).
+  # multilingual-e5 cobre PT-BR e é forte em recuperação. Exige prefixos query:/passage:.
+  modelo: "intfloat/multilingual-e5-base"
+  prefixo_consulta: "query: "
+  prefixo_documento: "passage: "
+  normalizar_l2: true        # normaliza -> produto interno = cosseno
+  batch_size: 32
+  dispositivo: null          # null = autodetecta (cpu/cuda)
+
+bm25:
+  # BM25 Okapi — implementado do zero (o "artesanato de CC" deste projeto, protocolo §3).
+  k1: 1.5
+  b: 0.75
+  dobrar_acentos: false      # manter acentos (PT distingue; e o gap leigo×técnico é objeto de estudo)
+
+hibrida:
+  metodo: "rrf"              # rrf | soma_ponderada
+  rrf_k: 60                  # constante do Reciprocal Rank Fusion
+  peso_densa: 0.5            # usado só em soma_ponderada
+  peso_esparsa: 0.5
+
+reranker:
+  # Q2 (opcional): cross-encoder multilíngue treinado em mMARCO (inclui PT).
+  modelo: "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+  top_k_entrada: 20          # reordena o top-k do 1º estágio
+
+recuperacao:
+  ks: [1, 3, 5, 10]          # valores de k para Recall@k
+  top_k: 10                  # profundidade retornada por padrão
+  limiar_relevancia: 0.5     # fração do trecho-fonte que precisa cair no chunk p/ contar como relevante
+
+geracao:
+  # Adiado — decidir backend no Marco 3 (Q3). Interface já existe, sem implementação concreta.
+  backend: null
+  temperatura: 0.0

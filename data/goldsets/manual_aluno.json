@@ -1,0 +1,149 @@
+{
+  "corpus": "manual_aluno",
+  "itens": [
+    {
+      "id": "m01",
+      "pergunta": "Qual é o percentual mínimo de frequência obrigatória em cada disciplina?",
+      "resposta": "75% das aulas dadas e demais atividades programadas.",
+      "trecho_fonte": "frequência obrigatória, em cada disciplina, em 75% (setenta e cinco por cento) das aulas",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m02",
+      "pergunta": "Até que limite o aluno-atleta pode ter as ausências compensadas?",
+      "resposta": "Até o limite máximo de 25% das aulas ministradas.",
+      "trecho_fonte": "até o limite máximo de 25% (vinte e cinco por cento) das aulas ministradas",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m03",
+      "pergunta": "O que é o trancamento de matrícula?",
+      "resposta": "A interrupção temporária das atividades escolares.",
+      "trecho_fonte": "É a interrupção temporária das atividades escolares",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m04",
+      "pergunta": "Por quanto tempo o trancamento de matrícula pode ser concedido?",
+      "resposta": "Pelo prazo de até dois anos.",
+      "trecho_fonte": "trancamento de matrícula será concedido pelo prazo de até dois anos",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m05",
+      "pergunta": "Como o aluno solicita o cancelamento de matrícula?",
+      "resposta": "Junto à Secretaria, a qualquer tempo, quitando as mensalidades vencidas.",
+      "trecho_fonte": "Pode ser solicitado junto à Secretaria, a qualquer tempo",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m06",
+      "pergunta": "Como peço transferência para outra instituição de ensino?",
+      "resposta": "Presencialmente, junto à Secretaria do campus onde está matriculado.",
+      "trecho_fonte": "deve ser solicitada presencialmente junto à Secretaria do campus",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m07",
+      "pergunta": "A nota da prova substitutiva substitui a média do bimestre?",
+      "resposta": "Não; substitui apenas a nota da prova não realizada.",
+      "trecho_fonte": "não substitui a média obtida no bimestre, substitui apenas a nota da prova",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m08",
+      "pergunta": "O que acontece se eu faltar à prova on-line que agendei?",
+      "resposta": "Não poderá reagendar e deverá fazer a prova substitutiva.",
+      "trecho_fonte": "Caso não compareça no dia e horário agendado, independentemente do motivo",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m09",
+      "pergunta": "Posso cursar disciplinas pendentes em regime de dependência no período seguinte?",
+      "resposta": "Sim; o aluno aprovado pode se matricular no período subsequente e cursar as pendentes em DP.",
+      "trecho_fonte": "cursar as disciplinas pendentes em regime de dependência",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m10",
+      "pergunta": "Com quantas dependências sou promovido do 1º para o 2º período?",
+      "resposta": "Com qualquer número de DPs, desde que as disciplinas tenham sido cursadas e reprovadas.",
+      "trecho_fonte": "do 1º para o 2º período: o aluno é promovido com qualquer número de DPs",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m11",
+      "pergunta": "O que é o estágio obrigatório?",
+      "resposta": "É o previsto no projeto pedagógico do curso, requisito para aprovação e diploma.",
+      "trecho_fonte": "O Estágio Obrigatório é aquele previsto no projeto pedagógico do curso",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m12",
+      "pergunta": "Em quantos dias a documentação de estágio é assinada após a postagem no site?",
+      "resposta": "Em até 15 dias úteis.",
+      "trecho_fonte": "será feita em até 15 (quinze) dias úteis",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m13",
+      "pergunta": "Qual a penalidade por atraso na devolução de material da biblioteca?",
+      "resposta": "Suspensão de 1 dia útil por dia de atraso, multiplicado pelo número de obras.",
+      "trecho_fonte": "suspensão de 1 (um) dia útil para cada dia de atraso",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m14",
+      "pergunta": "Posso emprestar minha carteirinha de estudante para outra pessoa?",
+      "resposta": "Não; é terminantemente proibido emprestá-la e divulgar a senha a terceiros.",
+      "trecho_fonte": "terminantemente proibidos o empréstimo da mesma e a divulgação da senha a terceiros",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m15",
+      "pergunta": "Quantas autorizações de entrada a Secretaria fornece se eu estiver sem a carteirinha?",
+      "resposta": "Até 3 autorizações por semestre.",
+      "trecho_fonte": "poderá fornecer até 3 (três) autorizações de entrada por semestre",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m16",
+      "pergunta": "Posso pedir reanálise se discordar do parecer da transferência?",
+      "resposta": "Sim; é permitida uma única reanálise do histórico.",
+      "trecho_fonte": "solicitar uma única reanálise do histórico",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m17",
+      "pergunta": "Em que se baseia a aprovação da transferência?",
+      "resposta": "Na análise do histórico escolar e na disponibilidade de vaga.",
+      "trecho_fonte": "baseia-se na análise do histórico escolar do estudante e na disponibilidade de vaga",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m18",
+      "pergunta": "Qual a consequência de não trancar a matrícula dentro do prazo?",
+      "resposta": "Constituição de dívida até o final do período letivo.",
+      "trecho_fonte": "implica constituição de dívida até o final do período letivo",
+      "tipo": null,
+      "doc_id": "manual"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Modelos, caches de embedding e saídas são regeneráveis pelos scripts — não versionar.
+data/processed/
+outputs/
+*.npy
+*.faiss
+
+# PDFs/corpora brutos: manter fora do git (podem ser grandes / redistribuição).
+data/raw/*
+!data/raw/.gitkeep
+
+# Segredos (chave da API do gerador, quando o Marco 3 chegar).
+.env
