@@ -50,7 +50,7 @@ geração (protocolo §7).
 | **0 — Smoke test** | Texto curtíssimo, 5 perguntas triviais | 3 estratégias recuperam o trecho óbvio | ✅ **passou** |
 | **1 — Manual do Aluno** | Manual UNIP 2026 (18 perguntas) | ≥1 estratégia com recall@5 > 70% | ✅ **passou** (todas 100%, satura) |
 | **2 — Pirá 2.0** | Benchmark científico ([C4AI/USP](https://github.com/C4AI/Pira), CC BY 4.0) | BM25 na faixa da literatura | ✅ **passou** (Q1 discrimina) |
-| 3 — Saúde + Reranker | Bulas/protocolos SUS (gap leigo×técnico) | Q1 se sustenta + Q2 + chatbot citando fonte | ⬜ pendente |
+| **3 — Saúde + Reranker** | 4 PCDTs do SUS ([CONITEC](https://www.gov.br/conitec), CC BY) | Q1 se sustenta + Q2 + gap leigo×técnico | ✅ **Q1/Q2 feitos** (Q3 adiado) |
 
 ### Resultado do Marco 1
 
@@ -106,6 +106,44 @@ trunca abstracts >512 subtokens). Já **híbrida ≈ esparsa** (efeito pequeno, 
 significativo): não dá para afirmar que a híbrida bate o BM25 aqui. Conclusão precisa:
 **híbrida > densa e esparsa > densa; híbrida e esparsa empatam estatisticamente.**
 
+### Resultado do Marco 3 (Saúde — 4 PCDTs do SUS)
+
+Corpus difícil "de propósito": 4 protocolos clínicos (asma, hipertensão, diabetes t2, dor
+crônica; 1330 chunks) e um gold-set de 24 perguntas em **pares leigo×técnico** (12+12) — a
+mesma pergunta em vocabulário popular vs. clínico, apontando para o mesmo trecho. n é
+pequeno, então valem direção e tamanho de efeito (o protocolo prevê isso no corpus difícil).
+
+**Q1 — geral:** híbrida R@5=0.62 / MRR=0.411; densa 0.50 / 0.392; esparsa 0.50 / 0.356. A
+híbrida lidera (efeito +0.60 vs ambas), mas nada é significativo a n=24. Direção: **híbrida
+≥ densa ≈ esparsa** — o padrão do Marco 2 se sustenta em direção, sem poder para provar.
+
+**Gap leigo×técnico (o cerne do Marco 3):**
+
+| estratégia | R@5 leigo | R@5 técnico | p (pareado por fato) |
+|---|---|---|---|
+| densa | 0.33 | 0.67 | 0.125 |
+| esparsa (BM25) | **0.17** | **0.83** | **0.008** |
+| híbrida | 0.42 | 0.83 | 0.062 |
+
+Todas recuperam pior no leigo (efeito +1.00: por fato, o técnico sempre ≥ leigo). Mas o
+**BM25 desaba no vocabulário leigo** (0.17 vs 0.83, significativo) — pura dependência léxica.
+A **densa é a que menos sofre no leigo** entre as puras (0.33 > 0.17): a busca semântica
+atravessa parte do gap termo-leigo × termo-técnico. É exatamente o fenômeno que o corpus foi
+desenhado para expor.
+
+**Q2 — reranker (cross-encoder sobre a híbrida):**
+
+| | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| híbrida | 0.29 | 0.46 | 0.62 | 0.67 | 0.411 |
+| + reranker | **0.50** | **0.62** | **0.71** | **0.75** | **0.581** |
+
+Ganho grande, sobretudo no topo do ranking (R@1 +0.21, MRR +0.17, efeito +0.58) — o que mais
+importa para um chatbot de QA, onde a 1ª fonte é a que vai para a resposta. Sugere que a
+latência extra do reranker **se justifica** neste caso de uso (p=0.09 a n=24; direção clara).
+
+**Q3 (chatbot gerando resposta citando fonte):** adiado — depende do backend do gerador.
+
 ## Como rodar
 
 ```bash
@@ -118,6 +156,8 @@ python scripts/marco0_smoke.py           # Marco 0 — baixa o e5 (~440 MB) na 1
 python scripts/construir_goldset_manual.py   # (re)constrói e valida o gold-set do manual
 python scripts/marco1_manual.py          # Marco 1 — avaliação + Q1; escreve outputs/marco1_*.csv
 python scripts/marco2_pira.py            # Marco 2 — Pirá; escreve outputs/marco2_*.csv
+python scripts/construir_goldset_pcdt.py # gold-set de saúde (pares leigo×técnico)
+python scripts/marco3_pcdt.py            # Marco 3 — PCDT + reranker; baixa o cross-encoder na 1ª vez
 ```
 
 Dados do Pirá (Marco 2) — baixados do repositório oficial ([C4AI/Pira](https://github.com/C4AI/Pira),
@@ -129,6 +169,10 @@ for f in train validation test; do \
   gh api "repos/C4AI/Pira/contents/Data/$f.csv" -H "Accept: application/vnd.github.raw" \
     > "data/raw/pira/$f.csv"; done
 ```
+
+PCDTs (Marco 3) — baixados da CONITEC/gov.br para `data/raw/pcdt/` (`asma.pdf`,
+`hipertensao.pdf`, `diabetes_t2.pdf`, `dor_cronica.pdf`). URLs oficiais no cabeçalho de
+`scripts/construir_goldset_pcdt.py`.
 
 ## Decisões de design
 
