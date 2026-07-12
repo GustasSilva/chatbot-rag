@@ -14,7 +14,12 @@ import pytest
 from rag.corpus.chunking import dividir_em_chunks
 from rag.corpus.loaders import limpar_texto
 from rag.evaluation import stats
-from rag.evaluation.goldset import GoldSetError, ItemGold, construir_relevancia
+from rag.evaluation.goldset import (
+    GoldSetError,
+    ItemGold,
+    construir_relevancia,
+    construir_relevancia_por_documento,
+)
 from rag.evaluation.metrics import recall_em_k, reciprocal_rank
 from rag.retrieval.densa import RecuperadorDenso
 from rag.retrieval.esparsa import RecuperadorBM25, tokenizar
@@ -178,3 +183,21 @@ def test_relevancia_trecho_inexistente_falha():
     item = ItemGold(id="q", pergunta="?", resposta="x", trecho_fonte="frase que não existe")
     with pytest.raises(GoldSetError):
         construir_relevancia([item], chunks, {"doc": texto}, limiar=0.5)
+
+
+def test_relevancia_por_documento():
+    """Relevância em nível de documento (usada no Pirá): todos os chunks do doc do item."""
+    from rag.corpus.chunking import Chunk
+
+    chunks = [
+        Chunk(id=0, doc_id="A", texto="a1", inicio_char=0, fim_char=2, indice_no_doc=0),
+        Chunk(id=1, doc_id="A", texto="a2", inicio_char=0, fim_char=2, indice_no_doc=1),
+        Chunk(id=2, doc_id="B", texto="b1", inicio_char=0, fim_char=2, indice_no_doc=0),
+    ]
+    item = ItemGold(id="q", pergunta="?", resposta="x", trecho_fonte="", doc_id="A")
+    relevancia = construir_relevancia_por_documento([item], chunks)
+    assert relevancia["q"] == {0, 1}  # ambos os chunks do doc A, nenhum do B
+
+    item_orfao = ItemGold(id="q2", pergunta="?", resposta="x", trecho_fonte="", doc_id="Z")
+    with pytest.raises(GoldSetError):
+        construir_relevancia_por_documento([item_orfao], chunks)

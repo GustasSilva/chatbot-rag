@@ -48,8 +48,8 @@ geração (protocolo §7).
 | Marco | Corpus | Portão | Status |
 |---|---|---|---|
 | **0 — Smoke test** | Texto curtíssimo, 5 perguntas triviais | 3 estratégias recuperam o trecho óbvio | ✅ **passou** |
-| **1 — Manual do Aluno** | Manual UNIP 2026 (18 perguntas) | ≥1 estratégia com recall@5 > 70% | ✅ **passou** (todas 100%) |
-| 2 — Pirá 2.0 | Benchmark científico | Números na faixa da literatura | ⬜ pendente |
+| **1 — Manual do Aluno** | Manual UNIP 2026 (18 perguntas) | ≥1 estratégia com recall@5 > 70% | ✅ **passou** (todas 100%, satura) |
+| **2 — Pirá 2.0** | Benchmark científico ([C4AI/USP](https://github.com/C4AI/Pira), CC BY 4.0) | BM25 na faixa da literatura | ✅ **passou** (Q1 discrimina) |
 | 3 — Saúde + Reranker | Bulas/protocolos SUS (gap leigo×técnico) | Q1 se sustenta + Q2 + chatbot citando fonte | ⬜ pendente |
 
 ### Resultado do Marco 1
@@ -72,6 +72,32 @@ mais difícil, com perguntas onde as estratégias divergem: é o papel do **Marc
 O único sinal (fraco, não significativo) que sobra é a ordem de MRR — a híbrida lidera —,
 coerente com a expectativa da literatura, mas a rigor indistinguível aqui.
 
+### Resultado do Marco 2 (Pirá 2.0)
+
+Corpus = 757 abstracts em PT (cada um um documento); queries = split de test (227
+perguntas); gold = o abstract da pergunta. Aqui as perguntas divergem e **n=227**, então o
+Wilcoxon+Holm tem poder real.
+
+| estratégia | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| densa (e5) | 0.52 | 0.71 | 0.78 | 0.87 | 0.642 |
+| esparsa (BM25) | 0.56 | 0.83 | 0.86 | 0.90 | 0.698 |
+| **híbrida** | 0.52 | 0.81 | **0.89** | **0.93** | 0.680 |
+
+**Portão:** BM25 recall@10 = **0.90**, batendo o paper (BM25 > 90% para k≥6) — confirma que
+o corpus e a tokenização estão corretos.
+
+**Q1 (agora com discriminação):**
+- **híbrida > densa** em recall@5 (p_holm = 0.0001, efeito +0.71) — forte e significativo.
+- **esparsa (BM25) > densa** em recall@5 (p_holm = 0.025) — **replica o achado do paper de que
+  o BM25 supera o denso no Pirá**. Domínio técnico/científico favorece o casamento léxico, e
+  o e5 zero-shot ainda trunca abstracts longos (>512 subtokens).
+- híbrida ≥ esparsa (numérico, não significativo em recall@5; p_holm = 0.18).
+- Em MRR nenhuma diferença sobrevive a Holm (efeitos menores).
+
+Leitura: no corpus difícil, **híbrida ≥ esparsa > densa** — a híbrida entrega o melhor
+recall e o BM25 é surpreendentemente forte, coerente com a literatura do Pirá.
+
 ## Como rodar
 
 ```bash
@@ -83,6 +109,17 @@ pytest                                   # 15 testes de núcleo (rápidos, sem b
 python scripts/marco0_smoke.py           # Marco 0 — baixa o e5 (~440 MB) na 1ª vez
 python scripts/construir_goldset_manual.py   # (re)constrói e valida o gold-set do manual
 python scripts/marco1_manual.py          # Marco 1 — avaliação + Q1; escreve outputs/marco1_*.csv
+python scripts/marco2_pira.py            # Marco 2 — Pirá; escreve outputs/marco2_*.csv
+```
+
+Dados do Pirá (Marco 2) — baixados do repositório oficial ([C4AI/Pira](https://github.com/C4AI/Pira),
+CC BY 4.0) para `data/raw/pira/` (fora do git):
+
+```bash
+# via GitHub CLI (branch main):
+for f in train validation test; do \
+  gh api "repos/C4AI/Pira/contents/Data/$f.csv" -H "Accept: application/vnd.github.raw" \
+    > "data/raw/pira/$f.csv"; done
 ```
 
 ## Decisões de design

@@ -81,6 +81,31 @@ def resolver_relevancia(
     return relevantes
 
 
+def construir_relevancia_por_documento(
+    itens: list[ItemGold],
+    chunks: list[Chunk],
+) -> dict[str, set[int]]:
+    """Relevância em nível de DOCUMENTO: o gold é o documento inteiro do item.
+
+    Usado em benchmarks como o Pirá, onde a tarefa é recuperar o texto-fonte correto
+    (não localizar um trecho dentro dele): todos os chunks do ``doc_id`` do item contam
+    como relevantes. Não depende de ``trecho_fonte``.
+    """
+    chunks_por_doc: dict[str, set[int]] = {}
+    for chunk in chunks:
+        chunks_por_doc.setdefault(chunk.doc_id, set()).add(chunk.id)
+
+    relevancia: dict[str, set[int]] = {}
+    for item in itens:
+        relevantes = chunks_por_doc.get(item.doc_id)
+        if not relevantes:
+            raise GoldSetError(
+                f"item {item.id}: doc_id '{item.doc_id}' não tem chunks no índice"
+            )
+        relevancia[item.id] = set(relevantes)
+    return relevancia
+
+
 def construir_relevancia(
     itens: list[ItemGold],
     chunks: list[Chunk],
