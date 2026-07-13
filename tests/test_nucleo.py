@@ -218,3 +218,13 @@ def test_extrair_fontes_citadas():
     assert extrair_fontes_citadas("veja [1] e [3].", ctx) == [10, 30]   # colchetes separados
     assert extrair_fontes_citadas("cita [9] inválido.", ctx) == []       # fora do intervalo
     assert extrair_fontes_citadas("sem citação.", ctx) == []
+
+
+def test_guardrail_contexto_vazio_recusa():
+    """Sem contexto recuperado, o gerador recusa sem sequer chamar o LLM (não alucina)."""
+    from rag.generation.generator import GeradorOllama
+
+    g = GeradorOllama(modelo="inexistente")  # __init__ não conecta em lugar nenhum
+    r = g.gerar("qualquer pergunta", [])
+    assert r.fontes == []
+    assert "não encontrei" in r.texto.lower()

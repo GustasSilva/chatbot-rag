@@ -160,14 +160,27 @@ Demonstração (`scripts/marco3_chatbot.py`, 6 perguntas):
 | horário da biblioteca (**fora do corpus**) | "Não encontrei essa informação nos documentos" | — |
 | primeiro remédio para diabetes tipo 2 | "Não encontrei…" | — |
 
-O **guardrail funciona** (recusa a pergunta fora do corpus). E a pergunta do diabetes cair no
-"não encontrei" é uma **ilustração honesta do achado central**: ela usa vocabulário leigo
-("remédio") e o trecho da metformina é técnico, então a recuperação erra — e o sistema
-**prefere recusar a inventar**. O mesmo gap leigo×técnico do Marco 3, agora visível no chatbot.
+O **guardrail funciona** (recusa a pergunta fora do corpus, sem alucinar). O miss do diabetes
+foi **diagnosticado** (não é o gap leigo×técnico, como se poderia supor): o trecho da
+metformina está nos chunks 537/538 e, verificando o rank em cada estratégia, a **densa
+sozinha o recupera no top-3 em todos os fraseados** (inclusive o leigo); o **BM25 falha em
+todos** (o termo da resposta, "metformina", não está na pergunta — que pede "qual remédio" —
+e os demais termos não discriminam no documento); e a **híbrida (RRF) perde o chunk que a
+densa achava no rank 2**, porque a fusão por ranks dilui um acerto forte de um único
+recuperador (itens que ambos acham medianamente ultrapassam um que só a densa acha bem). Como
+o reranker reordena o top-20 da híbrida, não há como recuperá-lo. Ou seja: o miss é um
+**artefato da fusão RRF**, e a densa pura teria respondido — uma limitação real da híbrida,
+não do vocabulário. (Script do diagnóstico não versionado; ver `outputs/` para as métricas.)
+
+**Guardrail validado** (`scripts/marco3_guardrail.py`): em 8 perguntas fora do escopo dos 4
+PCDTs — incluindo médicas difíceis (esquizofrenia, hepatite C, HPV, dengue, cetoacidose),
+onde o retriever devolve chunks clínicos parecidos mas nenhum responde — o chatbot **recusou
+todas (8/8 = 100%)**, sem alucinar. O caminho de contexto vazio também tem teste unitário.
 
 > **Rodar o Q3** exige o [Ollama](https://ollama.com) instalado e o modelo baixado:
 > `ollama pull llama3.1:8b` (fallback opcional `ollama pull llama3.2:3b`). Depois:
-> `python scripts/marco3_chatbot.py` (use `--fallback` para o 3B).
+> `python scripts/marco3_chatbot.py` (use `--fallback` para o 3B) e
+> `python scripts/marco3_guardrail.py` (taxa de recusa fora do escopo).
 
 ## Como rodar
 
