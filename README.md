@@ -40,7 +40,7 @@ geração (protocolo §7).
 | Avaliação | `rag.evaluation.metrics` | Recall@k, MRR (por pergunta) |
 | | `rag.evaluation.stats` | Wilcoxon pareado + Holm + tamanho de efeito |
 | | `rag.evaluation.goldset` | Perguntas com trecho-fonte; resolução de relevância |
-| Geração | `rag.generation.generator` | Interface do LLM (Q3, **adiada** ao Marco 3) |
+| Geração | `rag.generation.generator` / `chatbot` | Gerador local (Ollama/Llama 3.1 8B) + chatbot RAG que cita a fonte (Q3) |
 | Fábrica | `rag.pipeline` | Amarra corpus → índice → 3 recuperadores compartilhando chunks/embedding |
 
 ## Marcos
@@ -50,7 +50,7 @@ geração (protocolo §7).
 | **0 — Smoke test** | Texto curtíssimo, 5 perguntas triviais | 3 estratégias recuperam o trecho óbvio | ✅ **passou** |
 | **1 — Manual do Aluno** | Manual UNIP 2026 (18 perguntas) | ≥1 estratégia com recall@5 > 70% | ✅ **passou** (todas 100%, satura) |
 | **2 — Pirá 2.0** | Benchmark científico ([C4AI/USP](https://github.com/C4AI/Pira), CC BY 4.0) | BM25 na faixa da literatura | ✅ **passou** (Q1 discrimina) |
-| **3 — Saúde + Reranker** | 4 PCDTs do SUS ([CONITEC](https://www.gov.br/conitec), CC BY) | Q1 se sustenta + Q2 + gap leigo×técnico | ✅ **Q1/Q2 feitos** (Q3 adiado) |
+| **3 — Saúde + Reranker** | 4 PCDTs do SUS ([CONITEC](https://www.gov.br/conitec), CC BY) | Q1 se sustenta + Q2 + gap leigo×técnico | ✅ **Q1/Q2/Q3 feitos** |
 
 ### Resultado do Marco 1
 
@@ -142,7 +142,32 @@ Ganho grande, sobretudo no topo do ranking (R@1 +0.21, MRR +0.17, efeito +0.58) 
 importa para um chatbot de QA, onde a 1ª fonte é a que vai para a resposta. Sugere que a
 latência extra do reranker **se justifica** neste caso de uso (p=0.09 a n=24; direção clara).
 
-**Q3 (chatbot gerando resposta citando fonte):** adiado — depende do backend do gerador.
+### Q3 — Chatbot de saúde citando fonte (o artefato de demonstração)
+
+Junta a **melhor recuperação medida** (híbrida + reranker) a um gerador local (**Ollama,
+Llama 3.1 8B Q4**, temperatura 0). Para cada pergunta: recupera o top-5, gera a resposta em
+PT **citando o trecho `[n]`** e **recusa** quando a informação não está no contexto (não
+alucina). Latência média ~8 s/resposta na RTX 3050 — o 8B é fluido, sem precisar do fallback.
+
+Demonstração (`scripts/marco3_chatbot.py`, 6 perguntas):
+
+| pergunta | resposta | fonte |
+|---|---|---|
+| tempo para a dor virar crônica | "a partir de três meses [1, 2]" | dor_cronica |
+| sintomas da asma | "sibilância, dispneia, opressão torácica e tosse [2]" | asma |
+| valor de PA para confirmação diagnóstica | "140 mmHg /90 mmHg [1]" | hipertensao |
+| paracetamol na artrose de joelho | "Sim [1] e [3]" | dor_cronica |
+| horário da biblioteca (**fora do corpus**) | "Não encontrei essa informação nos documentos" | — |
+| primeiro remédio para diabetes tipo 2 | "Não encontrei…" | — |
+
+O **guardrail funciona** (recusa a pergunta fora do corpus). E a pergunta do diabetes cair no
+"não encontrei" é uma **ilustração honesta do achado central**: ela usa vocabulário leigo
+("remédio") e o trecho da metformina é técnico, então a recuperação erra — e o sistema
+**prefere recusar a inventar**. O mesmo gap leigo×técnico do Marco 3, agora visível no chatbot.
+
+> **Rodar o Q3** exige o [Ollama](https://ollama.com) instalado e o modelo baixado:
+> `ollama pull llama3.1:8b` (fallback opcional `ollama pull llama3.2:3b`). Depois:
+> `python scripts/marco3_chatbot.py` (use `--fallback` para o 3B).
 
 ## Como rodar
 
@@ -158,6 +183,7 @@ python scripts/marco1_manual.py          # Marco 1 — avaliação + Q1; escreve
 python scripts/marco2_pira.py            # Marco 2 — Pirá; escreve outputs/marco2_*.csv
 python scripts/construir_goldset_pcdt.py # gold-set de saúde (pares leigo×técnico)
 python scripts/marco3_pcdt.py            # Marco 3 — PCDT + reranker; baixa o cross-encoder na 1ª vez
+python scripts/marco3_chatbot.py         # Q3 — chatbot citando fonte (exige Ollama + llama3.1:8b)
 ```
 
 Dados do Pirá (Marco 2) — baixados do repositório oficial ([C4AI/Pira](https://github.com/C4AI/Pira),
@@ -189,8 +215,10 @@ PCDTs (Marco 3) — baixados da CONITEC/gov.br para `data/raw/pcdt/` (`asma.pdf`
   palavras quebradas na quebra de linha (257 casos no manual) — melhora sobretudo o BM25.
 - **Pareamento cuidadoso no Wilcoxon** (`avaliacao.series_pareadas`): vetores alinhados
   pela mesma ordem de perguntas — evita o erro clássico de desalinhar pares.
-- **Gerador adiado**: o núcleo científico (Q1/Q2) não usa LLM; a interface existe, o
-  backend concreto será escolhido no Marco 3.
+- **Gerador local (Ollama)**: o núcleo científico (Q1/Q2) não usa LLM; a geração entra só
+  no Q3, com um LLM fixo (Llama 3.1 8B Q4) a temperatura 0 e um **guardrail** que recusa
+  responder fora do contexto recuperado (não alucina). Chamado por `urllib` (sem dependência
+  nova). O prompt numera os trechos e o parser mapeia as citações `[n]` de volta às fontes.
 
 ## Estrutura
 

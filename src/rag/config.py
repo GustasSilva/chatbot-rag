@@ -62,6 +62,11 @@ class ConfigRecuperacao:
 class ConfigGeracao:
     backend: str | None
     temperatura: float
+    modelo: str | None = None
+    modelo_fallback: str | None = None
+    host: str = "http://localhost:11434"
+    top_k_contexto: int = 5
+    timeout_s: int = 120
 
 
 @dataclass(frozen=True)

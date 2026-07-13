@@ -201,3 +201,20 @@ def test_relevancia_por_documento():
     item_orfao = ItemGold(id="q2", pergunta="?", resposta="x", trecho_fonte="", doc_id="Z")
     with pytest.raises(GoldSetError):
         construir_relevancia_por_documento([item_orfao], chunks)
+
+
+# ------------------------------- geração ----------------------------------- #
+def test_extrair_fontes_citadas():
+    """Parser de citação: aceita [1], [1, 2] e [1,2]; ignora fora do intervalo."""
+    from rag.corpus.chunking import Chunk
+    from rag.generation.generator import extrair_fontes_citadas
+
+    ctx = [
+        Chunk(id=10, doc_id="d", texto="a", inicio_char=0, fim_char=1, indice_no_doc=0),
+        Chunk(id=20, doc_id="d", texto="b", inicio_char=0, fim_char=1, indice_no_doc=1),
+        Chunk(id=30, doc_id="d", texto="c", inicio_char=0, fim_char=1, indice_no_doc=2),
+    ]
+    assert extrair_fontes_citadas("resposta [1, 2].", ctx) == [10, 20]  # vírgula no colchete
+    assert extrair_fontes_citadas("veja [1] e [3].", ctx) == [10, 30]   # colchetes separados
+    assert extrair_fontes_citadas("cita [9] inválido.", ctx) == []       # fora do intervalo
+    assert extrair_fontes_citadas("sem citação.", ctx) == []

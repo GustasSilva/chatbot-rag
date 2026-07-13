@@ -44,6 +44,11 @@ recuperacao:
   limiar_relevancia: 0.5     # fração do trecho-fonte que precisa cair no chunk p/ contar como relevante
 
 geracao:
-  # Adiado — decidir backend no Marco 3 (Q3). Interface já existe, sem implementação concreta.
-  backend: null
+  # Q3 (Marco 3): gerador local via Ollama. LLM fixo, temperatura 0 (reprodutibilidade, §3).
+  backend: "ollama"
+  modelo: "llama3.1:8b"           # 8B quantizado Q4 (padrão do Ollama)
+  modelo_fallback: "llama3.2:3b"  # usado se a latência do 8B atrapalhar a demonstração
+  host: "http://localhost:11434"
   temperatura: 0.0
+  top_k_contexto: 5               # nº de trechos recuperados que entram no prompt
+  timeout_s: 120
