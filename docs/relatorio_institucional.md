@@ -42,6 +42,12 @@ Gold-set: `data/goldsets/institucional.json` (50 perguntas). Harness: `scripts/i
 chunk **vizinho** (que contém a mesma informação, por causa da sobreposição do chunking) em
 vez do chunk-fonte exato. A métrica de citação exata é conservadora.
 
+**Distribuição dos modos de falha (não misturar):** dos 4 erros de conteúdo, cada um é um tipo
+diferente — só **1/50 (2%) é do tipo `n14`, afirmação falsa com confiança**, que é o mais
+perigoso para o produto. Os outros três são 1 recuperação (`n04`), 1 recusa-a-mais (`n07`) e 1
+resposta confusa (`n17`) — modos menos graves. Frequência medida num passe completo das 50
+(temp 0), não anedota; um caso limítrofe pode oscilar entre execuções.
+
 ## Leitura
 
 Recuperação quase perfeita (98%) e ~92% de acerto de conteúdo com um LLM local de 8B. Os
@@ -79,6 +85,12 @@ asma −4.40, Manaus −3.78, RA −3.41; in-scope: mínimo do gold-set −2.92)
 que recusa *antes* de chamar o LLM), o teste adversarial vai a **31/31 = 100% de recusa**, sem
 regressão de acurácia — o gate, por construção, nunca dispara nas perguntas do gold-set. Bônus:
 economiza a latência do LLM nas perguntas fora de escopo.
+
+> **Ressalva (in-sample).** O piso de −3.2 foi *escolhido* para que 0/50 dessas 50 perguntas
+> caíssem abaixo dele — logo "0/50" é o critério de calibração, não validação independente. A
+> folga é fina: a legítima de menor score é −2.92 (0.28 acima do piso), então uma pergunta
+> legítima nova poderia ser recusada por engano. Uma validação mais forte usaria um conjunto
+> held-out; o valor do piso é específico deste corpus + reranker.
 
 ## Enquadramento (produto × ciência)
 

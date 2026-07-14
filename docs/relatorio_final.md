@@ -58,9 +58,10 @@ de guardrail **institucional** (mais brando que o de saúde) e um **piso de scor
   **geração, não de recuperação** (o 8B às vezes sintetiza do trecho vizinho).
 - **Guardrail adversarial** (31 perguntas fora de escopo): só com o prompt, 27/31 recusam; o
   único **vazamento real** (pergunta médica puxando um trecho institucional vizinho) foi
-  fechado com um **piso de score de reranker (−3.2)**, calibrado contra o gold-set
-  (**0/50 legítimas bloqueadas**) → recusa vai a **31/31 = 100%**. **0/5 injeções** de prompt
-  extraíram conteúdo fabricado.
+  fechado com um **piso de score de reranker (−3.2)** → recusa vai a **31/31 = 100%**. O piso
+  foi *calibrado* para não recusar nenhuma das 50 do gold-set (**0/50 in-sample**, folga fina
+  de 0.28 — ver ressalva no relatório institucional). **0/5 injeções** de prompt extraíram
+  conteúdo fabricado.
 - **Interface:** `python scripts/assistente_institucional.py` — REPL com **disclaimer**
   (assistente não-oficial), citação do trecho do Manual e recusa fora de escopo.
 
