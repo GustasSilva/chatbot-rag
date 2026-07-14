@@ -49,7 +49,8 @@ def main() -> int:
                                       cfg.recuperacao.limiar_relevancia)
     rer = montar_reranker(montar_recuperadores(indice, cfg, incluir=["hibrida"])["hibrida"], indice, cfg)
     gerador = GeradorOllama.de_config(cfg.geracao, perfil="institucional")
-    chatbot = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto)
+    chatbot = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,
+                         piso_score=cfg.geracao.piso_score_reranker)
 
     print(f"Acurácia institucional | {len(itens)} perguntas | perfil={gerador.perfil} "
           f"| modelo={gerador.modelo}\n")

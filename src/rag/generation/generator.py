@@ -18,6 +18,12 @@ from ..config import ConfigGeracao
 from ..corpus.chunking import Chunk
 
 
+# Frase de recusa canônica: emitida no caminho sem contexto e pelo piso de score do
+# reranker (chatbot). Também é o que o prompt manda o LLM responder quando o assunto não
+# está nos trechos — mantê-la única evita divergência entre os pontos de recusa.
+RECUSA_PADRAO = "Não encontrei essa informação nos documentos."
+
+
 @dataclass(frozen=True)
 class RespostaGerada:
     texto: str
@@ -119,7 +125,7 @@ class GeradorOllama(Gerador):
 
     def gerar(self, pergunta: str, contextos: list[Chunk]) -> RespostaGerada:
         if not contextos:
-            return RespostaGerada("Não encontrei essa informação nos documentos.", [])
+            return RespostaGerada(RECUSA_PADRAO, [])
 
         blocos = [
             f"[{i}] (fonte: {c.doc_id}) {c.texto}" for i, c in enumerate(contextos, start=1)

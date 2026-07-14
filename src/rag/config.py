@@ -68,6 +68,10 @@ class ConfigGeracao:
     top_k_contexto: int = 5
     timeout_s: int = 120
     perfil_guardrail: str = "estrito"  # "estrito" (saúde) | "institucional" (produto, menos estrito)
+    # Piso de score do reranker: recusa antes de gerar quando nem o melhor trecho atinge esse
+    # score. Calibrado contra o gold-set institucional (0/50 legítimas barradas em -3.2, mas
+    # captura fora-de-escopo como asma/-4.40). None = sem piso (padrão da via científica).
+    piso_score_reranker: float | None = None
 
 
 @dataclass(frozen=True)

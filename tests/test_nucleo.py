@@ -242,3 +242,45 @@ def test_perfil_guardrail_seleciona_prompt():
     assert GeradorOllama(modelo="x", perfil="institucional")._sistema == _SISTEMA_INSTITUCIONAL
     with pytest.raises(ValueError):
         GeradorOllama(modelo="x", perfil="inexistente")
+
+
+def test_piso_score_recusa_antes_de_gerar():
+    """O piso de score recusa fora-de-escopo (score baixo) SEM chamar o gerador; acima
+    do piso, gera normalmente."""
+    from rag.corpus.chunking import Chunk
+    from rag.generation.chatbot import ChatbotRAG
+    from rag.generation.generator import Gerador, RespostaGerada
+    from rag.retrieval.base import Recuperador, Resultado
+
+    chunk = Chunk(id=1, doc_id="d", texto="conteúdo", inicio_char=0, fim_char=8, indice_no_doc=0)
+
+    class _RecFixo(Recuperador):
+        nome = "fixo"
+
+        def __init__(self, score: float) -> None:
+            self._score = score
+
+        def buscar(self, consulta: str, k: int) -> list[Resultado]:
+            return [Resultado(chunk_id=1, posicao=0, score=self._score)]
+
+    class _GeradorEspiao(Gerador):
+        chamado = False
+
+        def gerar(self, pergunta, contextos):
+            self.__class__.chamado = True
+            return RespostaGerada("resposta gerada", [1])
+
+    # Abaixo do piso: recusa, contexto vazio, gerador NÃO chamado.
+    _GeradorEspiao.chamado = False
+    bot = ChatbotRAG(_RecFixo(-4.0), [chunk], _GeradorEspiao(), top_k_contexto=5, piso_score=-3.2)
+    r = bot.responder("pergunta fora de escopo")
+    assert "não encontrei" in r.resposta.texto.lower()
+    assert r.contextos == []
+    assert _GeradorEspiao.chamado is False
+
+    # Acima do piso: gera normalmente.
+    _GeradorEspiao.chamado = False
+    bot_ok = ChatbotRAG(_RecFixo(1.5), [chunk], _GeradorEspiao(), top_k_contexto=5, piso_score=-3.2)
+    r_ok = bot_ok.responder("pergunta in-scope")
+    assert r_ok.resposta.texto == "resposta gerada"
+    assert _GeradorEspiao.chamado is True

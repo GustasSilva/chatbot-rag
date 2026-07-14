@@ -53,3 +53,4 @@ geracao:
   top_k_contexto: 5               # nº de trechos recuperados que entram no prompt
   timeout_s: 120
   perfil_guardrail: "estrito"     # "estrito" (saúde/demo científica) | "institucional" (produto)
+  piso_score_reranker: -3.2       # recusa fora-de-escopo antes do LLM; calibrado no gold-set (0/50 legítimas barradas)
