@@ -228,3 +228,17 @@ def test_guardrail_contexto_vazio_recusa():
     r = g.gerar("qualquer pergunta", [])
     assert r.fontes == []
     assert "não encontrei" in r.texto.lower()
+
+
+def test_perfil_guardrail_seleciona_prompt():
+    """O perfil escolhe o system prompt; perfil inválido falha alto."""
+    from rag.generation.generator import (
+        _SISTEMA_ESTRITO,
+        _SISTEMA_INSTITUCIONAL,
+        GeradorOllama,
+    )
+
+    assert GeradorOllama(modelo="x", perfil="estrito")._sistema == _SISTEMA_ESTRITO
+    assert GeradorOllama(modelo="x", perfil="institucional")._sistema == _SISTEMA_INSTITUCIONAL
+    with pytest.raises(ValueError):
+        GeradorOllama(modelo="x", perfil="inexistente")

@@ -52,3 +52,4 @@ geracao:
   temperatura: 0.0
   top_k_contexto: 5               # nº de trechos recuperados que entram no prompt
   timeout_s: 120
+  perfil_guardrail: "estrito"     # "estrito" (saúde/demo científica) | "institucional" (produto)

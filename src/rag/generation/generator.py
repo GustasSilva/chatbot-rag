@@ -42,13 +42,29 @@ class GeradorNaoConfigurado(Gerador):
         )
 
 
-_SISTEMA = (
+# Dois perfis de guardrail. O ESTRITO (saúde/demonstração científica) recusa a menos que a
+# resposta esteja literalmente nos trechos — prioriza não errar em domínio de risco. O
+# INSTITUCIONAL (produto sobre o Manual, menor risco) é mais brando: permite sintetizar a
+# partir dos trechos e só recusa quando o assunto realmente não é tratado — evita o
+# over-refusal (recusar mesmo com o trecho certo recuperado).
+_SISTEMA_ESTRITO = (
     "Você é um assistente que responde perguntas SOMENTE com base nos trechos fornecidos. "
     "Se a resposta não estiver nos trechos, responda exatamente: "
     "'Não encontrei essa informação nos documentos.' "
     "Cite a(s) fonte(s) usada(s) indicando o número do trecho entre colchetes, por exemplo [1]. "
     "Responda em português, de forma concisa e objetiva."
 )
+_SISTEMA_INSTITUCIONAL = (
+    "Você é um assistente sobre o Manual do Aluno. Responda com base nos trechos fornecidos, "
+    "podendo sintetizar e inferir a partir do que eles dizem — desde que a resposta se apoie "
+    "neles. Não invente dados (datas, números, prazos) que não estejam nos trechos. "
+    "Só responda 'Não encontrei essa informação nos documentos.' se os trechos realmente não "
+    "tratarem do assunto perguntado. "
+    "Cite a(s) fonte(s) usada(s) indicando o número do trecho entre colchetes, por exemplo [1]. "
+    "Responda em português, de forma clara e objetiva."
+)
+PERFIS_SISTEMA = {"estrito": _SISTEMA_ESTRITO, "institucional": _SISTEMA_INSTITUCIONAL}
+
 # Captura números de citação em [1], [1, 2], [1,2] etc. (vários dígitos por colchete).
 _CITACAO = re.compile(r"\[([\d,\s]+)\]")
 
@@ -80,19 +96,26 @@ class GeradorOllama(Gerador):
         host: str = "http://localhost:11434",
         temperatura: float = 0.0,
         timeout_s: int = 120,
+        perfil: str = "estrito",
     ) -> None:
+        if perfil not in PERFIS_SISTEMA:
+            raise ValueError(f"perfil de guardrail desconhecido: {perfil}")
         self.modelo = modelo
         self.host = host.rstrip("/")
         self.temperatura = temperatura
         self.timeout_s = timeout_s
+        self.perfil = perfil
+        self._sistema = PERFIS_SISTEMA[perfil]
 
     @classmethod
-    def de_config(cls, cfg: ConfigGeracao, usar_fallback: bool = False) -> "GeradorOllama":
+    def de_config(
+        cls, cfg: ConfigGeracao, usar_fallback: bool = False, perfil: str | None = None
+    ) -> "GeradorOllama":
         modelo = cfg.modelo_fallback if usar_fallback else cfg.modelo
         if not modelo:
             raise ValueError("config.geracao sem modelo definido")
         return cls(modelo=modelo, host=cfg.host, temperatura=cfg.temperatura,
-                   timeout_s=cfg.timeout_s)
+                   timeout_s=cfg.timeout_s, perfil=perfil or cfg.perfil_guardrail)
 
     def gerar(self, pergunta: str, contextos: list[Chunk]) -> RespostaGerada:
         if not contextos:
@@ -102,7 +125,7 @@ class GeradorOllama(Gerador):
             f"[{i}] (fonte: {c.doc_id}) {c.texto}" for i, c in enumerate(contextos, start=1)
         ]
         conteudo = "Trechos:\n" + "\n\n".join(blocos) + f"\n\nPergunta: {pergunta}\nResposta:"
-        resposta = self._chamar(_SISTEMA, conteudo)
+        resposta = self._chamar(self._sistema, conteudo)
         fontes = extrair_fontes_citadas(resposta, contextos)
         return RespostaGerada(texto=resposta.strip(), fontes=fontes)
 

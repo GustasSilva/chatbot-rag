@@ -67,6 +67,7 @@ class ConfigGeracao:
     host: str = "http://localhost:11434"
     top_k_contexto: int = 5
     timeout_s: int = 120
+    perfil_guardrail: str = "estrito"  # "estrito" (saúde) | "institucional" (produto, menos estrito)
 
 
 @dataclass(frozen=True)
