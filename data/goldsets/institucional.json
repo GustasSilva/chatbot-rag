@@ -1,0 +1,405 @@
+{
+  "corpus": "institucional",
+  "itens": [
+    {
+      "id": "m01",
+      "pergunta": "Qual é o percentual mínimo de frequência obrigatória em cada disciplina?",
+      "resposta": "75% das aulas dadas e demais atividades programadas.",
+      "trecho_fonte": "frequência obrigatória, em cada disciplina, em 75% (setenta e cinco por cento) das aulas",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m02",
+      "pergunta": "Até que limite o aluno-atleta pode ter as ausências compensadas?",
+      "resposta": "Até o limite máximo de 25% das aulas ministradas.",
+      "trecho_fonte": "até o limite máximo de 25% (vinte e cinco por cento) das aulas ministradas",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m03",
+      "pergunta": "O que é o trancamento de matrícula?",
+      "resposta": "A interrupção temporária das atividades escolares.",
+      "trecho_fonte": "É a interrupção temporária das atividades escolares",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m04",
+      "pergunta": "Por quanto tempo o trancamento de matrícula pode ser concedido?",
+      "resposta": "Pelo prazo de até dois anos.",
+      "trecho_fonte": "trancamento de matrícula será concedido pelo prazo de até dois anos",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m05",
+      "pergunta": "Como o aluno solicita o cancelamento de matrícula?",
+      "resposta": "Junto à Secretaria, a qualquer tempo, quitando as mensalidades vencidas.",
+      "trecho_fonte": "Pode ser solicitado junto à Secretaria, a qualquer tempo",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m06",
+      "pergunta": "Como peço transferência para outra instituição de ensino?",
+      "resposta": "Presencialmente, junto à Secretaria do campus onde está matriculado.",
+      "trecho_fonte": "deve ser solicitada presencialmente junto à Secretaria do campus",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m07",
+      "pergunta": "A nota da prova substitutiva substitui a média do bimestre?",
+      "resposta": "Não; substitui apenas a nota da prova não realizada.",
+      "trecho_fonte": "não substitui a média obtida no bimestre, substitui apenas a nota da prova",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m08",
+      "pergunta": "O que acontece se eu faltar à prova on-line que agendei?",
+      "resposta": "Não poderá reagendar e deverá fazer a prova substitutiva.",
+      "trecho_fonte": "Caso não compareça no dia e horário agendado, independentemente do motivo",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m09",
+      "pergunta": "Posso cursar disciplinas pendentes em regime de dependência no período seguinte?",
+      "resposta": "Sim; o aluno aprovado pode se matricular no período subsequente e cursar as pendentes em DP.",
+      "trecho_fonte": "cursar as disciplinas pendentes em regime de dependência",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m10",
+      "pergunta": "Com quantas dependências sou promovido do 1º para o 2º período?",
+      "resposta": "Com qualquer número de DPs, desde que as disciplinas tenham sido cursadas e reprovadas.",
+      "trecho_fonte": "do 1º para o 2º período: o aluno é promovido com qualquer número de DPs",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m11",
+      "pergunta": "O que é o estágio obrigatório?",
+      "resposta": "É o previsto no projeto pedagógico do curso, requisito para aprovação e diploma.",
+      "trecho_fonte": "O Estágio Obrigatório é aquele previsto no projeto pedagógico do curso",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m12",
+      "pergunta": "Em quantos dias a documentação de estágio é assinada após a postagem no site?",
+      "resposta": "Em até 15 dias úteis.",
+      "trecho_fonte": "será feita em até 15 (quinze) dias úteis",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m13",
+      "pergunta": "Qual a penalidade por atraso na devolução de material da biblioteca?",
+      "resposta": "Suspensão de 1 dia útil por dia de atraso, multiplicado pelo número de obras.",
+      "trecho_fonte": "suspensão de 1 (um) dia útil para cada dia de atraso",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m14",
+      "pergunta": "Posso emprestar minha carteirinha de estudante para outra pessoa?",
+      "resposta": "Não; é terminantemente proibido emprestá-la e divulgar a senha a terceiros.",
+      "trecho_fonte": "terminantemente proibidos o empréstimo da mesma e a divulgação da senha a terceiros",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m15",
+      "pergunta": "Quantas autorizações de entrada a Secretaria fornece se eu estiver sem a carteirinha?",
+      "resposta": "Até 3 autorizações por semestre.",
+      "trecho_fonte": "poderá fornecer até 3 (três) autorizações de entrada por semestre",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m16",
+      "pergunta": "Posso pedir reanálise se discordar do parecer da transferência?",
+      "resposta": "Sim; é permitida uma única reanálise do histórico.",
+      "trecho_fonte": "solicitar uma única reanálise do histórico",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m17",
+      "pergunta": "Em que se baseia a aprovação da transferência?",
+      "resposta": "Na análise do histórico escolar e na disponibilidade de vaga.",
+      "trecho_fonte": "baseia-se na análise do histórico escolar do estudante e na disponibilidade de vaga",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "m18",
+      "pergunta": "Qual a consequência de não trancar a matrícula dentro do prazo?",
+      "resposta": "Constituição de dívida até o final do período letivo.",
+      "trecho_fonte": "implica constituição de dívida até o final do período letivo",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n01",
+      "pergunta": "Se eu tirar menos de 7 na média, o que acontece?",
+      "resposta": "Você é submetido a um exame.",
+      "trecho_fonte": "Se MS for menor que 7,0 (sete), o aluno será submetido a um exame",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n02",
+      "pergunta": "Depois do exame, quanto preciso para ser aprovado?",
+      "resposta": "Média final igual ou maior que 5,0.",
+      "trecho_fonte": "Se MF for igual ou maior que 5,0 (cinco)",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n03",
+      "pergunta": "Quando estou aprovado sem exame, qual é a minha média final?",
+      "resposta": "A média final é igual à MS.",
+      "trecho_fonte": "o aluno estará aprovado com média final igual a MS",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n04",
+      "pergunta": "Como é a matrícula de quem acabou de entrar na faculdade?",
+      "resposta": "Automaticamente no regime de progressão tutelada.",
+      "trecho_fonte": "será matriculado automaticamente no regime de progressão tutelada",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n05",
+      "pergunta": "Posso fazer a prova de exame a lápis?",
+      "resposta": "Não; o exame a lápis fica com nota zero.",
+      "trecho_fonte": "o exame redigido a lápis não será considerado, ficando o aluno com nota zero",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n06",
+      "pergunta": "O que é o estágio não obrigatório?",
+      "resposta": "Atividade opcional, à escolha do estudante.",
+      "trecho_fonte": "O Estágio Não Obrigatório é aquele realizado como atividade opcional, à escolha do estudante",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n07",
+      "pergunta": "Onde encontro vaga de estágio não obrigatório?",
+      "resposta": "Recorrendo aos Agentes de Integração.",
+      "trecho_fonte": "poderão recorrer aos Agentes de Integração",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n08",
+      "pergunta": "Quem faz licenciatura precisa fazer estágio?",
+      "resposta": "Sim; é o Estágio Curricular Supervisionado, obrigatório para docência.",
+      "trecho_fonte": "O Estágio Curricular Supervisionado é obrigatório para a formação de docentes",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n09",
+      "pergunta": "O que acontece se eu não fizer a matrícula no começo do semestre?",
+      "resposta": "É considerado abandono de curso.",
+      "trecho_fonte": "A não efetivação da matrícula no início de cada semestre, dentro dos prazos estabelecidos no Calendário Escolar da UNIP, representa abandono de curso",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n10",
+      "pergunta": "A matrícula pode ser renovada em outro campus ou turno?",
+      "resposta": "Sim, pode ser determinada para campus/turno diferente.",
+      "trecho_fonte": "a renovação da matrícula do aluno poderá ser determinada para um campus ou turno diferente daquele frequentado no semestre anterior",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n11",
+      "pergunta": "A faculdade pode passar minhas informações para os meus pais?",
+      "resposta": "Não sem autorização; o aluno maior de 18 tem direito à privacidade.",
+      "trecho_fonte": "É garantido ao aluno (maior de 18 anos ou emancipado) o direito à privacidade",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n12",
+      "pergunta": "O que é o FIES?",
+      "resposta": "Financiamento federal para estudantes com poucos recursos.",
+      "trecho_fonte": "para financiar os estudos de alunos com poucos recursos",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n13",
+      "pergunta": "Existe algum programa para ex-alunos?",
+      "resposta": "Sim, o IAP.",
+      "trecho_fonte": "aproximar da instituição os estudantes que estão saindo da universidade, bem como os egressos",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n14",
+      "pergunta": "De quem é a responsabilidade de controlar as faltas?",
+      "resposta": "Do próprio aluno.",
+      "trecho_fonte": "É de responsabilidade do aluno fazer controle de suas faltas",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n15",
+      "pergunta": "Preciso participar da colação de grau para me formar?",
+      "resposta": "Sim; sem ela não é considerado formado nem tem direito ao diploma.",
+      "trecho_fonte": "O aluno que não participar da colação de grau oficial não será considerado formado e, portanto, não terá direito ao diploma",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n16",
+      "pergunta": "Aluna grávida tem direito a afastamento?",
+      "resposta": "Sim, a partir do oitavo mês e por três meses.",
+      "trecho_fonte": "a partir do oitavo mês de gravidez e durante três meses",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n17",
+      "pergunta": "Faltar por causa do serviço militar conta como falta?",
+      "resposta": "Não; há abono para serviço militar obrigatório.",
+      "trecho_fonte": "O abono é concedido, por força de lei, somente ao aluno que esteja prestando serviço militar obrigatório",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n18",
+      "pergunta": "Como faço uma solicitação para a universidade?",
+      "resposta": "Por requerimento próprio, na Secretaria ou Secretaria On-line.",
+      "trecho_fonte": "Qualquer solicitação à Universidade e seus órgãos dar-se-á por meio de requerimento próprio",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n19",
+      "pergunta": "Onde vejo a resposta do meu requerimento?",
+      "resposta": "Na Sala de Atendimento ao Aluno.",
+      "trecho_fonte": "O aluno deverá verificar a resposta à sua solicitação na Sala de Atendimento ao Aluno",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n20",
+      "pergunta": "O diploma da UNIP é digital?",
+      "resposta": "Sim, diploma digital de graduação.",
+      "trecho_fonte": "A UNIP confere aos seus alunos diploma digital de graduação de nível superior",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n21",
+      "pergunta": "Preciso da carteirinha para entrar na faculdade?",
+      "resposta": "Sim; a carteirinha digital é o documento de identidade do aluno.",
+      "trecho_fonte": "A carteirinha digital é o documento de identidade do aluno",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n22",
+      "pergunta": "Quais são as punições disciplinares?",
+      "resposta": "Advertência, suspensão e dispensa por justa causa.",
+      "trecho_fonte": "I - Advertência; II - Suspensão; III - Dispensa por justa causa",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n23",
+      "pergunta": "Posso adiantar uma disciplina?",
+      "resposta": "Sim, por antecipação de disciplina, no mesmo turno.",
+      "trecho_fonte": "a antecipação de disciplina(s), no mesmo turno em que estiver matriculado",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n24",
+      "pergunta": "O aluno monitor pode dar aula ou corrigir prova?",
+      "resposta": "Não; é vedado ao monitor ministrar aulas ou corrigir provas.",
+      "trecho_fonte": "É vedado ao aluno monitor ministrar aulas, corrigir trabalhos ou provas, substituir o professor",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n25",
+      "pergunta": "As faltas do aluno-atleta são abonadas?",
+      "resposta": "Não; elas não se caracterizam como falta.",
+      "trecho_fonte": "Não há, no caso, abono de faltas, visto que estas não se caracterizam",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n26",
+      "pergunta": "Como é avaliada uma disciplina cursada em adaptação?",
+      "resposta": "Com critérios idênticos aos das demais disciplinas.",
+      "trecho_fonte": "em regime de adaptação, com critérios de avaliação e promoção idênticos às demais disciplinas",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n27",
+      "pergunta": "Posso digitar meus trabalhos nos computadores da biblioteca?",
+      "resposta": "Não; os equipamentos são só para pesquisa acadêmica.",
+      "trecho_fonte": "objetivando apenas pesquisas acadêmicas, não sendo permitida a digitação de trabalhos",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n28",
+      "pergunta": "Quantas vezes posso agendar a prova on-line por disciplina?",
+      "resposta": "Um único agendamento por disciplina.",
+      "trecho_fonte": "o aluno poderá efetuar um único agendamento por disciplina",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n29",
+      "pergunta": "Preciso estar regular para pedir transferência?",
+      "resposta": "Sim; situação regular é pressuposto.",
+      "trecho_fonte": "considerando como pressuposto a situação regular do aluno perante a UNIP",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n30",
+      "pergunta": "Para colar grau preciso estar regular no ENADE?",
+      "resposta": "Sim, quando for o caso.",
+      "trecho_fonte": "estejam em situação regular junto ao ENADE",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n31",
+      "pergunta": "Como funciona o empréstimo de equipamentos?",
+      "resposta": "Pela ordem de precedência das reservas e disponibilidade.",
+      "trecho_fonte": "O empréstimo de equipamentos obedecerá, rigorosamente, à ordem de precedência das reservas",
+      "tipo": null,
+      "doc_id": "manual"
+    },
+    {
+      "id": "n32",
+      "pergunta": "O que acontece se eu tirar menos de 5 na média final?",
+      "resposta": "Não é aprovado (aprovação exige MF >= 5,0).",
+      "trecho_fonte": "Se MF for igual ou maior que 5,0 (cinco)",
+      "tipo": null,
+      "doc_id": "manual"
+    }
+  ]
+}
