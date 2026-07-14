@@ -7,6 +7,10 @@ local (**Ollama / Llama 3.1 8B Q4**, temperatura 0) com **guardrail em perfil in
 assunto não está no material). Saúde/Pirá permanecem como estudo científico (Q1/Q2), não
 como chat aberto.
 
+**Interface**: `python scripts/assistente_institucional.py` — REPL de input aberto que mostra
+um disclaimer ("assistente não-oficial"), responde citando o trecho do Manual e recusa fora
+de escopo (guardrail + piso de score).
+
 ## Acurácia de resposta (50 perguntas, linguagem de aluno)
 
 Gold-set: `data/goldsets/institucional.json` (50 perguntas). Harness: `scripts/institucional_acuracia.py`.
