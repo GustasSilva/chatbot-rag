@@ -182,6 +182,17 @@ todas (8/8 = 100%)**, sem alucinar. O caminho de contexto vazio também tem test
 > `python scripts/marco3_chatbot.py` (use `--fallback` para o 3B) e
 > `python scripts/marco3_guardrail.py` (taxa de recusa fora do escopo).
 
+## Aplicação — assistente institucional (produto)
+
+O mesmo motor, com o corpus do **Manual do Aluno**, vira um produto de **chat livre**:
+`python scripts/assistente_institucional.py`. Usa a configuração validada acima (híbrida +
+reranker), um **guardrail em perfil institucional** e um **piso de score** que recusa fora de
+escopo. Acurácia de resposta 92% (conteúdo) / 98% (recuperação) em 50 perguntas de aluno;
+guardrail adversarial 31/31 com o piso. Saúde/Pirá **ficam só como estudo científico** (acima),
+não como chat aberto — separação por risco. Detalhes em
+[`docs/relatorio_institucional.md`](docs/relatorio_institucional.md); a visão consolidada
+produto × ciência em [`docs/relatorio_final.md`](docs/relatorio_final.md).
+
 ## Como rodar
 
 ```bash
@@ -189,7 +200,7 @@ python -m venv .venv
 # Windows:  .venv\Scripts\activate     |  Linux/Mac:  source .venv/bin/activate
 pip install -e ".[dev]"
 
-pytest                                   # 15 testes de núcleo (rápidos, sem baixar modelo)
+pytest                                   # 20 testes de núcleo (rápidos, sem baixar modelo)
 python scripts/marco0_smoke.py           # Marco 0 — baixa o e5 (~440 MB) na 1ª vez
 python scripts/construir_goldset_manual.py   # (re)constrói e valida o gold-set do manual
 python scripts/marco1_manual.py          # Marco 1 — avaliação + Q1; escreve outputs/marco1_*.csv
@@ -197,6 +208,11 @@ python scripts/marco2_pira.py            # Marco 2 — Pirá; escreve outputs/ma
 python scripts/construir_goldset_pcdt.py # gold-set de saúde (pares leigo×técnico)
 python scripts/marco3_pcdt.py            # Marco 3 — PCDT + reranker; baixa o cross-encoder na 1ª vez
 python scripts/marco3_chatbot.py         # Q3 — chatbot citando fonte (exige Ollama + llama3.1:8b)
+
+# Produto — assistente institucional (Manual do Aluno):
+python scripts/institucional_acuracia.py     # acurácia de resposta (50 perguntas)
+python scripts/institucional_guardrail.py    # guardrail adversarial (31 perguntas fora de escopo)
+python scripts/assistente_institucional.py   # chat livre (REPL) com disclaimer e citação de fonte
 ```
 
 Dados do Pirá (Marco 2) — baixados do repositório oficial ([C4AI/Pira](https://github.com/C4AI/Pira),
