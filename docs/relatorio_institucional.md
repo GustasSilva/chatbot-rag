@@ -53,8 +53,14 @@ resposta confusa (`n17`) — modos menos graves. Frequência medida num passe co
 Recuperação quase perfeita (98%) e ~92% de acerto de conteúdo com um LLM local de 8B. Os
 poucos erros são majoritariamente de **geração, não de recuperação** — o modelo ocasionalmente
 sintetiza do trecho errado (`n14`) ou recusa demais (`n07`). O guardrail adversarial (seção
-abaixo) fechou o único vazamento encontrado com um piso de score; resta, se necessário, ajuste
-de prompt/modelo para reduzir erros do tipo `n14` (errado com confiança).
+abaixo) fechou o único vazamento encontrado com um piso de score.
+
+**Tentativa de corrigir `n14` por prompt — rejeitada** (`scripts/exp_prompt_n14.py`). Uma âncora
+de atribuição ("ao dizer quem/quando/quanto, confirme que o trecho afirma isso sobre o sujeito;
+senão recuse") **não corrigiu `n14`** (seguiu "professor") e **regrediu o over-refusal** (recusas
+1→5 nas 50, com `m18/n08/n11/n26` recusando apesar de terem resposta correta). Isso indica que
+`n14` é limite de **compreensão do 8B** — o modelo não está "em dúvida" (onde a instrução
+ajudaria), está confiantemente errado. Reduzi-lo pediria um **modelo maior**, não outro prompt.
 
 ## Guardrail adversarial (31 perguntas fora de escopo)
 

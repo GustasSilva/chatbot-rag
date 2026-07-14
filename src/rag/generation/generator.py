@@ -70,6 +70,8 @@ _SISTEMA_INSTITUCIONAL = (
     "Responda em português, de forma clara e objetiva."
 )
 PERFIS_SISTEMA = {"estrito": _SISTEMA_ESTRITO, "institucional": _SISTEMA_INSTITUCIONAL}
+# Nota: uma variante "ancorada" (âncora de atribuição p/ o erro n14) foi testada e REJEITADA —
+# não corrigiu n14 e regrediu o over-refusal (recusas 1→5 nas 50). Ver scripts/exp_prompt_n14.py.
 
 # Captura números de citação em [1], [1, 2], [1,2] etc. (vários dígitos por colchete).
 _CITACAO = re.compile(r"\[([\d,\s]+)\]")
