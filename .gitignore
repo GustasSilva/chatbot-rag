@@ -1,8 +1,16 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+*.pyo
 *.egg-info/
+build/
+dist/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 .ipynb_checkpoints/
 
 # Modelos, caches de embedding e saídas são regeneráveis pelos scripts — não versionar.
@@ -10,10 +18,23 @@ data/processed/
 outputs/
 *.npy
 *.faiss
+*.log
 
 # PDFs/corpora brutos: manter fora do git (podem ser grandes / redistribuição).
 data/raw/*
 !data/raw/.gitkeep
 
-# Segredos (chave da API do gerador, quando o Marco 3 chegar).
+# Segredos (variáveis de ambiente, chaves de API).
 .env
+.env.*
+!.env.example
+
+# Editores / IDEs
+.vscode/
+.idea/
+*.swp
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+Desktop.ini
