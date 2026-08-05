@@ -66,6 +66,8 @@ _SISTEMA_INSTITUCIONAL = (
     "neles. Não invente dados (datas, números, prazos) que não estejam nos trechos. "
     "Só responda 'Não encontrei essa informação nos documentos.' se os trechos realmente não "
     "tratarem do assunto perguntado. "
+    "Combine os trechos em UMA resposta única e coesa; não escreva um parágrafo por trecho nem "
+    "repita a mesma informação. "
     "Cite a(s) fonte(s) usada(s) indicando o número do trecho entre colchetes, por exemplo [1]. "
     "Responda em português, de forma clara e objetiva."
 )

@@ -55,15 +55,19 @@ de guardrail **institucional** (mais brando que o de saúde) e um **piso de scor
   código do motor.
 - **Acurácia de resposta** (50 perguntas em linguagem de aluno, revisão manual):
   **recuperação 98%**, **conteúdo 92%**, citação exata 84%. Erros majoritariamente de
-  **geração, não de recuperação** (o 8B às vezes sintetiza do trecho vizinho).
+  **geração, não de recuperação** (o 8B às vezes sintetiza do trecho vizinho). Uma instrução
+  anti-repetição (perfil institucional **v2**) zerou o over-refusal (2%→0%) ao custo da citação
+  exata (84%→80%) — A/B completo no relatório institucional.
 - **Guardrail adversarial** (31 perguntas fora de escopo): só com o prompt, 27/31 recusam; o
   único **vazamento real** (pergunta médica puxando um trecho institucional vizinho) foi
   fechado com um **piso de score de reranker (−3.2)** → recusa vai a **31/31 = 100%**. O piso
   foi *calibrado* para não recusar nenhuma das 50 do gold-set (**0/50 in-sample**, folga fina
   de 0.28 — ver ressalva no relatório institucional). **0/5 injeções** de prompt extraíram
-  conteúdo fabricado.
-- **Interface:** `python scripts/assistente_institucional.py` — REPL com **disclaimer**
-  (assistente não-oficial), citação do trecho do Manual e recusa fora de escopo.
+  conteúdo fabricado. (No perfil **v2** o guardrail é **30/31**: um caso — *"quando é minha
+  próxima prova?"* — recusa o dado pessoal mas pivota para o Calendário público, **sem fabricar**.)
+- **Interface:** **tela web** (`streamlit run app.py`, com os trechos-fonte numerados `[n]` e o
+  citado marcado) ou **REPL** (`python scripts/assistente_institucional.py`) — ambas com
+  **disclaimer** (assistente não-oficial), citação do trecho do Manual e recusa fora de escopo.
 
 ## 4. Limitações e questões abertas
 

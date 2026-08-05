@@ -22,6 +22,9 @@ Gold-set: `data/goldsets/institucional.json` (50 perguntas). Harness: `scripts/i
 | Citação do chunk exato (entre respondidas) | 41/49 = 84% | objetiva |
 | **Conteúdo correto** | **46/50 = 92%** | revisão manual (não LLM-juiz) |
 
+> Números desta tabela = perfil institucional **v1**. A instrução anti-repetição (v2, 2026-08-05)
+> mudou alguns deles — ver **"Atualização — perfil institucional v2"** ao final.
+
 ## Erros classificados (não misturar tipos)
 
 **Recuperação (1):**
@@ -90,13 +93,44 @@ asma −4.40, Manaus −3.78, RA −3.41; in-scope: mínimo do gold-set −2.92)
 **0/50** legítimas e barra os 3 casos problemáticos. Ligando o piso (`ChatbotRAG(piso_score=…)`,
 que recusa *antes* de chamar o LLM), o teste adversarial vai a **31/31 = 100% de recusa**, sem
 regressão de acurácia — o gate, por construção, nunca dispara nas perguntas do gold-set. Bônus:
-economiza a latência do LLM nas perguntas fora de escopo.
+economiza a latência do LLM nas perguntas fora de escopo. (Este **31/31** é do perfil v1; com a
+instrução anti-repetição v2 passou a **30/31** — ver a atualização abaixo.)
 
 > **Ressalva (in-sample).** O piso de −3.2 foi *escolhido* para que 0/50 dessas 50 perguntas
 > caíssem abaixo dele — logo "0/50" é o critério de calibração, não validação independente. A
 > folga é fina: a legítima de menor score é −2.92 (0.28 acima do piso), então uma pergunta
 > legítima nova poderia ser recusada por engano. Uma validação mais forte usaria um conjunto
 > held-out; o valor do piso é específico deste corpus + reranker.
+
+## Atualização — perfil institucional v2 (anti-repetição, 2026-08-05)
+
+O perfil institucional ganhou uma instrução de coesão (*"combine os trechos em UMA resposta
+única e coesa; não escreva um parágrafo por trecho nem repita a mesma informação"*), motivada
+por respostas verbosas que repetiam a mesma definição uma vez por trecho (ex.: "aluno tutelado"
+saía em ~4 parágrafos quase idênticos). Afeta **só o perfil institucional** — o perfil `estrito`
+(via científica/saúde) não muda.
+
+**A/B (mesmo gold-set, mesmo modelo, temp 0):**
+
+| métrica | v1 (baseline) | v2 (anti-repetição) |
+|---|---|---|
+| Recuperação (top-5) | 98% (49/50) | 98% (49/50) — não depende do prompt |
+| Over-refusal (recusa em legítima) | 2% (1/50) | **0% (0/50)** — melhorou |
+| Citação exata (entre respondidas) | 84% (41/49) | 80% (40/50) |
+| Guardrail canônico | 31/31 = 100% | 30/31 = 97% |
+| Fabricação de dado (guardrail) | 0 | 0 |
+
+- **Ganho:** a verbosidade sumiu ("aluno tutelado" 4 parágrafos → 1 resposta coesa, ~metade do
+  tamanho) e o over-refusal zerou.
+- **Custo (assumido, decisão de manter):** o guardrail caiu 1 ponto. O único caso foi *"Quando é
+  a minha próxima prova?"* (dados pessoais): o modelo **recusou o dado pessoal** (*"os trechos não
+  mencionam uma data específica para a sua próxima prova"*) mas pivotou para o Calendário público
+  em vez da recusa canônica — **sem fabricar** a data. É o "detector ingênuo subconta recusas": a
+  mesma instrução que zerou o over-refusal deixou o modelo mais prestativo em casos limítrofes.
+- **Pendente:** o "92%" de conteúdo (revisão manual) foi medido nas respostas **v1**; as respostas
+  v2 estão em `outputs/institucional_respostas.txt` para nova revisão. Os sinais objetivos
+  (recuperação 98%, recusa 0%, citação 80%) e sondas manuais indicam conteúdo equivalente, mas o
+  número de conteúdo não foi re-cravado.
 
 ## Enquadramento (produto × ciência)
 
