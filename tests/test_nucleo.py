@@ -129,6 +129,32 @@ def test_hibrida_funde_sem_erro():
     assert top[0].chunk_id == 2
 
 
+def test_uniao_intercala_topo_de_cada_e_deduplica():
+    """A união intercala densa[0], esparsa[0], ... e deduplica — o topo de CADA
+    recuperador entra no pool sem diluição (ao contrário da média do RRF)."""
+    from rag.retrieval.base import Recuperador, Resultado
+    from rag.retrieval.uniao import RecuperadorUniao
+
+    class _RecFixo(Recuperador):
+        nome = "fixo"
+
+        def __init__(self, ids: list[int]) -> None:
+            self._ids = ids
+
+        def buscar(self, consulta: str, k: int) -> list[Resultado]:
+            return [Resultado(chunk_id=c, posicao=i, score=float(-i))
+                    for i, c in enumerate(self._ids[:k])]
+
+    densa = _RecFixo([10, 20, 30])    # densa coloca 10 no topo
+    esparsa = _RecFixo([40, 20, 50])  # esparsa coloca 40 no topo (20 é comum)
+    top = RecuperadorUniao(densa, esparsa).buscar("q", k=4)
+    ids = [r.chunk_id for r in top]
+
+    assert ids[:2] == [10, 40]          # topo de cada um entra sem diluição
+    assert ids == [10, 40, 20, 30]      # 20 deduplicado; ordem de intercalação mantida
+    assert len(ids) == len(set(ids))    # sem duplicatas
+
+
 # ------------------------------- métricas ---------------------------------- #
 def test_recall_e_mrr():
     ids = [5, 3, 9, 1]

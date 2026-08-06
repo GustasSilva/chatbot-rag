@@ -73,8 +73,16 @@ de guardrail **institucional** (mais brando que o de saúde) e um **piso de scor
 
 - **Erro de geração tipo `n14`** (produto): o 8B ocasionalmente responde **errado com
   confiança** sintetizando do trecho vizinho. Mitigável por prompt/modelo — em aberto.
-- **Experimento de fusão** (ciência): rerankear a **união** densa+esparsa em vez de
-  RRF→rerank, para testar se remove a diluição do RRF e melhora produto e ciência.
+- **Experimento de fusão** (ciência) — **RESOLVIDO** (`scripts/exp_fusao_reranker.py`,
+  `RecuperadorUniao`). Testado rerankear a **união intercalada** densa+esparsa (sem média de
+  ranks) em vez de RRF→rerank, com a mesma verba de candidatos (isola a fusão). **A união é
+  consistentemente ≥ RRF** nos dois corpora: recall@5 saúde 0.71→0.75, Pirá 0.91→0.93; MRR
+  Pirá 0.807→0.815. Direção sempre a favor da união (efeito recall@5 +0.33 na saúde, +0.60 no
+  Pirá), **mas nada significativo** (p>0.05) — o reranker já resolve a maioria dos casos, então
+  a diluição do RRF só pesa em poucas perguntas. Recuperou o próprio **"miss do diabetes"**
+  (pergunta leiga `dm3_l`) e mais alguns, perdendo só 1 por corpus. **Conclusão:** ganho real
+  porém pequeno e concentrado; `RecuperadorUniao` fica disponível, mas o **produto segue no RRF**
+  (adotar exigiria recalibrar o piso de score, que é específico do reranker+candidatos).
 - **Piso de score** é específico do corpus + reranker (calibrado no Manual); outro corpus
   exige recalibrar (o mecanismo é geral, o valor não).
 - **Escopo do produto:** Manual-only — os demais documentos institucionais não estavam

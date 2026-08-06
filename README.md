@@ -218,6 +218,8 @@ python scripts/assistente_institucional.py   # chat livre (REPL) com disclaimer 
 
 pip install -e ".[ui]"                        # dependência da tela web (streamlit)
 streamlit run app.py                          # chat livre em tela web (exige Ollama + llama3.1:8b)
+
+python scripts/exp_fusao_reranker.py          # experimento: união intercalada vs RRF p/ o reranker
 ```
 
 Dados do Pirá (Marco 2) — baixados do repositório oficial ([C4AI/Pira](https://github.com/C4AI/Pira),
