@@ -48,6 +48,7 @@ def main() -> int:
     print("=" * 72)
     print("Faca uma pergunta (ou 'sair' para encerrar).\n")
 
+    historico: list[tuple[str, str]] = []  # turnos anteriores (contexto p/ follow-ups)
     while True:
         try:
             pergunta = input("Voce> ").strip()
@@ -59,7 +60,8 @@ def main() -> int:
         if pergunta.lower() in SAIR:
             break
 
-        resp = chatbot.responder(pergunta)
+        resp = chatbot.responder(pergunta, historico=historico)
+        historico = (historico + [(pergunta, resp.resposta.texto)])[-4:]  # últimos 4 turnos
         print(f"\nAssistente> {resp.resposta.texto}")
         recusa = "não encontrei essa informação" in resp.resposta.texto.strip().lower()
         if resp.contextos and not recusa:

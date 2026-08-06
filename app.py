@@ -88,6 +88,18 @@ def render_mensagem(msg: dict) -> None:
                 st.caption("Confirme no Manual oficial antes de decidir algo importante.")
 
 
+def historico_de(mensagens: list[dict], max_turnos: int = 4) -> list[tuple[str, str]]:
+    """Pares (pergunta, resposta) dos últimos turnos, para dar contexto aos follow-ups."""
+    pares, pendente = [], None
+    for m in mensagens:
+        if m["papel"] == "user":
+            pendente = m["texto"]
+        elif m["papel"] == "assistant" and pendente is not None:
+            pares.append((pendente, m["texto"]))
+            pendente = None
+    return pares[-max_turnos:]
+
+
 def main() -> None:
     st.set_page_config(page_title="Assistente do Manual do Aluno", page_icon="📘")
     st.title("📘 Assistente do Manual do Aluno")
@@ -105,6 +117,8 @@ def main() -> None:
     if not pergunta:
         return
 
+    # Histórico dos turnos anteriores (antes de anexar a pergunta atual).
+    historico = historico_de(st.session_state.mensagens)
     usuario = {"papel": "user", "texto": pergunta}
     st.session_state.mensagens.append(usuario)
     render_mensagem(usuario)
@@ -112,7 +126,7 @@ def main() -> None:
     with st.chat_message("assistant"):
         with st.spinner("Consultando o Manual..."):
             try:
-                resp = chatbot.responder(pergunta)
+                resp = chatbot.responder(pergunta, historico=historico)
             except RuntimeError as erro:  # Ollama fora do ar, modelo ausente, etc.
                 st.error(str(erro))
                 return

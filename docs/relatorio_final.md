@@ -71,6 +71,10 @@ de guardrail **institucional** (mais brando que o de saúde) e um **piso de scor
   Mostra os **trechos consultados em toda resposta** (mesmo quando o modelo não cita `[n]`, para
   a evidência nunca ficar oculta) e **responde saudações** de forma amigável, sem afrouxar a
   recusa a perguntas específicas fora de escopo (detector conservador, `chatbot.eh_saudacao`).
+  Mantém **contexto da conversa** (multi-turn): reescreve follow-ups elípticos (*"e as
+  presenciais?"*) numa pergunta autônoma antes de recuperar. Validado: guardrail e acurácia de
+  turno único **inalterados** (30/31; recuperação 98%) e **0 vazamentos** em follow-ups
+  adversariais (*"e o tratamento para asma?"* após uma pergunta legítima segue recusando).
 
 ## 4. Limitações e questões abertas
 

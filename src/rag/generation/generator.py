@@ -30,18 +30,34 @@ class RespostaGerada:
     fontes: list[int]  # ids dos chunks citados como fonte
 
 
+# Histórico de conversa: turnos anteriores como (pergunta do usuário, resposta dada).
+Turno = tuple[str, str]
+
+
 class Gerador(ABC):
     """Gera a resposta final a partir da pergunta e dos chunks recuperados."""
 
     @abstractmethod
-    def gerar(self, pergunta: str, contextos: list[Chunk]) -> RespostaGerada:
+    def gerar(
+        self, pergunta: str, contextos: list[Chunk], historico: list[Turno] | None = None
+    ) -> RespostaGerada:
         raise NotImplementedError
+
+    def reescrever_consulta(self, pergunta: str, historico: list[Turno]) -> str:
+        """Reescreve a pergunta como autônoma usando o histórico (para a recuperação).
+
+        Default: devolve a pergunta sem mudança — geradores sem LLM (ou sem suporte a
+        conversa) não reescrevem. ``GeradorOllama`` sobrescreve com a reescrita via LLM.
+        """
+        return pergunta
 
 
 class GeradorNaoConfigurado(Gerador):
     """Placeholder explícito: falha alto se alguém tentar gerar sem backend configurado."""
 
-    def gerar(self, pergunta: str, contextos: list[Chunk]) -> RespostaGerada:
+    def gerar(
+        self, pergunta: str, contextos: list[Chunk], historico: list[Turno] | None = None
+    ) -> RespostaGerada:
         raise NotImplementedError(
             "Nenhum gerador configurado. Defina geracao.backend no config.yaml "
             "(ex.: 'ollama') e use GeradorOllama."
@@ -72,6 +88,15 @@ _SISTEMA_INSTITUCIONAL = (
     "Responda em português, de forma clara e objetiva."
 )
 PERFIS_SISTEMA = {"estrito": _SISTEMA_ESTRITO, "institucional": _SISTEMA_INSTITUCIONAL}
+
+# Reescrita de pergunta para conversa multi-turn: condensa histórico + pergunta numa
+# pergunta autônoma, para a RECUPERAÇÃO funcionar em follow-ups elípticos ("e as presenciais?").
+_SISTEMA_REESCRITA = (
+    "Dada a conversa e a última pergunta do usuário, reescreva essa pergunta como uma pergunta "
+    "AUTÔNOMA e completa em português, resolvendo referências (ex.: 'e as presenciais?', 'isso', "
+    "'ele') com base no histórico. Responda APENAS com a pergunta reescrita, sem explicações. "
+    "Se a pergunta já for autônoma, repita-a sem mudanças."
+)
 # Nota: uma variante "ancorada" (âncora de atribuição p/ o erro n14) foi testada e REJEITADA —
 # não corrigiu n14 e regrediu o over-refusal (recusas 1→5 nas 50). Ver scripts/exp_prompt_n14.py.
 
@@ -127,7 +152,9 @@ class GeradorOllama(Gerador):
         return cls(modelo=modelo, host=cfg.host, temperatura=cfg.temperatura,
                    timeout_s=cfg.timeout_s, perfil=perfil or cfg.perfil_guardrail)
 
-    def gerar(self, pergunta: str, contextos: list[Chunk]) -> RespostaGerada:
+    def gerar(
+        self, pergunta: str, contextos: list[Chunk], historico: list[Turno] | None = None
+    ) -> RespostaGerada:
         if not contextos:
             return RespostaGerada(RECUSA_PADRAO, [])
 
@@ -135,17 +162,35 @@ class GeradorOllama(Gerador):
             f"[{i}] (fonte: {c.doc_id}) {c.texto}" for i, c in enumerate(contextos, start=1)
         ]
         conteudo = "Trechos:\n" + "\n\n".join(blocos) + f"\n\nPergunta: {pergunta}\nResposta:"
-        resposta = self._chamar(self._sistema, conteudo)
+        # Sem histórico: mensagens = [system, user] — idêntico ao comportamento de turno único.
+        mensagens = [{"role": "system", "content": self._sistema}]
+        mensagens += self._mensagens_historico(historico)
+        mensagens.append({"role": "user", "content": conteudo})
+        resposta = self._chamar(mensagens)
         fontes = extrair_fontes_citadas(resposta, contextos)
         return RespostaGerada(texto=resposta.strip(), fontes=fontes)
 
-    def _chamar(self, sistema: str, usuario: str) -> str:
+    def reescrever_consulta(self, pergunta: str, historico: list[Turno]) -> str:
+        if not historico:
+            return pergunta
+        mensagens = [{"role": "system", "content": _SISTEMA_REESCRITA}]
+        mensagens += self._mensagens_historico(historico)
+        mensagens.append({"role": "user", "content": f"Pergunta a reescrever: {pergunta}"})
+        return self._chamar(mensagens).strip() or pergunta
+
+    @staticmethod
+    def _mensagens_historico(historico: list[Turno] | None) -> list[dict]:
+        """Converte os turnos anteriores em mensagens user/assistant para o chat do Ollama."""
+        mensagens: list[dict] = []
+        for pergunta_ant, resposta_ant in historico or []:
+            mensagens.append({"role": "user", "content": pergunta_ant})
+            mensagens.append({"role": "assistant", "content": resposta_ant})
+        return mensagens
+
+    def _chamar(self, mensagens: list[dict]) -> str:
         payload = {
             "model": self.modelo,
-            "messages": [
-                {"role": "system", "content": sistema},
-                {"role": "user", "content": usuario},
-            ],
+            "messages": mensagens,
             "stream": False,
             "options": {"temperature": self.temperatura},
         }

@@ -288,7 +288,7 @@ def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
     """Com saudar=True, uma saudação pura devolve a mensagem amigável sem tocar no
     recuperador nem no gerador; sem saudar=True, segue o fluxo normal."""
     from rag.corpus.chunking import Chunk
-    from rag.generation.chatbot import ChatbotRAG, RESPOSTA_SAUDACAO
+    from rag.generation.chatbot import ChatbotRAG, RESPOSTAS_SAUDACAO
     from rag.generation.generator import Gerador, RespostaGerada
     from rag.retrieval.base import Recuperador, Resultado
 
@@ -303,13 +303,13 @@ def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
             return [Resultado(chunk_id=1, posicao=0, score=5.0)]
 
     class _GerFixo(Gerador):
-        def gerar(self, pergunta, contextos):
+        def gerar(self, pergunta, contextos, historico=None):
             return RespostaGerada("resposta do LLM", [1])
 
     _RecEspiao.chamado = False
     bot = ChatbotRAG(_RecEspiao(), [chunk], _GerFixo(), piso_score=None, saudar=True)
     r = bot.responder("olá, tudo bem?")
-    assert r.resposta.texto == RESPOSTA_SAUDACAO
+    assert r.resposta.texto in RESPOSTAS_SAUDACAO
     assert r.contextos == [] and r.resposta.fontes == []
     assert _RecEspiao.chamado is False  # não recuperou nada
 
@@ -318,6 +318,53 @@ def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
     r2 = bot.responder("qual o limite de faltas?")
     assert r2.resposta.texto == "resposta do LLM"
     assert _RecEspiao.chamado is True
+
+
+def test_multiturn_recupera_pela_pergunta_reescrita_e_gera_com_historico():
+    """Com histórico, o ChatbotRAG recupera pela pergunta REESCRITA (autônoma) e passa o
+    histórico ao gerador. Sem histórico, usa a pergunta original e não reescreve."""
+    from rag.corpus.chunking import Chunk
+    from rag.generation.chatbot import ChatbotRAG
+    from rag.generation.generator import Gerador, RespostaGerada
+    from rag.retrieval.base import Recuperador, Resultado
+
+    chunk = Chunk(id=1, doc_id="d", texto="x", inicio_char=0, fim_char=1, indice_no_doc=0)
+
+    class _RecGrava(Recuperador):
+        nome = "grava"
+        consulta_usada = None
+
+        def buscar(self, consulta, k):
+            self.__class__.consulta_usada = consulta
+            return [Resultado(chunk_id=1, posicao=0, score=5.0)]
+
+    class _GerReescreve(Gerador):
+        historico_recebido = "nao chamado"
+        reescreveu = False
+
+        def gerar(self, pergunta, contextos, historico=None):
+            self.__class__.historico_recebido = historico
+            return RespostaGerada("ok", [1])
+
+        def reescrever_consulta(self, pergunta, historico):
+            self.__class__.reescreveu = True
+            return "PERGUNTA REESCRITA AUTONOMA"
+
+    hist = [("qual a data das provas?", "25/5 a 30/5 ...")]
+    bot = ChatbotRAG(_RecGrava(), [chunk], _GerReescreve(), piso_score=None)
+
+    _GerReescreve.reescreveu = False
+    bot.responder("e as presenciais?", historico=hist)
+    assert _RecGrava.consulta_usada == "PERGUNTA REESCRITA AUTONOMA"  # recuperou pela reescrita
+    assert _GerReescreve.historico_recebido == hist                   # gerou com o histórico
+    assert _GerReescreve.reescreveu is True
+
+    # Sem histórico: usa a pergunta original e NÃO reescreve (comportamento de turno único).
+    _GerReescreve.reescreveu = False
+    bot.responder("qual o limite de faltas?")
+    assert _RecGrava.consulta_usada == "qual o limite de faltas?"
+    assert _GerReescreve.reescreveu is False
+    assert _GerReescreve.historico_recebido is None
 
 
 def test_piso_score_recusa_antes_de_gerar():
@@ -342,7 +389,7 @@ def test_piso_score_recusa_antes_de_gerar():
     class _GeradorEspiao(Gerador):
         chamado = False
 
-        def gerar(self, pergunta, contextos):
+        def gerar(self, pergunta, contextos, historico=None):
             self.__class__.chamado = True
             return RespostaGerada("resposta gerada", [1])
 
