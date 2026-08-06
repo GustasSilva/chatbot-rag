@@ -270,6 +270,56 @@ def test_perfil_guardrail_seleciona_prompt():
         GeradorOllama(modelo="x", perfil="inexistente")
 
 
+def test_eh_saudacao_dispara_so_em_saudacao_pura():
+    """O detector é conservador: True só quando a mensagem é SÓ saudação; qualquer
+    pergunta substantiva (inclusive fora de escopo) devolve False e segue para o pipeline."""
+    from rag.generation.chatbot import eh_saudacao
+
+    for t in ["olá", "Oi!", "bom dia", "tudo bem?", "Olá, tudo bem?",
+              "e aí, beleza?", "boa noite", "opa"]:
+        assert eh_saudacao(t), f"deveria ser saudação: {t!r}"
+
+    for t in ["qual o limite de faltas?", "me conta uma piada", "qual o tratamento para asma?",
+              "você gosta de mim?", "olá, qual o limite de faltas?", "qual a data das provas?"]:
+        assert not eh_saudacao(t), f"NÃO deveria ser saudação: {t!r}"
+
+
+def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
+    """Com saudar=True, uma saudação pura devolve a mensagem amigável sem tocar no
+    recuperador nem no gerador; sem saudar=True, segue o fluxo normal."""
+    from rag.corpus.chunking import Chunk
+    from rag.generation.chatbot import ChatbotRAG, RESPOSTA_SAUDACAO
+    from rag.generation.generator import Gerador, RespostaGerada
+    from rag.retrieval.base import Recuperador, Resultado
+
+    chunk = Chunk(id=1, doc_id="d", texto="x", inicio_char=0, fim_char=1, indice_no_doc=0)
+
+    class _RecEspiao(Recuperador):
+        nome = "espiao"
+        chamado = False
+
+        def buscar(self, consulta, k):
+            self.__class__.chamado = True
+            return [Resultado(chunk_id=1, posicao=0, score=5.0)]
+
+    class _GerFixo(Gerador):
+        def gerar(self, pergunta, contextos):
+            return RespostaGerada("resposta do LLM", [1])
+
+    _RecEspiao.chamado = False
+    bot = ChatbotRAG(_RecEspiao(), [chunk], _GerFixo(), piso_score=None, saudar=True)
+    r = bot.responder("olá, tudo bem?")
+    assert r.resposta.texto == RESPOSTA_SAUDACAO
+    assert r.contextos == [] and r.resposta.fontes == []
+    assert _RecEspiao.chamado is False  # não recuperou nada
+
+    # Pergunta de verdade passa pelo pipeline mesmo com saudar=True.
+    _RecEspiao.chamado = False
+    r2 = bot.responder("qual o limite de faltas?")
+    assert r2.resposta.texto == "resposta do LLM"
+    assert _RecEspiao.chamado is True
+
+
 def test_piso_score_recusa_antes_de_gerar():
     """O piso de score recusa fora-de-escopo (score baixo) SEM chamar o gerador; acima
     do piso, gera normalmente."""

@@ -40,8 +40,7 @@ def main() -> int:
     rer = montar_reranker(montar_recuperadores(indice, cfg, incluir=["hibrida"])["hibrida"], indice, cfg)
     gerador = GeradorOllama.de_config(cfg.geracao, perfil="institucional")
     chatbot = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,
-                         piso_score=cfg.geracao.piso_score_reranker)
-    por_id = {c.id: c for c in indice.chunks}
+                         piso_score=cfg.geracao.piso_score_reranker, saudar=True)
 
     print("\n" + "=" * 72)
     print("  Assistente do Manual do Aluno")
@@ -62,12 +61,13 @@ def main() -> int:
 
         resp = chatbot.responder(pergunta)
         print(f"\nAssistente> {resp.resposta.texto}")
-        if resp.resposta.fontes:
-            print("\nFontes (trechos do Manual):")
-            for fid in resp.resposta.fontes:
-                chunk = por_id.get(fid)
-                if chunk:
-                    print(f"  - {_preview(chunk.texto)}")
+        recusa = "não encontrei essa informação" in resp.resposta.texto.strip().lower()
+        if resp.contextos and not recusa:
+            citados = set(resp.resposta.fontes)
+            print("\nFontes (trechos consultados; * = citado na resposta):")
+            for n, chunk in enumerate(resp.contextos, start=1):
+                marca = "*" if chunk.id in citados else " "
+                print(f"  {marca}[{n}] {_preview(chunk.texto)}")
             print("  (confirme no Manual oficial antes de decidir algo importante)")
         print()
 

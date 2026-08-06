@@ -43,6 +43,7 @@ def carregar_chatbot() -> ChatbotRAG:
         gerador,
         cfg.geracao.top_k_contexto,
         piso_score=cfg.geracao.piso_score_reranker,
+        saudar=True,  # produto de chat livre: responde saudações de forma amigável
     )
 
 
@@ -52,12 +53,20 @@ def preview(texto: str, n: int = 320) -> str:
     return t if len(t) <= n else t[:n].rstrip() + "..."
 
 
+def eh_recusa(texto: str) -> bool:
+    """True para a recusa canônica — nesse caso não há fonte a exibir."""
+    return "não encontrei essa informação" in texto.strip().lower()
+
+
 def montar_fontes(resp) -> list[dict]:
     """Lista os trechos consultados na resposta, numerados como o `[n]` que o LLM cita.
 
     Mostra TODOS os trechos recuperados (o contexto que o modelo viu), não só os citados —
     assim o `[n]` do texto aponta para o trecho de mesmo número e a evidência fica completa.
+    Em recusa não há o que embasar, então devolve vazio (nenhum painel de fontes).
     """
+    if eh_recusa(resp.resposta.texto):
+        return []
     citados = set(resp.resposta.fontes)
     return [
         {"n": n, "citada": ctx.id in citados, "texto": preview(ctx.texto)}
@@ -108,11 +117,10 @@ def main() -> None:
                 st.error(str(erro))
                 return
 
-    # Só exibe as fontes quando o modelo de fato respondeu citando um trecho; numa recusa
-    # ("Não encontrei...") não há o que embasar, então o painel não aparece.
-    fontes = montar_fontes(resp) if resp.resposta.fontes else []
+    # Toda resposta real mostra os trechos consultados (citando ou não); recusa e saudação
+    # ficam sem fontes — montar_fontes já trata esses casos.
     st.session_state.mensagens.append(
-        {"papel": "assistant", "texto": resp.resposta.texto, "fontes": fontes}
+        {"papel": "assistant", "texto": resp.resposta.texto, "fontes": montar_fontes(resp)}
     )
     st.rerun()
 

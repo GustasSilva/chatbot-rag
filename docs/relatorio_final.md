@@ -68,6 +68,9 @@ de guardrail **institucional** (mais brando que o de saúde) e um **piso de scor
 - **Interface:** **tela web** (`streamlit run app.py`, com os trechos-fonte numerados `[n]` e o
   citado marcado) ou **REPL** (`python scripts/assistente_institucional.py`) — ambas com
   **disclaimer** (assistente não-oficial), citação do trecho do Manual e recusa fora de escopo.
+  Mostra os **trechos consultados em toda resposta** (mesmo quando o modelo não cita `[n]`, para
+  a evidência nunca ficar oculta) e **responde saudações** de forma amigável, sem afrouxar a
+  recusa a perguntas específicas fora de escopo (detector conservador, `chatbot.eh_saudacao`).
 
 ## 4. Limitações e questões abertas
 
