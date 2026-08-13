@@ -72,6 +72,12 @@ class ConfigGeracao:
     # score. Calibrado contra o gold-set institucional (0/50 legítimas barradas em -3.2, mas
     # captura fora-de-escopo como asma/-4.40). None = sem piso (padrão da via científica).
     piso_score_reranker: float | None = None
+    # Backend llama-cpp (decodificação restrita por gramática). Opcionais — só usados por
+    # GeradorLlamaCpp; o backend Ollama ignora. caminho_modelo_gguf aponta para o GGUF Q4.
+    caminho_modelo_gguf: str | None = None
+    n_ctx: int = 4096
+    n_gpu_layers: int = -1  # -1 = todas as camadas na GPU (usa a CUDA já instalada)
+    restringir_citacao: bool = True
 
 
 @dataclass(frozen=True)

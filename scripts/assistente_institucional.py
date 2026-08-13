@@ -17,7 +17,7 @@ import sys
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
 from rag.generation.chatbot import ChatbotRAG
-from rag.generation.generator import GeradorOllama
+from rag.generation.fabrica import construir_gerador
 from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
@@ -38,7 +38,7 @@ def main() -> int:
     print("Carregando indice e modelos (pode levar alguns segundos)...", flush=True)
     indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
     rer = montar_reranker(montar_recuperadores(indice, cfg, incluir=["hibrida"])["hibrida"], indice, cfg)
-    gerador = GeradorOllama.de_config(cfg.geracao, perfil="institucional")
+    gerador = construir_gerador(cfg.geracao, perfil="institucional")
     chatbot = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,
                          piso_score=cfg.geracao.piso_score_reranker, saudar=True)
 

@@ -2,10 +2,12 @@
 
 Mesma pilha do REPL `scripts/assistente_institucional.py`, agora numa interface visual:
 recuperação **híbrida + reranker**, **piso de score** (recusa fora-de-escopo antes do LLM) e
-gerador local (Ollama, temperatura 0) no **perfil institucional** do guardrail. Não é um
-serviço oficial — mostra um disclaimer e cita o trecho do Manual em cada resposta.
+gerador local no **perfil institucional** do guardrail. Não é um serviço oficial — mostra um
+disclaimer e cita o trecho do Manual em cada resposta.
 
-Exige Ollama no ar + o modelo do config. Uso:
+O backend do gerador é escolhido pela `construir_gerador`: com um GGUF configurado (env
+`GGUF_MODEL` ou `geracao.caminho_modelo_gguf`), usa o llama-cpp com **saída JSON garantida por
+gramática** (a intervenção); senão, usa o Ollama. Uso:
     streamlit run app.py
 """
 from __future__ import annotations
@@ -15,7 +17,7 @@ import streamlit as st
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
 from rag.generation.chatbot import ChatbotRAG
-from rag.generation.generator import GeradorOllama
+from rag.generation.fabrica import construir_gerador
 from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
@@ -36,7 +38,7 @@ def carregar_chatbot() -> ChatbotRAG:
     indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
     hibrida = montar_recuperadores(indice, cfg, incluir=["hibrida"])["hibrida"]
     recuperador = montar_reranker(hibrida, indice, cfg)
-    gerador = GeradorOllama.de_config(cfg.geracao, perfil="institucional")
+    gerador = construir_gerador(cfg.geracao, perfil="institucional")
     return ChatbotRAG(
         recuperador,
         indice.chunks,
