@@ -21,9 +21,11 @@ class PlanoBEspiao:
 
     def __init__(self) -> None:
         self.perguntas: list[str] = []
+        self.historicos: list[list[tuple[str, str]] | None] = []
 
-    def responder(self, pergunta: str) -> RespostaChatbot:
+    def responder(self, pergunta: str, historico=None) -> RespostaChatbot:
         self.perguntas.append(pergunta)
+        self.historicos.append(historico)
         return RespostaChatbot(pergunta, RespostaGerada("resposta do plano B", [1]), [CORPUS[1]])
 
 
@@ -37,6 +39,20 @@ def test_pergunta_reconhecida_e_respondida_pelo_nucleo():
     assert resposta.intencao == "limite_faltas"
     assert "75%" in resposta.texto
     assert [t.id for t in resposta.trechos] == [0]
+    assert resposta.fontes == (0,)  # o trecho que embasa a resposta, para a interface marcar
+
+
+def test_historico_vai_para_o_plano_b_e_nao_para_o_nucleo():
+    """Multi-turn continua funcionando: o follow-up elíptico não casa regra e cai no plano B."""
+    espiao = PlanoBEspiao()
+    dialogo = montar(espiao)
+    historico = [("qual o limite de faltas?", "75% das aulas")]
+
+    dialogo.responder("o que é o trancamento de matrícula?", historico=historico)
+    assert espiao.historicos == []  # núcleo respondeu sozinho, sem estado
+
+    dialogo.responder("e para as presenciais?", historico=historico)
+    assert espiao.historicos == [historico]
 
 
 def test_plano_b_nao_e_chamado_quando_o_nucleo_responde():

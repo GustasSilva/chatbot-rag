@@ -26,7 +26,7 @@ from rag.corpus.loaders import carregar_pdf
 from rag.evaluation.goldset import carregar_goldset, construir_relevancia
 from rag.generation.chatbot import ChatbotRAG
 from rag.generation.generator import GeradorOllama
-from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
+from rag.pipeline import construir_indice, montar_recuperador_produto
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 CAMINHO_GOLD = "data/goldsets/institucional.json"
@@ -44,10 +44,10 @@ def main() -> int:
     corpus = carregar_pdf(CAMINHO_PDF)
     itens = carregar_goldset(CAMINHO_GOLD)
 
-    indice = construir_indice({DOC: corpus}, cfg)
+    indice = construir_indice({DOC: corpus}, cfg, calcular_densa=False)
     relevancia = construir_relevancia(itens, indice.chunks, indice.textos_doc,
                                       cfg.recuperacao.limiar_relevancia)
-    rer = montar_reranker(montar_recuperadores(indice, cfg, incluir=["hibrida"])["hibrida"], indice, cfg)
+    rer = montar_recuperador_produto(indice, cfg)
     gerador = GeradorOllama.de_config(cfg.geracao, perfil="institucional")
     chatbot = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,
                          piso_score=cfg.geracao.piso_score_reranker)

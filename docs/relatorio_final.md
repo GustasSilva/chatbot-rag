@@ -48,8 +48,17 @@ trecho no rank 2, a híbrida o perdia). Por isso **híbrida ≈ esparsa**, não 
 
 ## 3. Produto — assistente institucional
 
-Chat livre sobre o Manual do Aluno, na configuração validada (**híbrida + reranker**), perfil
-de guardrail **institucional** (mais brando que o de saúde) e um **piso de score** de reranker.
+Chat livre sobre o Manual do Aluno, perfil de guardrail **institucional** (mais brando que o de
+saúde) e um **piso de score** de reranker.
+
+Recuperação do produto: **BM25 + reranker** (`pipeline.montar_recuperador_produto`). Difere da
+configuração vencedora do estudo comparativo (híbrida + reranker) por uma razão medida: quem
+consulta o Manual passou a ser a **consulta canônica** montada pelo front-end de compilador,
+escrita nas palavras do próprio documento — e nesse caminho BM25 puro e híbrida+reranker deram
+resultado **idêntico** (`scripts/cobertura_nucleo.py`). A recuperação densa compensava a redação
+crua do aluno, que não chega mais até a busca. O cross-encoder permanece porque o **piso de
+score** depende do escore dele, e o piso é o guardrail do plano B — esse sim ainda recebe a
+pergunta como o aluno escreveu.
 
 - **Config plugável:** o núcleo é corpus-agnóstico — o produto trocou só o corpus, sem mudar
   código do motor.
@@ -80,16 +89,15 @@ de guardrail **institucional** (mais brando que o de saúde) e um **piso de scor
 
 - **Erro de geração tipo `n14`** (produto): o 8B ocasionalmente responde **errado com
   confiança** sintetizando do trecho vizinho. Mitigável por prompt/modelo — em aberto.
-- **Experimento de fusão** (ciência) — **RESOLVIDO** (`scripts/exp_fusao_reranker.py`,
-  `RecuperadorUniao`). Testado rerankear a **união intercalada** densa+esparsa (sem média de
-  ranks) em vez de RRF→rerank, com a mesma verba de candidatos (isola a fusão). **A união é
-  consistentemente ≥ RRF** nos dois corpora: recall@5 saúde 0.71→0.75, Pirá 0.91→0.93; MRR
-  Pirá 0.807→0.815. Direção sempre a favor da união (efeito recall@5 +0.33 na saúde, +0.60 no
-  Pirá), **mas nada significativo** (p>0.05) — o reranker já resolve a maioria dos casos, então
-  a diluição do RRF só pesa em poucas perguntas. Recuperou o próprio **"miss do diabetes"**
-  (pergunta leiga `dm3_l`) e mais alguns, perdendo só 1 por corpus. **Conclusão:** ganho real
-  porém pequeno e concentrado; `RecuperadorUniao` fica disponível, mas o **produto segue no RRF**
-  (adotar exigiria recalibrar o piso de score, que é específico do reranker+candidatos).
+- **Experimento de fusão** (estudo preliminar) — **fechado e fora do escopo do produto**.
+  Testado rerankear a **união intercalada** densa+esparsa (sem média de ranks) em vez de
+  RRF→rerank, com a mesma verba de candidatos. A união ficou consistentemente ≥ RRF (recall@5
+  saúde 0.71→0.75, Pirá 0.91→0.93) **mas sem significância** (p>0.05), e recuperou o
+  **"miss do diabetes"**. A questão deixou de existir no produto: com o front-end de compilador
+  não há mais fusão nenhuma no caminho (a recuperação é BM25 + reranker, ver §3), então RRF
+  versus união virou pergunta sobre a configuração do estudo comparativo, não sobre o sistema
+  entregue. Fica registrado como resultado; `RecuperadorUniao` e `scripts/exp_fusao_reranker.py`
+  seguem reproduzíveis para quem quiser reexaminar o estudo.
 - **Piso de score** é específico do corpus + reranker (calibrado no Manual); outro corpus
   exige recalibrar (o mecanismo é geral, o valor não).
 - **Escopo do produto:** Manual-only — os demais documentos institucionais não estavam

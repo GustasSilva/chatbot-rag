@@ -186,9 +186,18 @@ todas (8/8 = 100%)**, sem alucinar. O caminho de contexto vazio também tem test
 
 O mesmo motor, com o corpus do **Manual do Aluno**, vira um produto de **chat livre** — com
 **tela web** (`streamlit run app.py`) ou no terminal (`python scripts/assistente_institucional.py`).
-Usa a configuração validada acima (híbrida +
-reranker), um **guardrail em perfil institucional** e um **piso de score** que recusa fora de
-escopo. Acurácia de resposta 92% (conteúdo) / 98% (recuperação) em 50 perguntas de aluno;
+
+Quem responde é o **núcleo de compilador** (`src/rag/nlu/`): a pergunta do aluno passa por
+análise **léxica → sintática → semântica**, e a intenção reconhecida é respondida direto do
+Manual, **sem modelo de linguagem no caminho** — dá para desligar a IA e o assistente continua
+respondendo o que a gramática cobre. O que a gramática **não** reconhece cai no **plano B**, o
+chatbot RAG descrito acima, com um **guardrail em perfil institucional** e um **piso de score**
+que recusa fora de escopo. Cada resposta indica de onde veio.
+
+A recuperação do produto é **BM25 + reranker**, não a híbrida vencedora do estudo comparativo:
+quem consulta o Manual é a consulta canônica escrita pelo front-end nas palavras do documento, e
+nesse caminho BM25 puro empata com híbrida+reranker (medido em `scripts/cobertura_nucleo.py`). O
+cross-encoder fica porque o piso de score depende do escore dele. Acurácia de resposta 92% (conteúdo) / 98% (recuperação) em 50 perguntas de aluno;
 guardrail adversarial 30/31 com o piso (perfil v2 anti-repetição; o único caso recusa o dado
 pessoal sem fabricar — A/B no relatório institucional). Saúde/Pirá **ficam só como estudo científico** (acima),
 não como chat aberto — separação por risco. Detalhes em
@@ -212,6 +221,7 @@ python scripts/marco3_pcdt.py            # Marco 3 — PCDT + reranker; baixa o 
 python scripts/marco3_chatbot.py         # Q3 — chatbot citando fonte (exige Ollama + llama3.1:8b)
 
 # Produto — assistente institucional (Manual do Aluno):
+python scripts/cobertura_nucleo.py           # quanto o núcleo responde sem LLM (COBERTURA_RAPIDA=1 = só BM25)
 python scripts/institucional_acuracia.py     # acurácia de resposta (50 perguntas)
 python scripts/institucional_guardrail.py    # guardrail adversarial (31 perguntas fora de escopo)
 python scripts/assistente_institucional.py   # chat livre (REPL) com disclaimer e citação de fonte
@@ -219,7 +229,8 @@ python scripts/assistente_institucional.py   # chat livre (REPL) com disclaimer 
 pip install -e ".[ui]"                        # dependência da tela web (streamlit)
 streamlit run app.py                          # chat livre em tela web (exige Ollama + llama3.1:8b)
 
-python scripts/exp_fusao_reranker.py          # experimento: união intercalada vs RRF p/ o reranker
+# Estudo preliminar (não faz parte do produto; mantido para reprodução):
+python scripts/exp_fusao_reranker.py          # união intercalada vs RRF p/ o reranker
 ```
 
 Dados do Pirá (Marco 2) — baixados do repositório oficial ([C4AI/Pira](https://github.com/C4AI/Pira),
@@ -260,7 +271,9 @@ PCDTs (Marco 3) — baixados da CONITEC/gov.br para `data/raw/pcdt/` (`asma.pdf`
 
 ```
 config.yaml            parâmetros fixos do experimento
-src/rag/               pacote (corpus, embeddings, retrieval, evaluation, generation, pipeline)
+src/rag/               pacote (corpus, embeddings, retrieval, evaluation, generation, nlu, pipeline)
+src/rag/nlu/           núcleo que entende a pergunta: léxico, gramática, parser, semântico,
+                       base de conhecimento e controlador de diálogo
 scripts/               marco0_smoke, construir_goldset_manual, marco1_manual
 tests/                 testes de núcleo (pytest)
 data/raw/              corpora brutos (PDF) — fora do git

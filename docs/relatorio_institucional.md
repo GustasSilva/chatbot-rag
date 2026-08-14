@@ -1,7 +1,9 @@
 # Relatório — Assistente Institucional (produto sobre o Manual do Aluno)
 
-Produto de chat livre sobre a vida acadêmica, construído sobre o Manual do Aluno. Usa a
-configuração de recuperação validada cientificamente (**híbrida + reranker**) e um gerador
+Produto de chat livre sobre a vida acadêmica, construído sobre o Manual do Aluno. Recuperação
+**BM25 + reranker** (ver §3 do relatório final: com a consulta canônica do front-end de
+compilador, a recuperação densa deixou de acrescentar resultado medido; o cross-encoder fica
+pelo piso de score) e um gerador
 local (**Ollama / Llama 3.1 8B Q4**, temperatura 0) com **guardrail em perfil institucional**
 (menos estrito que o de saúde — permite sintetizar a partir dos trechos, só recusa quando o
 assunto não está no material). Saúde/Pirá permanecem como estudo científico (Q1/Q2), não

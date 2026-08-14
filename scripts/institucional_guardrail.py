@@ -20,7 +20,7 @@ from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
 from rag.generation.chatbot import ChatbotRAG
 from rag.generation.generator import GeradorOllama
-from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
+from rag.pipeline import construir_indice, montar_recuperador_produto
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 
@@ -97,8 +97,8 @@ def _recusou_outra(texto: str) -> bool:
 
 def main() -> int:
     cfg = carregar_config()
-    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
-    rer = montar_reranker(montar_recuperadores(indice, cfg, incluir=["hibrida"])["hibrida"], indice, cfg)
+    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg, calcular_densa=False)
+    rer = montar_recuperador_produto(indice, cfg)
     gerador = GeradorOllama.de_config(cfg.geracao, perfil="institucional")
     chatbot = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,
                          piso_score=cfg.geracao.piso_score_reranker)

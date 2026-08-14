@@ -1,9 +1,12 @@
 """Tela de chat do Assistente do Manual do Aluno (interface web do produto).
 
-Mesma pilha do REPL `scripts/assistente_institucional.py`, agora numa interface visual:
-recuperação **híbrida + reranker**, **piso de score** (recusa fora-de-escopo antes do LLM) e
-gerador local no **perfil institucional** do guardrail. Não é um serviço oficial — mostra um
-disclaimer e cita o trecho do Manual em cada resposta.
+Mesma pilha do REPL `scripts/assistente_institucional.py`, agora numa interface visual. Quem
+responde é o **controlador** (`rag.nlu.dialogo`): o núcleo de compilador entende a pergunta
+(léxico → gramática de intenções → parser → semântica) e responde direto do Manual, **sem
+passar por modelo de linguagem**; o que a gramática não reconhece cai no **plano B**, o chatbot
+RAG de sempre — recuperação **híbrida + reranker**, **piso de score** (recusa fora-de-escopo
+antes do LLM) e gerador local no **perfil institucional** do guardrail. Cada resposta mostra de
+onde veio. Não é um serviço oficial — mostra um disclaimer e cita o trecho do Manual.
 
 O backend do gerador é escolhido pela `construir_gerador`: com um GGUF configurado (env
 `GGUF_MODEL` ou `geracao.caminho_modelo_gguf`), usa o llama-cpp com **saída JSON garantida por
@@ -18,28 +21,40 @@ from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
 from rag.generation.chatbot import ChatbotRAG
 from rag.generation.fabrica import construir_gerador
-from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
+from rag.nlu.base_conhecimento import BaseConhecimento
+from rag.nlu.dialogo import Dialogo, Origem
+from rag.pipeline import construir_indice, montar_recuperador_produto
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 DISCLAIMER = (
     "Assistente **não-oficial**, baseado apenas no Manual do Aluno. Pode errar; confirme "
     "informações importantes (prazos, valores, datas) na secretaria ou no Manual oficial."
 )
+# Como a resposta foi produzida — exibido sob cada mensagem, para o aluno (e para a banca)
+# saberem quando houve modelo de linguagem no caminho e quando não houve.
+RODAPE_ORIGEM = {
+    Origem.NUCLEO: "📗 Trecho do Manual, localizado pela gramática de intenções (sem IA).",
+    Origem.PLANO_B: "🤖 Redigida pelo assistente a partir dos trechos consultados.",
+}
 
 
 @st.cache_resource(show_spinner="Carregando índice e modelos (só na primeira vez)...")
-def carregar_chatbot() -> ChatbotRAG:
-    """Monta o chatbot uma única vez e reaproveita entre perguntas e sessões.
+def carregar_dialogo() -> Dialogo:
+    """Monta o controlador uma única vez e reaproveita entre perguntas e sessões.
 
     `@st.cache_resource` garante que o PDF, os embeddings e os modelos (e5 + reranker)
     são carregados apenas na primeira execução — as perguntas seguintes usam o cache.
+
+    O núcleo (léxico → gramática → parser → semântico → Manual) responde o que a gramática
+    reconhece; o `ChatbotRAG` entra como **plano B** para o resto, mantendo o guardrail do
+    piso de score, o perfil institucional e as saudações exatamente como antes.
     """
     cfg = carregar_config()
-    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
-    hibrida = montar_recuperadores(indice, cfg, incluir=["hibrida"])["hibrida"]
-    recuperador = montar_reranker(hibrida, indice, cfg)
+    # calcular_densa=False: o produto não usa embeddings, então nem carrega o modelo.
+    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg, calcular_densa=False)
+    recuperador = montar_recuperador_produto(indice, cfg)
     gerador = construir_gerador(cfg.geracao, perfil="institucional")
-    return ChatbotRAG(
+    plano_b = ChatbotRAG(
         recuperador,
         indice.chunks,
         gerador,
@@ -47,6 +62,7 @@ def carregar_chatbot() -> ChatbotRAG:
         piso_score=cfg.geracao.piso_score_reranker,
         saudar=True,  # produto de chat livre: responde saudações de forma amigável
     )
+    return Dialogo.de_manual(BaseConhecimento(recuperador, indice.chunks), plano_b)
 
 
 def preview(texto: str, n: int = 320) -> str:
@@ -63,16 +79,16 @@ def eh_recusa(texto: str) -> bool:
 def montar_fontes(resp) -> list[dict]:
     """Lista os trechos consultados na resposta, numerados como o `[n]` que o LLM cita.
 
-    Mostra TODOS os trechos recuperados (o contexto que o modelo viu), não só os citados —
+    Mostra TODOS os trechos recuperados (o contexto que embasou a resposta), não só os citados —
     assim o `[n]` do texto aponta para o trecho de mesmo número e a evidência fica completa.
     Em recusa não há o que embasar, então devolve vazio (nenhum painel de fontes).
     """
-    if eh_recusa(resp.resposta.texto):
+    if eh_recusa(resp.texto):
         return []
-    citados = set(resp.resposta.fontes)
+    citados = set(resp.fontes)
     return [
         {"n": n, "citada": ctx.id in citados, "texto": preview(ctx.texto)}
-        for n, ctx in enumerate(resp.contextos, start=1)
+        for n, ctx in enumerate(resp.trechos, start=1)
     ]
 
 
@@ -80,6 +96,8 @@ def render_mensagem(msg: dict) -> None:
     """Desenha uma mensagem do histórico (com os trechos consultados, se houver)."""
     with st.chat_message(msg["papel"]):
         st.markdown(msg["texto"])
+        if msg.get("origem"):
+            st.caption(msg["origem"])
         fontes = msg.get("fontes")
         if fontes:
             with st.expander(f"Fontes — {len(fontes)} trechos consultados (✓ = citado na resposta)"):
@@ -107,7 +125,7 @@ def main() -> None:
     st.title("📘 Assistente do Manual do Aluno")
     st.warning(DISCLAIMER, icon="⚠️")
 
-    chatbot = carregar_chatbot()
+    dialogo = carregar_dialogo()
 
     # Histórico da conversa vive na sessão do navegador.
     if "mensagens" not in st.session_state:
@@ -128,15 +146,23 @@ def main() -> None:
     with st.chat_message("assistant"):
         with st.spinner("Consultando o Manual..."):
             try:
-                resp = chatbot.responder(pergunta, historico=historico)
+                resp = dialogo.responder(pergunta, historico=historico)
             except RuntimeError as erro:  # Ollama fora do ar, modelo ausente, etc.
                 st.error(str(erro))
                 return
 
     # Toda resposta real mostra os trechos consultados (citando ou não); recusa e saudação
     # ficam sem fontes — montar_fontes já trata esses casos.
+    fontes = montar_fontes(resp)
     st.session_state.mensagens.append(
-        {"papel": "assistant", "texto": resp.resposta.texto, "fontes": montar_fontes(resp)}
+        {
+            "papel": "assistant",
+            "texto": resp.texto,
+            # Sem fontes não houve consulta ao Manual (recusa do piso, saudação, não
+            # entendi): nesse caso o rodapé de origem só confundiria.
+            "origem": RODAPE_ORIGEM[resp.origem] if fontes else "",
+            "fontes": fontes,
+        }
     )
     st.rerun()
 

@@ -110,3 +110,24 @@ def montar_reranker(base: Recuperador, indice: IndiceCorpus, cfg: Config) -> Rer
         modelo=cfg.reranker.modelo,
         top_k_entrada=cfg.reranker.top_k_entrada,
     )
+
+
+def montar_recuperador_produto(indice: IndiceCorpus, cfg: Config) -> Recuperador:
+    """A configuração de recuperação do PRODUTO: BM25 + cross-encoder. Um lugar só.
+
+    Difere do estudo comparativo de propósito, e a diferença tem duas razões medidas:
+
+    - **Sem densa e sem fusão.** Quem consulta o Manual é a consulta canônica montada pelo
+      front-end de compilador (``rag.nlu.semantico``), escrita nas palavras do próprio
+      documento — o caso fácil da busca léxica. Medido em ``scripts/cobertura_nucleo.py``:
+      BM25 puro e híbrida+reranker deram resultado **idêntico** no caminho do núcleo. O
+      recuperador semântico compensava a redação crua do aluno, que agora não chega aqui.
+    - **Com cross-encoder.** Ele fica pelo ``piso_score``: o score do 1º resultado é o que
+      separa pergunta de dentro do escopo das de fora, e é o guardrail do plano B (que, esse
+      sim, continua recebendo a pergunta crua). Reordenar é efeito colateral bem-vindo.
+
+    O estudo comparativo (densa, híbrida, união) segue disponível em ``montar_recuperadores``
+    para os scripts dos marcos — ele é o que justificou esta escolha, e continua reproduzível.
+    """
+    esparsa = montar_recuperadores(indice, cfg, incluir=["esparsa"])["esparsa"]
+    return montar_reranker(esparsa, indice, cfg)
