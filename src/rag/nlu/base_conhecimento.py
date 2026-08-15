@@ -29,6 +29,7 @@ uma janela de tamanho fixo, não um parágrafo.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..corpus.chunking import Chunk
@@ -60,10 +61,25 @@ def destacar(texto: str, consulta: str) -> str:
 
     O chunk tem ~180 tokens e quase sempre começa no meio de outro assunto: mostrá-lo inteiro
     ao aluno é ruim de ler e parece resposta errada. Esta é a versão sem IA de "extrair a
-    resposta do trecho" — determinística e conferível, ao contrário da síntese do LLM.
+    resposta do trecho", determinística e conferível, ao contrário da síntese do LLM.
 
-    Usa o tokenizador do BM25 de propósito: o destaque é pontuado pela mesma noção de termo
-    que escolheu o trecho, então destacar não pode discordar de recuperar.
+    Usa o tokenizador do BM25 de propósito: o destaque é pontuado pela mesma noção de termo que
+    escolheu o trecho, então destacar não pode discordar de recuperar.
+
+    **Alternativas testadas e rejeitadas** (medidas nas 44 perguntas que a gramática reconhece,
+    acerto = trecho-fonte do gold-set dentro da frase destacada; a versão atual faz 26/44):
+
+    - varrer os três trechos recuperados em vez de só o primeiro: **24/44**. A frase certa está
+      mesmo no 2º ou 3º trecho em vários casos, mas ampliar o espaço de busca sem melhorar a
+      pontuação deixa frases longas do trecho errado vencerem por volume de termos;
+    - dividir a sobreposição pela raiz do tamanho da frase: 25/44 (20/44 varrendo os três);
+    - dividir pelo tamanho da frase (precisão): 19/44; média harmônica tipo F1: 20/44. As duas
+      penalizam frase longa e este Manual é cheio de fragmentos curtos ("Art. 5º -"), que passam
+      a ganhar.
+
+    O caminho que sobra para melhorar não é a fórmula, é a **evidência**: ponderar cada termo
+    pelo IDF do índice (termo raro vale mais) exigiria dar a esta função acesso às estatísticas
+    do corpus, que hoje ela não tem de propósito.
     """
     frases = [frase for frase in _FIM_DE_FRASE.split(texto) if frase.strip()]
     if not frases:
