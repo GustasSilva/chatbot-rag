@@ -94,4 +94,4 @@ def test_perguntas_reais_do_goldset():
         assert reconhecer(pergunta, lexer, parser).intencao == esperada
 
     # Fora do escopo da gramática: vai para o plano B em vez de casar errado.
-    assert reconhecer("O diploma da UNIP é digital?", lexer, parser) is None
+    assert reconhecer("O bandejão abre no feriado?", lexer, parser) is None
