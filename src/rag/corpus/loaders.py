@@ -52,7 +52,3 @@ def carregar_pdf(caminho: str | Path, limpar: bool = True) -> str:
     return limpar_texto(normalizar_pdf(texto))
 
 
-def carregar_texto(caminho: str | Path, limpar: bool = True) -> str:
-    """Carrega um arquivo ``.txt`` (UTF-8)."""
-    conteudo = Path(caminho).read_text(encoding="utf-8")
-    return limpar_texto(conteudo) if limpar else conteudo

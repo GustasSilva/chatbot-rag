@@ -52,18 +52,6 @@ class Gerador(ABC):
         return pergunta
 
 
-class GeradorNaoConfigurado(Gerador):
-    """Placeholder explícito: falha alto se alguém tentar gerar sem backend configurado."""
-
-    def gerar(
-        self, pergunta: str, contextos: list[Chunk], historico: list[Turno] | None = None
-    ) -> RespostaGerada:
-        raise NotImplementedError(
-            "Nenhum gerador configurado. Defina geracao.backend no config.yaml "
-            "(ex.: 'ollama') e use GeradorOllama."
-        )
-
-
 # Dois perfis de guardrail. O ESTRITO (saúde/demonstração científica) recusa a menos que a
 # resposta esteja literalmente nos trechos — prioriza não errar em domínio de risco. O
 # INSTITUCIONAL (produto sobre o Manual, menor risco) é mais brando: permite sintetizar a

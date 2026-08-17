@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import csv
 import sys
-import time
 import unicodedata
 
 from rag.config import carregar_config
