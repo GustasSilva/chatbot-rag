@@ -4,3 +4,13 @@
 # Efeito colateral: editar app.py não recarrega sozinho; reinicie o streamlit.
 [server]
 fileWatcherType = "none"
+
+[client]
+# Esconde o botão "Deploy" e o menu de desenvolvedor: numa demonstração eles são
+# ruído, e o caminho suportado para tirá-los é este, não injeção de CSS.
+toolbarMode = "minimal"
+
+[theme]
+# Azul institucional no lugar do coral padrão do Streamlit. Só a cor de destaque é
+# fixada; claro e escuro continuam seguindo o tema do sistema de quem abre a tela.
+primaryColor = "#1b6ca8"

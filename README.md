@@ -226,8 +226,10 @@ python scripts/institucional_acuracia.py     # acurácia de resposta (50 pergunt
 python scripts/institucional_guardrail.py    # guardrail adversarial (31 perguntas fora de escopo)
 python scripts/assistente_institucional.py   # chat livre (REPL) com disclaimer e citação de fonte
 
-pip install -e ".[ui]"                        # dependência da tela web (streamlit)
-streamlit run app.py                          # chat livre em tela web (exige Ollama + llama3.1:8b)
+python servidor.py                            # tela do produto em http://localhost:8000 (sem dependência extra)
+
+pip install -e ".[ui]"                        # dependência da tela alternativa (streamlit)
+streamlit run app.py                          # a mesma conversa em Streamlit, na porta 8501
 
 # Estudo preliminar (não faz parte do produto; mantido para reprodução):
 python scripts/exp_fusao_reranker.py          # união intercalada vs RRF p/ o reranker
@@ -274,6 +276,9 @@ config.yaml            parâmetros fixos do experimento
 src/rag/               pacote (corpus, embeddings, retrieval, evaluation, generation, nlu, pipeline)
 src/rag/nlu/           núcleo que entende a pergunta: léxico, gramática, parser, semântico,
                        base de conhecimento e controlador de diálogo
+servidor.py            servidor próprio (biblioteca padrão) que serve web/index.html
+web/index.html         a tela do produto: HTML, CSS e JS num arquivo só
+docs/decisoes.md       o porquê de cada decisão do núcleo, com as medições
 scripts/               marco0_smoke, construir_goldset_manual, marco1_manual
 tests/                 testes de núcleo (pytest)
 data/raw/              corpora brutos (PDF) — fora do git

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistente do Manual do Aluno</title>
+<style>
+  :root {
+    --papel: #f5f7f9;
+    --bloco: #eaeef2;
+    --tinta: #12171c;
+    --tinta-suave: #59636e;
+    --linha: #d7dde4;
+    --manual: #17608f;
+    --assistente: #8f5406;
+    --neutro: #7b848e;
+    /* Serifada para a voz do documento, sem serifa para a voz da interface. A escolhida para a
+       interface é neutra de propósito: Corbel e Constantia são irmãs da mesma coleção e foram
+       desenhadas para harmonizar, então lado a lado a diferença não se lia. */
+    --serif: Constantia, "Iowan Old Style", Cambria, Georgia, serif;
+    --sans: "Segoe UI", Corbel, system-ui, sans-serif;
+    --mono: "Cascadia Mono", Consolas, "DejaVu Sans Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --papel: #0f1317;
+      --bloco: #171e25;
+      --tinta: #e4e9ee;
+      --tinta-suave: #94a0ab;
+      --linha: #262f38;
+      --manual: #6fb6e6;
+      --assistente: #d99f4e;
+      --neutro: #8b959f;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 2.5rem 1.25rem 8rem;
+  }
+  .folha { max-width: 44rem; margin: 0 auto; }
+  .ico { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none;
+         stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- cabeçalho ---------- */
+  header { border-bottom: 1px solid var(--linha); padding-bottom: 1.4rem; }
+  h1 { font-family: var(--serif); font-size: 1.9rem; font-weight: 600; margin: 0 0 .3rem;
+       letter-spacing: -0.01em; }
+  .chamada { color: var(--tinta-suave); margin: 0 0 1rem; max-width: 34rem; }
+  .aviso { display: flex; gap: .6rem; align-items: flex-start; background: var(--bloco);
+           padding: .7rem .9rem; margin: 0; font-size: .88rem; color: var(--tinta-suave);
+           border-left: 3px solid var(--neutro); }
+  .aviso .ico { margin-top: .25em; }
+  .aviso strong { color: var(--tinta); font-weight: 600; }
+
+  /* ---------- conversa ---------- */
+  #conversa { display: flex; flex-direction: column; gap: 2rem; padding: 2rem 0 0; }
+
+  .pergunta { align-self: flex-end; max-width: 85%; background: var(--bloco);
+              padding: .55rem .9rem; font-size: .95rem; }
+
+  .resposta { position: relative; padding-left: 1.1rem; }
+  .resposta::before { content: ""; position: absolute; left: 0; top: .15rem; bottom: .15rem;
+                      width: 3px; background: var(--via); transform-origin: top;
+                      animation: descer .3s ease-out both; }
+  .do-manual { --via: var(--manual); }
+  .do-assistente { --via: var(--assistente); }
+  .sem-resposta { --via: var(--neutro); }
+
+  /* A resposta do núcleo é um EXTRATO do Manual: fica na voz do documento, serifada.
+     A do plano B foi REDIGIDA, então usa a voz da interface. A diferença é de espécie. */
+  .extrato { font-family: var(--serif); font-size: 1.18rem; line-height: 1.5; margin: 0; }
+  .redacao { font-size: 1rem; margin: 0; }
+  .redacao ul, .redacao ol { padding-left: 1.2rem; }
+
+  .selo { display: flex; align-items: center; gap: .45rem; margin-top: .7rem;
+          font-family: var(--mono); font-size: .72rem; letter-spacing: .04em;
+          text-transform: uppercase; color: var(--via); }
+  .selo .sep { color: var(--linha); }
+  .selo .tempo { color: var(--tinta-suave); font-variant-numeric: tabular-nums;
+                 text-transform: none; letter-spacing: 0; }
+
+  /* ---------- fontes ---------- */
+  .fontes { margin-top: .9rem; font-size: .88rem; }
+  .fontes summary { cursor: pointer; display: flex; align-items: center; gap: .4rem;
+                    color: var(--tinta-suave); list-style: none; width: fit-content; }
+  .fontes summary::-webkit-details-marker { display: none; }
+  .fontes summary .ico { transition: transform .15s; }
+  .fontes[open] summary .ico { transform: rotate(90deg); }
+  .trecho { border-left: 1px solid var(--linha); padding: .1rem 0 .1rem .9rem; margin: .9rem 0; }
+  .trecho .rotulo { display: flex; align-items: center; gap: .3rem; font-family: var(--mono);
+                    font-size: .72rem; color: var(--tinta-suave); margin-bottom: .3rem; }
+  .trecho.usado { border-left-color: var(--manual); }
+  .trecho.usado .rotulo { color: var(--manual); }
+  .trecho p { margin: 0; color: var(--tinta-suave); }
+  .rodape-fontes { font-size: .8rem; color: var(--tinta-suave); margin: .9rem 0 0; }
+
+  /* ---------- estado vazio ---------- */
+  .sugestoes { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .4rem; }
+  .sugestoes p { width: 100%; margin: 0 0 .2rem; color: var(--tinta-suave); font-size: .9rem; }
+  .chip { font-family: var(--sans); font-size: .9rem; color: var(--tinta);
+          background: none; border: 1px solid var(--linha); padding: .4rem .8rem;
+          cursor: pointer; }
+  .chip:hover { border-color: var(--manual); color: var(--manual); }
+
+  /* ---------- caixa de pergunta ---------- */
+  #caixa { position: fixed; left: 0; right: 0; bottom: 0; background: var(--papel);
+           border-top: 1px solid var(--linha); padding: .9rem 1.25rem 1.1rem; }
+  #caixa form { max-width: 44rem; margin: 0 auto; display: flex; gap: .6rem; }
+  #pergunta { flex: 1; font-family: var(--sans); font-size: 1rem; color: var(--tinta);
+              background: var(--bloco); border: 1px solid var(--linha); padding: .7rem .9rem; }
+  #pergunta::placeholder { color: var(--tinta-suave); }
+  #enviar { display: flex; align-items: center; justify-content: center; width: 2.9rem;
+            background: var(--manual); color: var(--papel); border: none; cursor: pointer;
+            font-size: 1.1rem; }
+  #enviar:disabled { opacity: .45; cursor: default; }
+  :focus-visible { outline: 2px solid var(--manual); outline-offset: 2px; }
+
+  .pensando { color: var(--tinta-suave); font-style: italic; }
+  .erro { border-left: 3px solid #a33; padding-left: 1.1rem; color: var(--tinta-suave); }
+
+  @keyframes descer { from { transform: scaleY(0); } }
+  @keyframes surgir { from { opacity: 0; transform: translateY(5px); } }
+  .resposta, .pergunta { animation: surgir .22s ease-out both; }
+  @media (prefers-reduced-motion: reduce) {
+    .resposta, .pergunta, .resposta::before { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-manual" viewBox="0 0 24 24">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+  </symbol>
+  <symbol id="i-caneta" viewBox="0 0 24 24">
+    <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+  <symbol id="i-seta" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></symbol>
+  <symbol id="i-enviar" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-aviso" viewBox="0 0 24 24">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <path d="M12 9v4"/><path d="M12 17h.01"/>
+  </symbol>
+  <symbol id="i-duvida" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4"/><path d="M12 17h.01"/>
+  </symbol>
+</svg>
+
+<div class="folha">
+  <header>
+    <h1>Assistente do Manual do Aluno</h1>
+    <p class="chamada">Pergunte sobre a vida acadêmica. As respostas saem do Manual do Aluno da
+      UNIP, e cada uma mostra de onde veio.</p>
+    <p class="aviso">
+      <svg class="ico"><use href="#i-aviso"/></svg>
+      <span><strong>Assistente não-oficial.</strong> Pode errar. Confirme prazos, valores e datas
+        na secretaria ou no Manual oficial.</span>
+    </p>
+  </header>
+
+  <main id="conversa" aria-live="polite"></main>
+</div>
+
+<div id="caixa">
+  <form id="form">
+    <label for="pergunta" class="visualmente-oculto" hidden>Sua pergunta</label>
+    <input id="pergunta" autocomplete="off" placeholder="Quantas faltas posso ter?">
+    <button id="enviar" type="submit" title="Enviar pergunta">
+      <svg class="ico"><use href="#i-enviar"/></svg>
+    </button>
+  </form>
+</div>
+
+<script>
+const conversa = document.getElementById("conversa");
+const form = document.getElementById("form");
+const campo = document.getElementById("pergunta");
+const botao = document.getElementById("enviar");
+
+const SUGESTOES = [
+  "Quantas faltas posso ter?",
+  "O que é o trancamento de matrícula?",
+  "Qual a multa da biblioteca?",
+  "Preciso participar da colação de grau?",
+];
+const VIA = {
+  NUCLEO:        { classe: "do-manual",      icone: "i-manual",  rotulo: "Manual" },
+  PLANO_B:       { classe: "do-assistente",  icone: "i-caneta",  rotulo: "Assistente" },
+  NAO_ENTENDIDA: { classe: "sem-resposta",   icone: "i-duvida",  rotulo: "Não entendi" },
+};
+let historico = [];
+
+function elemento(tag, classe, texto) {
+  const e = document.createElement(tag);
+  if (classe) e.className = classe;
+  if (texto) e.textContent = texto;
+  return e;
+}
+
+function icone(id) {
+  return `<svg class="ico" aria-hidden="true"><use href="#${id}"/></svg>`;
+}
+
+function duracao(ms) {
+  return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1).replace(".", ",")} s`;
+}
+
+function mostrarSugestoes() {
+  const caixa = elemento("div", "sugestoes");
+  caixa.appendChild(elemento("p", null, "Comece por uma destas:"));
+  for (const texto of SUGESTOES) {
+    const chip = elemento("button", "chip", texto);
+    chip.type = "button";
+    chip.onclick = () => { caixa.remove(); perguntar(texto); };
+    caixa.appendChild(chip);
+  }
+  conversa.appendChild(caixa);
+}
+
+function selo(dados) {
+  const via = VIA[dados.origem];
+  const partes = [icone(via.icone), `<span>${via.rotulo}</span>`];
+  if (dados.intencao) partes.push('<span class="sep">·</span>', `<span>${dados.intencao}</span>`);
+  partes.push('<span class="sep">·</span>', `<span class="tempo">${duracao(dados.ms)}</span>`);
+  const div = elemento("div", "selo");
+  div.innerHTML = partes.join(" ");
+  return div;
+}
+
+function painelFontes(fontes) {
+  const det = elemento("details", "fontes");
+  const sum = elemento("summary");
+  const usados = fontes.filter((f) => f.citada).length;
+  sum.innerHTML = `${icone("i-seta")} <span>${fontes.length} trechos consultados` +
+    (usados ? `, ${usados} usado${usados > 1 ? "s" : ""}` : "") + "</span>";
+  det.appendChild(sum);
+
+  for (const f of fontes) {
+    const bloco = elemento("div", "trecho" + (f.citada ? " usado" : ""));
+    const rot = elemento("div", "rotulo");
+    rot.innerHTML = (f.citada ? icone("i-check") : "") + `<span>[${f.n}]</span>`;
+    bloco.appendChild(rot);
+    bloco.appendChild(elemento("p", null, f.texto));
+    det.appendChild(bloco);
+  }
+  det.appendChild(elemento("p", "rodape-fontes",
+    "O trecho marcado é o que embasou a resposta. Confirme no Manual oficial antes de decidir " +
+    "algo importante."));
+  return det;
+}
+
+function desenharResposta(dados) {
+  const art = elemento("article", "resposta " + VIA[dados.origem].classe);
+  const corpo = elemento("p", dados.origem === "NUCLEO" ? "extrato" : "redacao", dados.texto);
+  art.appendChild(corpo);
+  art.appendChild(selo(dados));
+  if (dados.fontes && dados.fontes.length) art.appendChild(painelFontes(dados.fontes));
+  return art;
+}
+
+async function perguntar(texto) {
+  campo.value = "";
+  botao.disabled = true;
+  conversa.appendChild(elemento("div", "pergunta", texto));
+
+  const espera = elemento("article", "resposta sem-resposta");
+  espera.appendChild(elemento("p", "pensando", "Consultando o Manual…"));
+  conversa.appendChild(espera);
+  window.scrollTo(0, document.body.scrollHeight);
+
+  try {
+    const resposta = await fetch("/perguntar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pergunta: texto, historico: historico.slice(-4) }),
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok) throw new Error(dados.erro || "falha ao responder");
+
+    espera.replaceWith(desenharResposta(dados));
+    historico.push([texto, dados.texto]);
+  } catch (erro) {
+    const falha = elemento("article", "erro");
+    falha.textContent = erro.message;
+    espera.replaceWith(falha);
+  } finally {
+    botao.disabled = false;
+    campo.focus();
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+}
+
+form.onsubmit = (evento) => {
+  evento.preventDefault();
+  const texto = campo.value.trim();
+  if (texto) perguntar(texto);
+};
+
+mostrarSugestoes();
+campo.focus();
+</script>
+</body>
+</html>

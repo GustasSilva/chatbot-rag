@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import sys
 
+from rag.apresentacao import fontes_de
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
 from rag.generation.chatbot import ChatbotRAG
@@ -38,9 +39,6 @@ DISCLAIMER = (
 )
 
 
-def _preview(texto: str, n: int = 110) -> str:
-    t = " ".join(texto.split())
-    return t if len(t) <= n else t[:n].rstrip() + "..."
 
 
 def main() -> int:
@@ -74,16 +72,14 @@ def main() -> int:
         resp = dialogo.responder(pergunta, historico=historico)
         historico = (historico + [(pergunta, resp.texto)])[-4:]  # últimos 4 turnos
         print(f"\nAssistente> {resp.texto}")
-        recusa = "não encontrei essa informação" in resp.texto.strip().lower()
-        # Sem trecho não houve consulta ao Manual (recusa do piso, saudação, não entendi):
+        # Sem fonte não houve consulta ao Manual (recusa do piso, saudação, não entendi):
         # nesses casos nem o rodapé de origem nem as fontes fazem sentido.
-        if resp.trechos and not recusa:
+        fontes = fontes_de(resp, n=110)
+        if fontes:
             print(f"  {RODAPE_ORIGEM[resp.origem]}")
-            citados = set(resp.fontes)
             print("\nFontes (trechos consultados; * = citado na resposta):")
-            for n, chunk in enumerate(resp.trechos, start=1):
-                marca = "*" if chunk.id in citados else " "
-                print(f"  {marca}[{n}] {_preview(chunk.texto)}")
+            for f in fontes:
+                print(f"  {'*' if f['citada'] else ' '}[{f['n']}] {f['texto']}")
             print("  (confirme no Manual oficial antes de decidir algo importante)")
         print()
 

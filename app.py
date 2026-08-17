@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from rag.apresentacao import fontes_de
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
 from rag.generation.chatbot import ChatbotRAG
@@ -32,10 +33,15 @@ DISCLAIMER = (
 )
 # Como a resposta foi produzida — exibido sob cada mensagem, para o aluno (e para a banca)
 # saberem quando houve modelo de linguagem no caminho e quando não houve.
+# Os ícones são Material Symbols, que o Streamlit resolve internamente: sem emoji e sem
+# requisição de rede.
 RODAPE_ORIGEM = {
-    Origem.NUCLEO: "📗 Trecho do Manual, localizado pela gramática de intenções (sem IA).",
-    Origem.PLANO_B: "🤖 Redigida pelo assistente a partir dos trechos consultados.",
+    Origem.NUCLEO: ":material/menu_book: Trecho do Manual, localizado pela gramática de "
+                   "intenções (sem IA).",
+    Origem.PLANO_B: ":material/smart_toy: Redigida pelo assistente a partir dos trechos "
+                    "consultados.",
 }
+AVATAR = {"user": ":material/person:", "assistant": ":material/school:"}
 
 
 @st.cache_resource(show_spinner="Carregando índice e modelos (só na primeira vez)...")
@@ -65,47 +71,24 @@ def carregar_dialogo() -> Dialogo:
     return Dialogo.de_manual(BaseConhecimento(recuperador, indice.chunks), plano_b)
 
 
-def preview(texto: str, n: int = 320) -> str:
-    """Compacta um trecho do Manual para exibição na lista de fontes."""
-    t = " ".join(texto.split())
-    return t if len(t) <= n else t[:n].rstrip() + "..."
-
-
-def eh_recusa(texto: str) -> bool:
-    """True para a recusa canônica — nesse caso não há fonte a exibir."""
-    return "não encontrei essa informação" in texto.strip().lower()
-
-
-def montar_fontes(resp) -> list[dict]:
-    """Lista os trechos consultados na resposta, numerados como o `[n]` que o LLM cita.
-
-    Mostra TODOS os trechos recuperados (o contexto que embasou a resposta), não só os citados —
-    assim o `[n]` do texto aponta para o trecho de mesmo número e a evidência fica completa.
-    Em recusa não há o que embasar, então devolve vazio (nenhum painel de fontes).
-    """
-    if eh_recusa(resp.texto):
-        return []
-    citados = set(resp.fontes)
-    return [
-        {"n": n, "citada": ctx.id in citados, "texto": preview(ctx.texto)}
-        for n, ctx in enumerate(resp.trechos, start=1)
-    ]
-
-
 def render_mensagem(msg: dict) -> None:
     """Desenha uma mensagem do histórico (com os trechos consultados, se houver)."""
-    with st.chat_message(msg["papel"]):
+    with st.chat_message(msg["papel"], avatar=AVATAR[msg["papel"]]):
         st.markdown(msg["texto"])
         if msg.get("origem"):
             st.caption(msg["origem"])
         fontes = msg.get("fontes")
         if fontes:
-            with st.expander(f"Fontes — {len(fontes)} trechos consultados (✓ = citado na resposta)"):
+            rotulo = f"Fontes · {len(fontes)} trechos consultados"
+            with st.expander(rotulo, icon=":material/description:"):
                 for f in fontes:
-                    marca = "✓ " if f["citada"] else ""
-                    st.markdown(f"**{marca}[{f['n']}]**")
+                    marca = ":material/check_circle: " if f["citada"] else ""
+                    st.markdown(f"{marca}**[{f['n']}]**")
                     st.markdown(f"> {f['texto']}")
-                st.caption("Confirme no Manual oficial antes de decidir algo importante.")
+                st.caption(
+                    ":material/info: O trecho marcado é o que embasou a resposta. "
+                    "Confirme no Manual oficial antes de decidir algo importante."
+                )
 
 
 def historico_de(mensagens: list[dict], max_turnos: int = 4) -> list[tuple[str, str]]:
@@ -121,9 +104,13 @@ def historico_de(mensagens: list[dict], max_turnos: int = 4) -> list[tuple[str, 
 
 
 def main() -> None:
-    st.set_page_config(page_title="Assistente do Manual do Aluno", page_icon="📘")
-    st.title("📘 Assistente do Manual do Aluno")
-    st.warning(DISCLAIMER, icon="⚠️")
+    st.set_page_config(
+        page_title="Assistente do Manual do Aluno",
+        page_icon=":material/menu_book:",
+        layout="centered",
+    )
+    st.title("Assistente do Manual do Aluno")
+    st.warning(DISCLAIMER, icon=":material/warning:")
 
     dialogo = carregar_dialogo()
 
@@ -143,7 +130,7 @@ def main() -> None:
     st.session_state.mensagens.append(usuario)
     render_mensagem(usuario)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=AVATAR["assistant"]):
         with st.spinner("Consultando o Manual..."):
             try:
                 resp = dialogo.responder(pergunta, historico=historico)
@@ -153,7 +140,7 @@ def main() -> None:
 
     # Toda resposta real mostra os trechos consultados (citando ou não); recusa e saudação
     # ficam sem fontes — montar_fontes já trata esses casos.
-    fontes = montar_fontes(resp)
+    fontes = fontes_de(resp)
     st.session_state.mensagens.append(
         {
             "papel": "assistant",
