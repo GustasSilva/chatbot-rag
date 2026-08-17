@@ -1,38 +1,21 @@
-"""Análise sintática: casa os tokens do aluno com a gramática de intenções.
+"""Fase 2 do front-end: casa os tokens com a gramática e devolve a intenção.
 
-Fase 2 do front-end, agora do lado do mecanismo. Entra a sequência de tokens que a análise
-léxica produziu; sai uma :class:`Reconhecimento` — a intenção identificada, os tokens que
-casaram a regra e os que sobraram — ou ``None``, que é o sinal para o controlador cair no plano
-B (a LLM). Nenhuma resposta é montada aqui: esta fase só decide **o que o aluno quis dizer**.
+Entra a lista de tokens, sai um :class:`Reconhecimento` ou ``None`` — e esse ``None`` é o sinal
+para o controlador cair no plano B. Nenhuma resposta é montada aqui.
 
-Como reconhece
---------------
-Para cada regra, varre os tokens **uma vez**, da esquerda para a direita, pegando para cada
-elemento a primeira ocorrência ainda não usada. É o casamento por ilha descrito em
-``gramatica``: os tokens entre os elementos são pulados, e o que não casou vira ``sobra``.
+Para cada regra, varre os tokens uma vez, da esquerda para a direita, pegando a primeira
+ocorrência de cada elemento e pulando o resto. Só ``PALAVRA_CHAVE`` casa: número e palavra
+desconhecida sobram de propósito, porque são a matéria-prima dos campos da fase semântica.
 
-O guloso é exato porque a gramática garante elementos disjuntos dentro da regra (ver
-``gramatica``): nenhum token disputado por dois elementos, logo a escolha mais à esquerda nunca
-custa um casamento. Custo linear no número de tokens vezes o número de elementos, sem pilha e
-sem retrocesso — o reconhecimento de uma linguagem regular, que é o que essas regras são.
-
-Só ``PALAVRA_CHAVE`` participa do casamento. Número e palavra desconhecida nunca casam elemento
-nenhum: sobram de propósito, porque são a matéria-prima dos **campos** que a fase semântica vai
-preencher (o nome da disciplina, um prazo em dias).
-
-Ambiguidade
------------
-Se mais de uma regra casar, vence a de mais símbolos obrigatórios (*maximal munch*: a mais
-específica). Empate resolve pela ordem de declaração em ``intencoes.REGRAS``, o que mantém o
-resultado determinístico — mas empate persistente entre duas regras é sinal de gramática mal
-desenhada, e o lugar de corrigir é a gramática, não aqui.
+Se mais de uma regra casar, vence a de mais símbolos obrigatórios. Por que o guloso é exato e
+como o desempate funciona: ``docs/decisoes.md`` (seções 3 e 5).
 """
 from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from .gramatica import Elemento, Gramatica, Regra
+from .gramatica import Elemento, Gramatica, Juncao, Regra
 from .lexico import Token, TipoToken
 
 
@@ -75,23 +58,88 @@ class AnalisadorSintatico:
 
 def _casar(regra: Regra, tokens: Sequence[Token]) -> tuple[int, ...] | None:
     """Índices dos tokens que satisfazem a regra, ou ``None`` se falta algum obrigatório."""
+    presentes = {t.valor for t in tokens if t.tipo is TipoToken.PALAVRA_CHAVE}
     indices: list[int] = []
     proximo = 0
     for elemento in regra.elementos:
+        if elemento.excluido:
+            # Guarda: a regra inteira é descartada se o símbolo proibido aparecer na pergunta.
+            if presentes & elemento.alternativas:
+                return None
+            continue
         achado = _procurar(elemento, tokens, proximo)
         if achado is None:
             if elemento.opcional:
                 continue
             return None
-        indices.append(achado)
-        proximo = achado + 1  # a ordem da regra é a ordem da frase
+        inicio, fim = achado
+        indices.append(inicio)
+        proximo = fim + 1  # a ordem da regra é a ordem da frase
     return tuple(indices)
 
 
-def _procurar(elemento: Elemento, tokens: Sequence[Token], inicio: int) -> int | None:
-    """Primeira posição, a partir de ``inicio``, cujo token satisfaz o elemento."""
+def _procurar(
+    elemento: Elemento, tokens: Sequence[Token], inicio: int
+) -> tuple[int, int] | None:
+    """Posições que satisfazem o elemento inteiro, a partir de ``inicio``.
+
+    Devolve o par (primeira, última) das posições usadas. Num elemento de símbolo único, as
+    duas coincidem.
+    """
+    if elemento.extras and elemento.juncao is Juncao.LIVRE:
+        return _casar_livre(elemento, tokens, inicio)
     for i in range(inicio, len(tokens)):
-        token = tokens[i]
-        if token.tipo is TipoToken.PALAVRA_CHAVE and token.valor in elemento.alternativas:
+        if not _satisfaz(tokens[i], elemento.alternativas):
+            continue
+        fim = _casar_adjacentes(elemento.extras, tokens, i)
+        if fim is not None:
+            return i, fim
+    return None
+
+
+def _casar_livre(
+    elemento: Elemento, tokens: Sequence[Token], inicio: int
+) -> tuple[int, int] | None:
+    """Todos os símbolos do elemento presentes, em qualquer ordem.
+
+    Serve à pergunta cuja ordem varia sem mudar o sentido ("quantas faltas posso ter" × "é
+    permitido faltar quantas vezes"). Pega a ocorrência mais à esquerda de cada símbolo, que
+    consome o mínimo da frase e preserva a exatidão do guloso.
+    """
+    posicoes = []
+    for conjunto in (elemento.alternativas, *elemento.extras):
+        posicao = next(
+            (i for i in range(inicio, len(tokens)) if _satisfaz(tokens[i], conjunto)), None
+        )
+        if posicao is None:
+            return None
+        posicoes.append(posicao)
+    return min(posicoes), max(posicoes)
+
+
+def _casar_adjacentes(
+    extras: tuple[frozenset[str], ...], tokens: Sequence[Token], posicao: int
+) -> int | None:
+    """Confere que cada extra vem imediatamente depois, no fluxo de SÍMBOLOS.
+
+    "Imediatamente" ignora palavra desconhecida e número: em "não fizer a matrícula", ``NEGACAO``
+    e ``MATRICULA`` são adjacentes, porque "fizer" não é símbolo.
+    """
+    atual = posicao
+    for conjunto in extras:
+        seguinte = _proxima_palavra_chave(tokens, atual + 1)
+        if seguinte is None or not _satisfaz(tokens[seguinte], conjunto):
+            return None
+        atual = seguinte
+    return atual
+
+
+def _proxima_palavra_chave(tokens: Sequence[Token], inicio: int) -> int | None:
+    for i in range(inicio, len(tokens)):
+        if tokens[i].tipo is TipoToken.PALAVRA_CHAVE:
             return i
     return None
+
+
+def _satisfaz(token: Token, simbolos: frozenset[str]) -> bool:
+    return token.tipo is TipoToken.PALAVRA_CHAVE and token.valor in simbolos

@@ -1,18 +1,11 @@
-"""Controlador do diálogo: orquestra as fases e decide quando chamar o plano B.
+"""Controlador: orquestra as fases e decide quando chamar o plano B.
 
-É o topo do núcleo — o único módulo que conhece as quatro fases e a saída de emergência. A
-regra de decisão cabe em duas linhas: **se a gramática reconheceu a pergunta, a resposta vem do
-Manual; se não reconheceu, vai para o plano B (a LLM)**. O conteúdo da resposta reconhecida
-nunca passa por modelo nenhum.
+Único módulo que conhece as quatro fases e a saída de emergência. Reconheceu, responde do
+Manual; não reconheceu, ou reconheceu mas a busca voltou vazia, vai para o plano B.
 
-``plano_b`` é opcional de propósito. Sem ele, o assistente responde as intenções que conhece e
-diz que não entendeu o resto — que é a demonstração de que o **núcleo é o compilador, não a
-LLM**. Ligá-lo só acrescenta cobertura na cauda longa; não muda uma vírgula do que o núcleo já
-respondia (:class:`Origem` deixa isso auditável resposta a resposta).
-
-Também se cai no plano B quando a intenção foi reconhecida mas a busca não trouxe trecho algum
-— situação de corpus trocado ou desatualizado. Devolver "não achei" seria pior do que deixar a
-LLM tentar, já que a pergunta comprovadamente é do domínio.
+``plano_b`` é opcional de propósito: sem ele o assistente responde o que conhece e diz que não
+entendeu o resto, que é a demonstração de que o núcleo é o compilador, não a LLM. :class:`Origem`
+deixa isso auditável resposta a resposta.
 """
 from __future__ import annotations
 
@@ -87,9 +80,8 @@ class Dialogo:
     ) -> RespostaDialogo:
         """Responde pelo núcleo quando a gramática reconhece; senão, recorre ao plano B.
 
-        ``historico`` serve só ao plano B: o núcleo é sem estado por construção — cada intenção
-        se resolve na própria frase. Follow-up elíptico ("e para as presenciais?") não casa
-        regra nenhuma, então cai no plano B levando o histórico junto, que é onde ele resolve.
+        ``historico`` serve só ao plano B: o núcleo é sem estado por construção, cada intenção se
+        resolve na própria frase. Follow-up elíptico não casa regra e cai no plano B com ele.
         """
         reconhecimento = self._sintatico.analisar(self._lexico.analisar(pergunta))
         if reconhecimento is not None:

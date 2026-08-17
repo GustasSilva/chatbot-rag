@@ -13,6 +13,8 @@ LEXICO_FALSO = Lexico.de_grupos(
         "DISCIPLINA": ["disciplina"],
         "COMO": ["como"],
         "TRANCAR": ["trancar"],
+        "NEGACAO": ["não"],
+        "MATRICULA": ["matrícula"],
     },
     ruido=["de", "eu", "na"],
 )
@@ -21,6 +23,14 @@ GRAMATICA_FALSA = Gramatica.de_notacao(
         "limite_faltas": "QUANTIDADE FALTA DISCIPLINA?",
         "trancamento": "TRANCAR",
         "como_trancar": "COMO TRANCAR",
+    },
+    LEXICO_FALSO,
+)
+GRAMATICA_NEGACAO = Gramatica.de_notacao(
+    {
+        "sem_trancar": "COMO NEGACAO+TRANCAR",
+        "sem_matricula": "COMO NEGACAO+MATRICULA",
+        "com_trancar": "COMO TRANCAR !NEGACAO",
     },
     LEXICO_FALSO,
 )
@@ -73,6 +83,29 @@ def test_guloso_pega_a_ocorrencia_mais_a_esquerda():
     resultado = reconhecer("faltas quantas faltas")
     assert [t.inicio for t in resultado.casados] == [7, 15]  # "quantas" e a 2ª "faltas"
     assert [t.inicio for t in resultado.sobra] == [0]        # a 1ª "faltas" sobrou
+
+
+def test_adjacencia_prende_a_negacao_ao_que_ela_nega():
+    """"como não trancar a matrícula": o "não" nega TRANCAR, não MATRICULA."""
+    parser = AnalisadorSintatico(GRAMATICA_NEGACAO)
+    resultado = reconhecer("como não trancar a matrícula", parser=parser)
+    assert resultado.intencao == "sem_trancar"
+
+    # Sem símbolo entre os dois, a outra regra é que casa.
+    assert reconhecer("como não matrícula", parser=parser).intencao == "sem_matricula"
+
+
+def test_adjacencia_ignora_palavra_desconhecida_no_meio():
+    """Adjacência é no fluxo de símbolos: "fizer" não é símbolo, então não separa os dois."""
+    parser = AnalisadorSintatico(GRAMATICA_NEGACAO)
+    assert reconhecer("como não fizer matrícula", parser=parser).intencao == "sem_matricula"
+
+
+def test_exclusao_descarta_a_regra_quando_o_simbolo_proibido_aparece():
+    parser = AnalisadorSintatico(GRAMATICA_NEGACAO)
+    assert reconhecer("como trancar", parser=parser).intencao == "com_trancar"
+    # Com a negação presente, com_trancar sai de cena e sobra a regra do "não trancar".
+    assert reconhecer("como não trancar", parser=parser).intencao == "sem_trancar"
 
 
 def test_perguntas_reais_do_goldset():

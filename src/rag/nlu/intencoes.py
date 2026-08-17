@@ -1,21 +1,13 @@
-"""Vocabulário do Manual do Aluno — os **dados** que alimentam o front-end de compilador.
+"""Vocabulário e intenções do Manual do Aluno: os dados do front-end de compilador.
 
-Só definição, sem lógica: o mecanismo está em ``lexico`` (fase 1) e ``gramatica`` (fase 2). A
-separação é o que permite ampliar vocabulário e intenções sem tocar em código — e ampliar é a
-rotina prevista no plano, olhando o que cai no plano B.
+Só definição, sem lógica, e é essa separação que permite ampliar o assistente sem tocar em
+código. Três tabelas, na ordem em que o compilador as usa: **léxico** (palavra do aluno →
+símbolo), **gramática** (sequência de símbolos → intenção) e **ações** (intenção → consulta ao
+Manual). Cada uma é conferida contra a anterior na construção, então erro de definição aparece
+na importação, não em produção.
 
-Três tabelas, na ordem em que o compilador as usa: o **léxico** (palavra escrita pelo aluno →
-símbolo), a **gramática de intenções** (sequência de símbolos → intenção) e as **ações**
-(intenção → consulta ao Manual). Cada uma é conferida contra a anterior no momento em que é
-construída, então erro de definição aparece na importação, não em produção.
-
-Cada símbolo nomeia um **assunto ou marcador**, não uma palavra: ``FALTA`` cobre "faltas",
-"ausências" e "frequência" porque, para a gramática, as três apontam para a mesma regra do
-Manual. Quem decide o que fazer com a combinação de símbolos é a fase sintática.
-
-O recorte inicial sai das 50 perguntas do gold-set institucional
-(``data/goldsets/institucional.json``), escritas em linguagem de aluno real — é vocabulário
-observado, não imaginado. Ampliar olhando o que cai no plano B é o passo 8 do plano.
+Cada símbolo nomeia um assunto ou marcador, não uma palavra: ``FALTA`` cobre "faltas",
+"ausências" e "frequência", que para a gramática apontam para a mesma regra do Manual.
 """
 from __future__ import annotations
 
@@ -66,16 +58,18 @@ ASSUNTOS: dict[str, list[str]] = {
     "APROVACAO": ["aprovado", "aprovada", "aprovação", "aprovar"],
     "REPROVACAO": ["reprovado", "reprovada", "reprovação"],
     "ESTAGIO": ["estágio", "estágios"],
-    "OBRIGATORIO": ["obrigatório", "obrigatória", "obrigatoriedade"],
+    # "obrigado" também é agradecimento. Sozinho não casa regra nenhuma (toda regra pede dois
+    # símbolos ou um termo inequívoco), então o risco de confundir um "obrigado!" solto é nulo.
+    "OBRIGATORIO": ["obrigatório", "obrigatória", "obrigatoriedade", "obrigado", "obrigada"],
     "BIBLIOTECA": ["biblioteca"],
-    "EMPRESTIMO": ["empréstimo", "emprestar", "devolução", "devolver"],
+    "EMPRESTIMO": ["empréstimo", "emprestar", "devolução", "devolver", "devolvi", "devolvido"],
     "CARTEIRINHA": ["carteirinha", "carteira"],
     "DIPLOMA": ["diploma"],
     "COLACAO": ["colação", "colar", "grau", "formatura", "formar"],
     "REQUERIMENTO": ["requerimento", "requerimentos", "solicitação", "solicitações",
                      "solicitar", "solicita", "solicito", "pedido", "pedir", "peço", "pede"],
-    "PENALIDADE": ["penalidade", "penalidades", "punição", "punições",
-                   "multa", "sanção", "sanções"],
+    "PENALIDADE": ["penalidade", "penalidades", "punição", "punições", "multa",
+                   "sanção", "sanções", "suspensão", "advertência", "repreensão"],
     "PRAZO": ["prazo", "prazos", "data", "datas", "dia", "dias"],
     "ALUNO": ["aluno", "aluna", "alunos", "estudante", "estudantes"],
     # Símbolo próprio, não variante de ALUNO: "aluno-atleta" chega como ALUNO ATLETA e é a
@@ -180,30 +174,19 @@ LEXICO_MANUAL = Lexico.de_grupos(GRUPOS, RUIDO)
 # opcional e "|" separa símbolos equivalentes. A regra casa como subsequência, ignorando o que
 # sobra na frase — ver ``gramatica`` para a semântica completa.
 #
-# As regras derivam dos TÓPICOS DO MANUAL (os títulos de seção do documento), não das perguntas
-# do gold-set. A diferença importa para a medição: escrever regra olhando as mesmas perguntas que
-# depois medem a cobertura daria um número in-sample, que nada diz sobre generalização.
+# As regras derivam dos TÍTULOS DE SEÇÃO do Manual, não das perguntas do gold-set: escrever
+# regra olhando as perguntas que depois medem a cobertura daria um número in-sample.
 #
-# O par definição × procedimento sobre o MESMO assunto (trancamento) é proposital: mostra que
-# quem separa as duas é o marcador, não o assunto, que é o motivo de a fase léxica classificar
-# marcadores à parte.
-#
-# Regra com um único símbolo obrigatório é reservada a termo inequívoco do documento
-# ("jubilamento", "trote"), nunca a palavra que uma pergunta fora de escopo possa carregar:
-# "mensalidade" e "internet", por exemplo, exigem um segundo símbolo, senão "quanto custa a
-# mensalidade" e "qual a senha do wi-fi" passariam a ser respondidas em vez de recusadas.
+# Regra de um único símbolo obrigatório é reservada a termo inequívoco do documento
+# ("jubilamento", "trote"). Palavra que pergunta fora de escopo possa carregar exige um segundo
+# símbolo. Ver docs/decisoes.md §6 e §8.
 REGRAS: dict[str, str] = {
     # --- frequência, notas e avaliação ---
-    # O terceiro símbolo não é enfeite: "quantas faltas EU JÁ TENHO" é pergunta de dado pessoal,
-    # que o Manual não responde, e casava com QUANTIDADE FALTA sozinho (medido no teste
-    # adversarial). Exigir PODER, OBRIGATORIO ou DISCIPLINA separa a pergunta sobre a REGRA
-    # ("quantas faltas posso ter") da pergunta sobre o ALUNO. A formulação genérica que perde
-    # cobertura por causa disso ("qual o limite de faltas?") não fica sem resposta: cai no plano
-    # B, que a responde com o guardrail de sempre.
-    "limite_faltas":            "QUANTIDADE FALTA PODER|OBRIGATORIO|DISCIPLINA",
-    # As duas do aluno-atleta são mais específicas que limite_faltas de propósito e vencem pelo
-    # número de obrigatórios (maximal munch). O Manual trata os dois fatos em frases separadas:
-    # quanto pode ser compensado e que não há abono, daí duas intenções, não uma.
+    # O terceiro símbolo separa a pergunta sobre a NORMA da pergunta sobre o ALUNO: sem ele,
+    # "quantas faltas eu já tenho" era respondida com a regra dos 75% (decisoes.md §6).
+    "limite_faltas":            "QUANTIDADE&FALTA&PODER|OBRIGATORIO|DISCIPLINA",
+    # As duas do aluno-atleta vencem limite_faltas pelo número de obrigatórios, e são duas porque
+    # o Manual trata os dois fatos em frases separadas: quanto compensa e que não há abono.
     "limite_atleta":            "QUANTIDADE ALUNO ATLETA ABONO",
     "abono_falta_atleta":       "ALUNO ATLETA ABONO",
     "consulta_notas_faltas":    "LOCALIZAR NOTA|FALTA",
@@ -219,12 +202,13 @@ REGRAS: dict[str, str] = {
 
     # --- matrícula e situações do vínculo ---
     "matricula_ingressante":    "COMO MATRICULA",
-    "definicao_trancamento":    "QUE TRANCAR MATRICULA?",
+    "definicao_trancamento":    "QUE&TRANCAR MATRICULA?",
     "como_trancar":             "COMO TRANCAR MATRICULA?",
     "prazo_trancamento":        "QUANTIDADE|PRAZO TRANCAR MATRICULA?",
     "como_cancelar":            "COMO CANCELAR MATRICULA",
-    "consequencia_sem_trancar": "CONSEQUENCIA NEGACAO TRANCAR",
-    "consequencia_sem_matricula": "CONSEQUENCIA NEGACAO MATRICULA",
+    # A adjacência prende a negação ao assunto que ela nega (decisoes.md §4).
+    "consequencia_sem_trancar": "CONSEQUENCIA NEGACAO+TRANCAR",
+    "consequencia_sem_matricula": "CONSEQUENCIA NEGACAO+MATRICULA",
     "renovacao_matricula":      "RENOVACAO MATRICULA?",
     "remanejamento":            "REMANEJAMENTO CAMPUS|TURNO|TURMA?",
     "jubilamento":              "JUBILAMENTO",
@@ -249,16 +233,15 @@ REGRAS: dict[str, str] = {
     "inscricao_disciplinas":    "INSCRICAO DISCIPLINA",
     "plano_de_ensino":          "PLANO ENSINO",
 
-    # --- estágio: a do não obrigatório vem antes porque as duas casam a mesma pergunta com o
-    # mesmo peso, e o desempate por ordem de declaração deve ficar com a mais específica ---
-    "estagio_nao_obrigatorio":  "ESTAGIO NEGACAO OBRIGATORIO",
-    "estagio_obrigatorio":      "QUE ESTAGIO OBRIGATORIO",
+    # --- estágio: a exclusão é o que separa as duas (decisoes.md §4) ---
+    "estagio_nao_obrigatorio":  "ESTAGIO NEGACAO+OBRIGATORIO",
+    "estagio_obrigatorio":      "QUE ESTAGIO OBRIGATORIO !NEGACAO",
     "vaga_estagio":             "LOCALIZAR ESTAGIO",
     "quem_faz_estagio":         "PRECISAR ESTAGIO",
     "prazo_documento_estagio":  "QUANTIDADE|PRAZO ESTAGIO",
 
     # --- biblioteca ---
-    "penalidade_biblioteca":    "PENALIDADE EMPRESTIMO BIBLIOTECA",
+    "penalidade_biblioteca":    "PENALIDADE|CONSEQUENCIA&EMPRESTIMO|BIBLIOTECA",
     "computador_biblioteca":    "COMPUTADOR BIBLIOTECA",
     "renovacao_emprestimo":     "RENOVACAO EMPRESTIMO",
     "emprestimo_equipamento":   "EMPRESTIMO EQUIPAMENTO",
@@ -283,7 +266,7 @@ REGRAS: dict[str, str] = {
     # --- diploma e formatura ---
     "diploma":                  "DIPLOMA",
     "colacao_enade":            "COLACAO REGULAR ENADE",
-    "colacao_obrigatoria":      "PRECISAR COLACAO",
+    "colacao_obrigatoria":      "PRECISAR|OBRIGATORIO|PODER&COLACAO",
 
     # --- oportunidades ---
     "atribuicoes_monitor":      "MONITORIA AULA|PROVA",
@@ -295,7 +278,9 @@ REGRAS: dict[str, str] = {
     "palestras_visitas":        "PALESTRA",
 
     # --- conduta e espaços ---
-    "penalidades_disciplinares": "QUAL PENALIDADE",
+    # A exclusão cede a vez para a regra da biblioteca: sem ela, "qual a multa da biblioteca"
+    # empatava aqui e podia ser respondida com o regime disciplinar, que é outro assunto.
+    "penalidades_disciplinares": "PENALIDADE !BIBLIOTECA !EMPRESTIMO",
     "proibicao_fumar":          "FUMAR",
     "armas":                    "ARMA",
     "trote":                    "TROTE",
@@ -307,10 +292,9 @@ GRAMATICA_MANUAL = Gramatica.de_notacao(REGRAS, LEXICO_MANUAL)
 
 
 # --------------------------------------------------------------------------------------------
-# Ações: o que fazer com cada intenção reconhecida. A consulta é escrita **no vocabulário do
-# Manual**, não no do aluno — é ela que vai ao recuperador, e é aí que a tradução leigo → termo
-# do documento se paga (ver ``semantico``). Onde o trecho-fonte do gold-set foi conferido, as
-# palavras vêm dele; onde não há trecho conferido, a consulta fica no tema, sem afirmar conteúdo.
+# Ações: a consulta que vai ao recuperador, escrita no vocabulário do Manual e não no do aluno.
+# Onde o trecho-fonte do gold-set foi conferido, as palavras vêm dele; onde não, a consulta fica
+# no tema, sem afirmar conteúdo. Ver docs/decisoes.md §7.
 ACOES: dict[str, Acao] = {
     "limite_faltas": Acao(
         "frequência obrigatória em cada disciplina, aulas dadas",

@@ -1,40 +1,17 @@
-"""Análise semântica: dá sentido à intenção reconhecida e monta a consulta ao Manual.
+"""Fase 3 do front-end: traduz a intenção na consulta que vai ao Manual.
 
-Fase 3 do front-end, a última antes da busca. Entra um :class:`~rag.nlu.sintatico.Reconhecimento`
-(intenção + tokens); sai uma :class:`Consulta`: o que perguntar ao Manual, em palavras do Manual,
-mais os campos que a pergunta trouxe. É o passo de *lowering* de um compilador — a forma de
-superfície, cheia de variação, vira uma representação interna única e sem ambiguidade.
+Entra o reconhecimento, sai uma :class:`Consulta`. É o *lowering* de um compilador: a forma de
+superfície, cheia de variação, vira uma representação interna única.
 
-A consulta canônica
--------------------
-Cada intenção tem uma **consulta fixa, escrita por nós no vocabulário do documento**. A frase do
-aluno não chega ao recuperador: chega esta. Duas consequências que valem o projeto inteiro:
+Cada intenção tem uma consulta fixa, escrita à mão no vocabulário do documento, e é ela que
+chega ao recuperador, nunca a frase do aluno. Os **campos** são os dados soltos que a regra não
+consumiu (nome de disciplina, número de dias) e não entram na consulta.
 
-- **O núcleo responde sem IA.** Consulta determinística no Manual, mesma pergunta → mesma
-  resposta, sem modelo no caminho.
-- **Fecha o buraco léxico medido no Marco 3.** Lá, o BM25 desabava em pergunta de leigo
-  (recall@5 0.17 contra 0.83 na técnica) justamente porque a palavra do aluno não é a palavra do
-  documento. Aqui a tradução leigo → termo do documento acontece **antes** da busca, no léxico e
-  nesta tabela, em vez de ser deixada para o recuperador adivinhar.
+``de_tabela`` exige que toda regra da gramática tenha ação e que não haja ação órfã, senão uma
+regra nova casaria a pergunta e estouraria na hora de agir.
 
-Campos
-------
-São os dados soltos que a regra não consumiu (a ``sobra`` do reconhecimento): o nome de uma
-disciplina, um número de dias. Cada intenção declara que campos espera e de que tipo de token
-eles vêm. Os campos **não entram na consulta**: a regra de frequência do Manual não menciona
-"cálculo", e jogar o nome da disciplina na busca só atrapalharia o casamento. Eles seguem na
-``Consulta`` para quem monta a resposta usar.
-
-Conferência
------------
-``de_tabela`` exige que **toda regra da gramática tenha ação** e que não haja ação órfã. É o
-mesmo tipo de conferência que a gramática faz contra o léxico, um andar acima: sem ela, uma regra
-nova casaria a pergunta e depois estouraria na hora de agir — erro que aparece longe da causa.
-
-Limitação conhecida: o valor de um campo é o **primeiro token do tipo esperado** que sobrou. É
-uma heurística de posição, e erra quando sobra outra palavra desconhecida antes do valor
-("cálculo integral" também vira só "cálculo"). O conserto previsto é a tabela de entidades citada
-em ``lexico``: com ela o valor passa a ser reconhecido por tipo, como qualquer outro símbolo.
+Por que a consulta canônica importa tanto, e a limitação da colheita de campos:
+``docs/decisoes.md`` (seção 7).
 """
 from __future__ import annotations
 

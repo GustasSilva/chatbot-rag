@@ -1,35 +1,18 @@
-"""Base de conhecimento: executa a consulta do front-end contra o Manual e devolve o trecho.
+"""Executa a consulta do front-end contra o Manual e devolve o trecho.
 
-É a costura entre as duas metades do sistema. O front-end de compilador decidiu **o que**
-perguntar (``Consulta``); aqui se pergunta ao documento, reaproveitando a recuperação que já
-existe e já foi medida nos marcos científicos — nada de busca nova, só uso.
+É a costura entre as duas metades do sistema, e **o caminho que responde sem IA**: da pergunta
+até o trecho não há modelo de linguagem em lugar nenhum.
 
-**Este é o caminho que responde sem IA.** Da pergunta do aluno até o trecho do Manual não há
-modelo de linguagem em lugar nenhum: léxico, gramática, parser, consulta canônica e recuperação.
-A LLM só aparece no plano B, que é decisão do controlador, não daqui.
+Depende do ``Recuperador`` abstrato, nunca de uma estratégia concreta. Não tem piso de score
+porque aqui o portão é a gramática — fora de escopo não casa regra e nem chega até aqui
+(``docs/decisoes.md`` §11).
 
-Depende do ``Recuperador`` **abstrato**, nunca de uma estratégia concreta: o produto injeta a
-configuração que venceu a comparação (híbrida + reranker) e a via científica segue intocada.
-
-Sem piso de score
------------------
-O ``ChatbotRAG`` precisa de um piso de score porque aceita pergunta livre: qualquer assunto entra,
-inclusive fora do escopo, e o piso é o que barra. Aqui o portão é **a gramática**: só chega
-consulta de intenção reconhecida, e a consulta canônica dessa intenção foi escrita por nós
-apontando para um assunto que conferimos existir no Manual. Fora de escopo não chega até aqui —
-não casa regra nenhuma e o controlador manda para o plano B.
-
-Ainda assim a busca pode voltar vazia (corpus trocado, termo sem casamento). Nesse caso a
-resposta vem com ``trechos`` vazio e ``encontrou`` falso; o que fazer é decisão do controlador.
-
-A resposta traz o chunk inteiro (rastreabilidade) **e** um ``destaque``: a frase do chunk que
-de fato responde. Sem isso a resposta começaria no meio do assunto anterior, porque o chunk é
-uma janela de tamanho fixo, não um parágrafo.
+A resposta traz o trecho inteiro, para rastreabilidade, e o ``destaque``: a frase que de fato
+responde. Busca vazia devolve ``encontrou`` falso, e o que fazer é decisão do controlador.
 """
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..corpus.chunking import Chunk
@@ -59,27 +42,11 @@ class RespostaNucleo:
 def destacar(texto: str, consulta: str) -> str:
     """A frase do trecho com maior sobreposição de termos com a consulta.
 
-    O chunk tem ~180 tokens e quase sempre começa no meio de outro assunto: mostrá-lo inteiro
-    ao aluno é ruim de ler e parece resposta errada. Esta é a versão sem IA de "extrair a
-    resposta do trecho", determinística e conferível, ao contrário da síntese do LLM.
+    É a versão sem IA de "extrair a resposta do trecho": determinística e conferível. Usa o
+    tokenizador do BM25 de propósito, para destacar não discordar de recuperar.
 
-    Usa o tokenizador do BM25 de propósito: o destaque é pontuado pela mesma noção de termo que
-    escolheu o trecho, então destacar não pode discordar de recuperar.
-
-    **Alternativas testadas e rejeitadas** (medidas nas 44 perguntas que a gramática reconhece,
-    acerto = trecho-fonte do gold-set dentro da frase destacada; a versão atual faz 26/44):
-
-    - varrer os três trechos recuperados em vez de só o primeiro: **24/44**. A frase certa está
-      mesmo no 2º ou 3º trecho em vários casos, mas ampliar o espaço de busca sem melhorar a
-      pontuação deixa frases longas do trecho errado vencerem por volume de termos;
-    - dividir a sobreposição pela raiz do tamanho da frase: 25/44 (20/44 varrendo os três);
-    - dividir pelo tamanho da frase (precisão): 19/44; média harmônica tipo F1: 20/44. As duas
-      penalizam frase longa e este Manual é cheio de fragmentos curtos ("Art. 5º -"), que passam
-      a ganhar.
-
-    O caminho que sobra para melhorar não é a fórmula, é a **evidência**: ponderar cada termo
-    pelo IDF do índice (termo raro vale mais) exigiria dar a esta função acesso às estatísticas
-    do corpus, que hoje ela não tem de propósito.
+    Quatro critérios alternativos foram implementados e medidos, e todos ficaram piores que este.
+    A tabela e o motivo estão em ``docs/decisoes.md`` §9 — não vale tentar de novo sem ler.
     """
     frases = [frase for frase in _FIM_DE_FRASE.split(texto) if frase.strip()]
     if not frases:
