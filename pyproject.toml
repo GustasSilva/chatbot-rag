@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chatbot-rag-pt"
 version = "0.1.0"
-description = "Chatbot RAG em português — comparação de estratégias de recuperação (densa, esparsa/BM25, híbrida)"
+description = "Assistente de perguntas e respostas em português cujo núcleo é um front-end de compilador, com modelo de linguagem como plano B"
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
