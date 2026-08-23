@@ -1,5 +1,11 @@
 # Relatório Final — um motor RAG, duas aplicações
 
+> **Escopo.** Este documento pertence à fase do **estudo comparativo de recuperação**, que
+> foi a direção do trabalho até 13/08/2026. Depois dessa data o núcleo passou a ser um
+> **front-end de compilador sobre a entrada**, e o estudo virou **resultado preliminar**.
+> O que está aqui continua valendo como registro do que foi medido e de como foi medido;
+> a moldura atual do projeto está no [`README.md`](../README.md).
+
 Documento de fechamento. Amarra as duas metades do projeto e aponta para os relatórios
 detalhados; os números-cabeçalho estão aqui para o texto se sustentar sozinho.
 

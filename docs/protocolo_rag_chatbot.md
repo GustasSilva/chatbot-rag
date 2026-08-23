@@ -1,5 +1,11 @@
 # Protocolo Experimental — Chatbot com Recuperação Aumentada (RAG) em Português
 
+> **Escopo.** Este documento pertence à fase do **estudo comparativo de recuperação**, que
+> foi a direção do trabalho até 13/08/2026. Depois dessa data o núcleo passou a ser um
+> **front-end de compilador sobre a entrada**, e o estudo virou **resultado preliminar**.
+> O que está aqui continua valendo como registro do que foi medido e de como foi medido;
+> a moldura atual do projeto está no [`README.md`](../README.md).
+
 **Tipo de trabalho:** comparação de estratégias de recuperação de informação para RAG, com avaliação objetiva por métricas de recuperação.
 **Metodologia:** mesma disciplina do projeto de internações — marcos incrementais, dado fácil/controlado primeiro, dado real/desafiador depois, testes estatísticos pareados.
 

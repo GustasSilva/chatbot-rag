@@ -125,7 +125,9 @@ Um trecho tem 180 palavras e quase sempre começa no meio do assunto anterior, e
 inteiro parece resposta errada. O destaque escolhe a frase com maior sobreposição de termos com
 a consulta, usando o tokenizador do BM25 — assim destacar não pode discordar de recuperar.
 
-Acerto = trecho-fonte do gold-set dentro da frase destacada, nas 44 que a gramática reconhece:
+Acerto = trecho-fonte do gold-set dentro da frase destacada, nas 44 que a gramática reconhece.
+Os quatro critérios foram medidos **só com BM25**, para que a comparação entre eles corra em
+condição idêntica. No caminho do produto, com o reranker, o critério em uso chega a 30/44 (§17).
 
 | Critério | Só o 1º trecho | Varrendo os 3 |
 |---|---|---|
@@ -141,7 +143,7 @@ o Manual é cheio de "Art. 5º -".
 O caminho que sobra não é a fórmula, é a **evidência**: ponderar cada termo pelo IDF do índice,
 o que exigiria dar à função acesso às estatísticas do corpus.
 
-Diagnóstico das 18 falhas: em 12 a frase certa estava no 2º ou 3º trecho; em 6 o trecho do topo
+Diagnóstico das 18 falhas medidas nessa condição: em 12 a frase certa estava no 2º ou 3º trecho; em 6 o trecho do topo
 estava certo e a frase escolhida não; em 0 a métrica foi injusta.
 
 ## 10. Recuperação do produto: BM25 + reranker
