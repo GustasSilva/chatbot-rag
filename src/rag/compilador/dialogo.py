@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from ..corpus.chunking import Chunk
-from ..generation.chatbot import ChatbotRAG
-from ..generation.generator import Turno
+from ..ia.chatbot import ChatbotRAG
+from ..ia.generator import Turno
 from .base_conhecimento import BaseConhecimento
 from .lexico import AnalisadorLexico
 from .semantico import AnalisadorSemantico

@@ -22,10 +22,10 @@ import numpy as np
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.evaluation.avaliacao import agregar, avaliar_recuperador, series_pareadas
-from rag.evaluation.goldset import carregar_goldset, construir_relevancia
-from rag.evaluation.relatorio import salvar_agregado, salvar_por_pergunta, salvar_testes
-from rag.evaluation.stats import comparar_estrategias, efeito_rank_biserial, _wilcoxon_seguro
+from rag.avaliacao.avaliacao import agregar, avaliar_recuperador, series_pareadas
+from rag.avaliacao.goldset import carregar_goldset, construir_relevancia
+from rag.avaliacao.relatorio import salvar_agregado, salvar_por_pergunta, salvar_testes
+from rag.avaliacao.stats import comparar_estrategias, efeito_rank_biserial, _wilcoxon_seguro
 from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
 
 PDFS = {

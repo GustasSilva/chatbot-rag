@@ -11,7 +11,7 @@ import sys
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.evaluation.goldset import ItemGold, construir_relevancia, salvar_goldset
+from rag.avaliacao.goldset import ItemGold, construir_relevancia, salvar_goldset
 from rag.pipeline import construir_indice
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"

@@ -31,11 +31,11 @@ import sys
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.evaluation.goldset import carregar_goldset, construir_relevancia
-from rag.nlu.base_conhecimento import BaseConhecimento
-from rag.nlu.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS, SEMANTICA_MANUAL
-from rag.nlu.lexico import AnalisadorLexico, simbolos
-from rag.nlu.sintatico import AnalisadorSintatico
+from rag.avaliacao.goldset import carregar_goldset, construir_relevancia
+from rag.compilador.base_conhecimento import BaseConhecimento
+from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS, SEMANTICA_MANUAL
+from rag.compilador.lexico import AnalisadorLexico, simbolos
+from rag.compilador.sintatico import AnalisadorSintatico
 from rag.pipeline import construir_indice, montar_recuperador_produto, montar_recuperadores
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"

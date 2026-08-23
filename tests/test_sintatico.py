@@ -1,10 +1,10 @@
 """Testes da análise sintática: tokens -> intenção, por casamento de ilha."""
 from __future__ import annotations
 
-from rag.nlu.gramatica import Gramatica
-from rag.nlu.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL
-from rag.nlu.lexico import AnalisadorLexico, Lexico, TipoToken
-from rag.nlu.sintatico import AnalisadorSintatico
+from rag.compilador.gramatica import Gramatica
+from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL
+from rag.compilador.lexico import AnalisadorLexico, Lexico, TipoToken
+from rag.compilador.sintatico import AnalisadorSintatico
 
 LEXICO_FALSO = Lexico.de_grupos(
     grupos={

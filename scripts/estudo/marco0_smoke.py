@@ -17,8 +17,8 @@ import sys
 
 from rag.config import carregar_config
 from rag.corpus.loaders import limpar_texto
-from rag.evaluation.avaliacao import agregar, avaliar_recuperador
-from rag.evaluation.goldset import ItemGold, construir_relevancia
+from rag.avaliacao.avaliacao import agregar, avaliar_recuperador
+from rag.avaliacao.goldset import ItemGold, construir_relevancia
 from rag.pipeline import construir_indice, montar_recuperadores
 
 # Texto curtíssimo e controlado: cada fato é um documento próprio, com vocabulário distinto.

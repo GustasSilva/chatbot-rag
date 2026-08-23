@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from rag.generation.gramatica_citacao import (
+from rag.ia.gramatica_citacao import (
     AutomatoCitacao,
     RestritorCitacao,
     tokens_permitidos,

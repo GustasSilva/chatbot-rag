@@ -22,9 +22,9 @@ import unicodedata
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.evaluation.goldset import carregar_goldset, construir_relevancia
-from rag.generation.chatbot import ChatbotRAG
-from rag.generation.generator import GeradorOllama
+from rag.avaliacao.goldset import carregar_goldset, construir_relevancia
+from rag.ia.chatbot import ChatbotRAG
+from rag.ia.generator import GeradorOllama
 from rag.pipeline import construir_indice, montar_recuperador_produto
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"

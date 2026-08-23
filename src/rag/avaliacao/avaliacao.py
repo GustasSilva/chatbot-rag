@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ..retrieval.base import Recuperador
+from ..recuperacao.base import Recuperador
 from .goldset import ItemGold
 from .metrics import recall_em_k, reciprocal_rank
 

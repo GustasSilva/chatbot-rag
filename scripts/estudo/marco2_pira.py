@@ -18,11 +18,11 @@ import dataclasses
 import sys
 
 from rag.config import ConfigChunking, carregar_config
-from rag.datasets.pira import carregar_pira
-from rag.evaluation.avaliacao import avaliar_recuperador, series_pareadas
-from rag.evaluation.goldset import construir_relevancia_por_documento
-from rag.evaluation.relatorio import salvar_agregado, salvar_por_pergunta, salvar_testes
-from rag.evaluation.stats import comparar_estrategias
+from rag.dados.pira import carregar_pira
+from rag.avaliacao.avaliacao import avaliar_recuperador, series_pareadas
+from rag.avaliacao.goldset import construir_relevancia_por_documento
+from rag.avaliacao.relatorio import salvar_agregado, salvar_por_pergunta, salvar_testes
+from rag.avaliacao.stats import comparar_estrategias
 from rag.pipeline import construir_indice, montar_recuperadores
 
 DIR_PIRA = "data/raw/pira"

@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from rag.corpus.chunking import Chunk
-from rag.generation.chatbot import RespostaChatbot
-from rag.generation.generator import RespostaGerada
-from rag.nlu.base_conhecimento import BaseConhecimento
-from rag.nlu.dialogo import NAO_ENTENDI, Dialogo, Origem
-from rag.retrieval.esparsa import RecuperadorBM25
+from rag.ia.chatbot import RespostaChatbot
+from rag.ia.generator import RespostaGerada
+from rag.compilador.base_conhecimento import BaseConhecimento
+from rag.compilador.dialogo import NAO_ENTENDI, Dialogo, Origem
+from rag.recuperacao.esparsa import RecuperadorBM25
 
 CORPUS = [
     Chunk(0, "manual", "A frequência obrigatória, em cada disciplina, é de 75% das aulas "

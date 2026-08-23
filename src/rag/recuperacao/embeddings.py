@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .config import ConfigEmbeddings
+from ..config import ConfigEmbeddings
 
 
 class Embedder:

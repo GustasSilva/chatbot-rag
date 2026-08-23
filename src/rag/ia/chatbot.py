@@ -10,7 +10,7 @@ import unicodedata
 from dataclasses import dataclass
 
 from ..corpus.chunking import Chunk
-from ..retrieval.base import Recuperador
+from ..recuperacao.base import Recuperador
 from .generator import RECUSA_PADRAO, Gerador, RespostaGerada, Turno
 
 

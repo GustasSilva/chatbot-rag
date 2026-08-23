@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 from rag.corpus.chunking import Chunk
-from rag.nlu.base_conhecimento import BaseConhecimento, destacar
-from rag.nlu.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
-from rag.nlu.lexico import AnalisadorLexico
-from rag.nlu.semantico import Consulta
-from rag.nlu.sintatico import AnalisadorSintatico
-from rag.retrieval.base import Recuperador, Resultado
-from rag.retrieval.esparsa import RecuperadorBM25
+from rag.compilador.base_conhecimento import BaseConhecimento, destacar
+from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
+from rag.compilador.lexico import AnalisadorLexico
+from rag.compilador.semantico import Consulta
+from rag.compilador.sintatico import AnalisadorSintatico
+from rag.recuperacao.base import Recuperador, Resultado
+from rag.recuperacao.esparsa import RecuperadorBM25
 
 # Corpus minúsculo no estilo do Manual: BM25 é determinístico e não baixa modelo nenhum.
 CORPUS = [

@@ -9,7 +9,7 @@ correto dentre todo o corpus. Mapeamento para o nosso framework:
   abstract único é um documento.
 - **queries**: as perguntas em PT (``question_pt_origin``) do split escolhido.
 - **gold**: para cada pergunta, o documento é o seu próprio abstract (relevância em nível
-  de documento — ver ``evaluation.goldset.construir_relevancia_por_documento``).
+  de documento — ver ``avaliacao.goldset.construir_relevancia_por_documento``).
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import csv
 from pathlib import Path
 
 from ..corpus.loaders import limpar_texto
-from ..evaluation.goldset import ItemGold
+from ..avaliacao.goldset import ItemGold
 
 csv.field_size_limit(1_000_000)  # abstracts são longos
 

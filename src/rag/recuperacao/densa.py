@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..corpus.chunking import Chunk
-from ..embeddings import Embedder
+from .embeddings import Embedder
 from .base import Recuperador, Resultado, ordenar_para_resultados
 
 

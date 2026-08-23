@@ -13,17 +13,17 @@ import pytest
 
 from rag.corpus.chunking import dividir_em_chunks
 from rag.corpus.loaders import limpar_texto
-from rag.evaluation import stats
-from rag.evaluation.goldset import (
+from rag.avaliacao import stats
+from rag.avaliacao.goldset import (
     GoldSetError,
     ItemGold,
     construir_relevancia,
     construir_relevancia_por_documento,
 )
-from rag.evaluation.metrics import recall_em_k, reciprocal_rank
-from rag.retrieval.densa import RecuperadorDenso
-from rag.retrieval.esparsa import RecuperadorBM25, tokenizar
-from rag.retrieval.hibrida import RecuperadorHibrido
+from rag.avaliacao.metrics import recall_em_k, reciprocal_rank
+from rag.recuperacao.densa import RecuperadorDenso
+from rag.recuperacao.esparsa import RecuperadorBM25, tokenizar
+from rag.recuperacao.hibrida import RecuperadorHibrido
 
 
 # --------------------------------------------------------------------------- #
@@ -132,8 +132,8 @@ def test_hibrida_funde_sem_erro():
 def test_uniao_intercala_topo_de_cada_e_deduplica():
     """A união intercala densa[0], esparsa[0], ... e deduplica — o topo de CADA
     recuperador entra no pool sem diluição (ao contrário da média do RRF)."""
-    from rag.retrieval.base import Recuperador, Resultado
-    from rag.retrieval.uniao import RecuperadorUniao
+    from rag.recuperacao.base import Recuperador, Resultado
+    from rag.recuperacao.uniao import RecuperadorUniao
 
     class _RecFixo(Recuperador):
         nome = "fixo"
@@ -233,7 +233,7 @@ def test_relevancia_por_documento():
 def test_extrair_fontes_citadas():
     """Parser de citação: aceita [1], [1, 2] e [1,2]; ignora fora do intervalo."""
     from rag.corpus.chunking import Chunk
-    from rag.generation.generator import extrair_fontes_citadas
+    from rag.ia.generator import extrair_fontes_citadas
 
     ctx = [
         Chunk(id=10, doc_id="d", texto="a", inicio_char=0, fim_char=1, indice_no_doc=0),
@@ -248,7 +248,7 @@ def test_extrair_fontes_citadas():
 
 def test_guardrail_contexto_vazio_recusa():
     """Sem contexto recuperado, o gerador recusa sem sequer chamar o LLM (não alucina)."""
-    from rag.generation.generator import GeradorOllama
+    from rag.ia.generator import GeradorOllama
 
     g = GeradorOllama(modelo="inexistente")  # __init__ não conecta em lugar nenhum
     r = g.gerar("qualquer pergunta", [])
@@ -258,7 +258,7 @@ def test_guardrail_contexto_vazio_recusa():
 
 def test_perfil_guardrail_seleciona_prompt():
     """O perfil escolhe o system prompt; perfil inválido falha alto."""
-    from rag.generation.generator import (
+    from rag.ia.generator import (
         _SISTEMA_ESTRITO,
         _SISTEMA_INSTITUCIONAL,
         GeradorOllama,
@@ -273,7 +273,7 @@ def test_perfil_guardrail_seleciona_prompt():
 def test_eh_saudacao_dispara_so_em_saudacao_pura():
     """O detector é conservador: True só quando a mensagem é SÓ saudação; qualquer
     pergunta substantiva (inclusive fora de escopo) devolve False e segue para o pipeline."""
-    from rag.generation.chatbot import eh_saudacao
+    from rag.ia.chatbot import eh_saudacao
 
     for t in ["olá", "Oi!", "bom dia", "tudo bem?", "Olá, tudo bem?",
               "e aí, beleza?", "boa noite", "opa"]:
@@ -288,9 +288,9 @@ def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
     """Com saudar=True, uma saudação pura devolve a mensagem amigável sem tocar no
     recuperador nem no gerador; sem saudar=True, segue o fluxo normal."""
     from rag.corpus.chunking import Chunk
-    from rag.generation.chatbot import ChatbotRAG, RESPOSTAS_SAUDACAO
-    from rag.generation.generator import Gerador, RespostaGerada
-    from rag.retrieval.base import Recuperador, Resultado
+    from rag.ia.chatbot import ChatbotRAG, RESPOSTAS_SAUDACAO
+    from rag.ia.generator import Gerador, RespostaGerada
+    from rag.recuperacao.base import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="x", inicio_char=0, fim_char=1, indice_no_doc=0)
 
@@ -324,9 +324,9 @@ def test_multiturn_recupera_pela_pergunta_reescrita_e_gera_com_historico():
     """Com histórico, o ChatbotRAG recupera pela pergunta REESCRITA (autônoma) e passa o
     histórico ao gerador. Sem histórico, usa a pergunta original e não reescreve."""
     from rag.corpus.chunking import Chunk
-    from rag.generation.chatbot import ChatbotRAG
-    from rag.generation.generator import Gerador, RespostaGerada
-    from rag.retrieval.base import Recuperador, Resultado
+    from rag.ia.chatbot import ChatbotRAG
+    from rag.ia.generator import Gerador, RespostaGerada
+    from rag.recuperacao.base import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="x", inicio_char=0, fim_char=1, indice_no_doc=0)
 
@@ -371,9 +371,9 @@ def test_piso_score_recusa_antes_de_gerar():
     """O piso de score recusa fora-de-escopo (score baixo) SEM chamar o gerador; acima
     do piso, gera normalmente."""
     from rag.corpus.chunking import Chunk
-    from rag.generation.chatbot import ChatbotRAG
-    from rag.generation.generator import Gerador, RespostaGerada
-    from rag.retrieval.base import Recuperador, Resultado
+    from rag.ia.chatbot import ChatbotRAG
+    from rag.ia.generator import Gerador, RespostaGerada
+    from rag.recuperacao.base import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="conteúdo", inicio_char=0, fim_char=8, indice_no_doc=0)
 

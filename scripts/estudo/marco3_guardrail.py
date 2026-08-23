@@ -17,8 +17,8 @@ import unicodedata
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.generation.chatbot import ChatbotRAG
-from rag.generation.generator import GeradorOllama
+from rag.ia.chatbot import ChatbotRAG
+from rag.ia.generator import GeradorOllama
 from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
 
 PDFS = {

@@ -16,8 +16,8 @@ import re
 from dataclasses import dataclass
 
 from ..corpus.chunking import Chunk
-from ..retrieval.base import Recuperador
-from ..retrieval.esparsa import tokenizar
+from ..recuperacao.base import Recuperador
+from ..recuperacao.esparsa import tokenizar
 from .semantico import Consulta
 
 # Fim de frase: ponto/!/? seguido de espaço. Heurística simples de propósito — abreviação

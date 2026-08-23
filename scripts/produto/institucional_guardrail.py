@@ -18,10 +18,10 @@ from pathlib import Path
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.generation.chatbot import ChatbotRAG
-from rag.generation.generator import GeradorOllama
-from rag.nlu.base_conhecimento import BaseConhecimento
-from rag.nlu.dialogo import Dialogo, Origem
+from rag.ia.chatbot import ChatbotRAG
+from rag.ia.generator import GeradorOllama
+from rag.compilador.base_conhecimento import BaseConhecimento
+from rag.compilador.dialogo import Dialogo, Origem
 from rag.pipeline import construir_indice, montar_recuperador_produto
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"

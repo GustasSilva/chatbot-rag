@@ -19,8 +19,8 @@ import os
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.generation.json_estruturado import validar
-from rag.generation.llamacpp import GeradorLlamaCpp
+from rag.ia.json_estruturado import validar
+from rag.ia.llamacpp import GeradorLlamaCpp
 from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"

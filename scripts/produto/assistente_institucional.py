@@ -1,6 +1,6 @@
 """Assistente do Manual do Aluno — chat livre (item 6 do plano): o produto demonstrável.
 
-REPL de input aberto. Quem responde é o **controlador** (`rag.nlu.dialogo`): o núcleo de
+REPL de input aberto. Quem responde é o **controlador** (`rag.compilador.dialogo`): o núcleo de
 compilador entende a pergunta (léxico → gramática de intenções → parser → semântica) e responde
 direto do Manual, **sem modelo de linguagem no caminho**; o que a gramática não reconhece cai no
 **plano B**, a pilha validada cientificamente — recuperação **híbrida + reranker**, **piso de
@@ -21,10 +21,10 @@ import sys
 from rag.apresentacao import fontes_de
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.generation.chatbot import ChatbotRAG
-from rag.generation.fabrica import construir_gerador
-from rag.nlu.base_conhecimento import BaseConhecimento
-from rag.nlu.dialogo import Dialogo, Origem
+from rag.ia.chatbot import ChatbotRAG
+from rag.ia.fabrica import construir_gerador
+from rag.compilador.base_conhecimento import BaseConhecimento
+from rag.compilador.dialogo import Dialogo, Origem
 from rag.pipeline import construir_indice, montar_recuperador_produto
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"

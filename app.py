@@ -1,7 +1,7 @@
 """Tela de chat do Assistente do Manual do Aluno (interface web do produto).
 
 Mesma pilha do REPL `scripts/produto/assistente_institucional.py`, agora numa interface visual. Quem
-responde é o **controlador** (`rag.nlu.dialogo`): o núcleo de compilador entende a pergunta
+responde é o **controlador** (`rag.compilador.dialogo`): o núcleo de compilador entende a pergunta
 (léxico → gramática de intenções → parser → semântica) e responde direto do Manual, **sem
 passar por modelo de linguagem**; o que a gramática não reconhece cai no **plano B**, o chatbot
 RAG de sempre — recuperação **híbrida + reranker**, **piso de score** (recusa fora-de-escopo
@@ -20,10 +20,10 @@ import streamlit as st
 from rag.apresentacao import fontes_de
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.generation.chatbot import ChatbotRAG
-from rag.generation.fabrica import construir_gerador
-from rag.nlu.base_conhecimento import BaseConhecimento
-from rag.nlu.dialogo import Dialogo, Origem
+from rag.ia.chatbot import ChatbotRAG
+from rag.ia.fabrica import construir_gerador
+from rag.compilador.base_conhecimento import BaseConhecimento
+from rag.compilador.dialogo import Dialogo, Origem
 from rag.pipeline import construir_indice, montar_recuperador_produto
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"

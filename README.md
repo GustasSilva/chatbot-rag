@@ -33,23 +33,23 @@ Disso saem três propriedades que um chatbot baseado só em modelo de linguagem 
 ```
 "Quantas faltas posso ter em Cálculo?"
        |
-       |  nlu/lexico.py          texto  ->  tokens tipados
+       |  compilador/lexico.py          texto  ->  tokens tipados
        v
   [QUANTIDADE] [FALTA] [PODER]   ("ter", "em" = ruído · "Cálculo" = desconhecido)
        |
-       |  nlu/sintatico.py       tokens ->  intenção          (segundo nlu/gramatica.py)
+       |  compilador/sintatico.py       tokens ->  intenção          (segundo compilador/gramatica.py)
        v
   intenção = limite_faltas
        |
-       |  nlu/semantico.py       intenção -> consulta canônica
+       |  compilador/semantico.py       intenção -> consulta canônica
        v
   "frequência obrigatória em cada disciplina, aulas dadas"  + {disciplina: Cálculo}
        |
-       |  nlu/base_conhecimento.py    consulta -> trecho do Manual   (BM25)
+       |  compilador/base_conhecimento.py    consulta -> trecho do Manual   (BM25)
        v
   3 trechos + a frase que responde
        |
-       |  nlu/dialogo.py         respondeu? senão, plano B
+       |  compilador/dialogo.py         respondeu? senão, plano B
        v
   resposta com origem NÚCLEO
 ```
@@ -141,24 +141,24 @@ Por isso a medição de cobertura não é *in sample* (§8).
 
 | Camada | Módulo | Papel |
 |---|---|---|
-| **Núcleo (compilador)** | `rag.nlu.lexico` | Tokeniza, normaliza a escrita e traduz variantes em símbolos. É a tabela de símbolos do reconhecedor: fixa, carregada antes da análise, e é contra ela que cada símbolo usado numa regra é validado |
-| | `rag.nlu.gramatica` | A notação das regras e o compilador dela, com as validações |
-| | `rag.nlu.sintatico` | Reconhece a intenção, ou devolve `None` e aciona o plano B |
-| | `rag.nlu.semantico` | Traduz a intenção na consulta canônica e colhe os campos |
-| | `rag.nlu.base_conhecimento` | Executa a consulta contra o Manual e destaca a frase que responde |
-| | `rag.nlu.intencoes` | Só dados: léxico, gramática e ações, sem lógica |
-| **Controlador** | `rag.nlu.dialogo` | Orquestra as fases e decide o plano B. Marca a origem de cada resposta |
+| **Núcleo (compilador)** | `rag.compilador.lexico` | Tokeniza, normaliza a escrita e traduz variantes em símbolos. É a tabela de símbolos do reconhecedor: fixa, carregada antes da análise, e é contra ela que cada símbolo usado numa regra é validado |
+| | `rag.compilador.gramatica` | A notação das regras e o compilador dela, com as validações |
+| | `rag.compilador.sintatico` | Reconhece a intenção, ou devolve `None` e aciona o plano B |
+| | `rag.compilador.semantico` | Traduz a intenção na consulta canônica e colhe os campos |
+| | `rag.compilador.base_conhecimento` | Executa a consulta contra o Manual e destaca a frase que responde |
+| | `rag.compilador.intencoes` | Só dados: léxico, gramática e ações, sem lógica |
+| **Controlador** | `rag.compilador.dialogo` | Orquestra as fases e decide o plano B. Marca a origem de cada resposta |
 | **Corpus** | `rag.corpus.loaders` · `chunking` | Carrega o PDF, normaliza e divide em trechos com sobreposição |
-| **Recuperação** | `rag.retrieval.esparsa` | **BM25 Okapi do zero**, com índice invertido |
-| | `rag.retrieval.densa` | Similaridade de cosseno sobre embeddings |
-| | `rag.retrieval.hibrida` | Fusão por RRF ou soma ponderada |
-| | `rag.retrieval.reranker` | Cross-encoder de segundo estágio |
-| **Plano B** | `rag.generation.chatbot` · `generator` · `fabrica` | Chatbot RAG com guardrail e piso de score, sobre Ollama ou llama.cpp |
-| | `rag.generation.gramatica` · `json_estruturado` | Autômato e gramática que restringem a saída do modelo |
-| **Avaliação** | `rag.evaluation.metrics` · `stats` · `goldset` | Recall@k, MRR, Wilcoxon pareado com Holm e tamanho de efeito |
+| **Recuperação** | `rag.recuperacao.esparsa` | **BM25 Okapi do zero**, com índice invertido |
+| | `rag.recuperacao.densa` | Similaridade de cosseno sobre embeddings |
+| | `rag.recuperacao.hibrida` | Fusão por RRF ou soma ponderada |
+| | `rag.recuperacao.reranker` | Cross-encoder de segundo estágio |
+| **Plano B** | `rag.ia.chatbot` · `generator` · `fabrica` | Chatbot RAG com guardrail e piso de score, sobre Ollama ou llama.cpp |
+| | `rag.ia.gramatica` · `json_estruturado` | Autômato e gramática que restringem a saída do modelo |
+| **Avaliação** | `rag.avaliacao.metrics` · `stats` · `goldset` | Recall@k, MRR, Wilcoxon pareado com Holm e tamanho de efeito |
 | **Montagem** | `rag.pipeline` · `rag.config` · `rag.apresentacao` | Índice, parâmetros fixos e a formatação comum às três interfaces |
 
-O pacote `rag.nlu`, com exceção do controlador, **não importa nada além da biblioteca padrão**:
+O pacote `rag.compilador`, com exceção do controlador, **não importa nada além da biblioteca padrão**:
 só `re`, `unicodedata`, `dataclasses`, `enum` e `collections.abc`. Nenhum gerador de parser,
 nenhuma biblioteca de processamento de linguagem. É verificável por `grep`.
 
@@ -287,12 +287,12 @@ caso foi diagnosticado em detalhe e um experimento de fusão alternativa está e
 Antes do pivô para a entrada, a contribuição de Ciência da Computação atacava a **saída** do
 modelo de linguagem. Os dois módulos continuam no repositório, testados isoladamente:
 
-- **`generation/gramatica_citacao.py`** define a gramática regular do formato de citação `[n]` e o
+- **`ia/gramatica_citacao.py`** define a gramática regular do formato de citação `[n]` e o
   **autômato finito determinístico que a reconhece, escrito à mão**. O número é casado por um
   autômato de prefixos, o que elimina becos sem saída por construção. `RestritorCitacao` é um
   *logits processor*: a cada passo avança o autômato e põe `-inf` no logit de todo token que
   levaria a uma cadeia inválida.
-- **`generation/json_estruturado.py`** sobe um nível na hierarquia. Um objeto JSON é **livre
+- **`ia/json_estruturado.py`** sobe um nível na hierarquia. Um objeto JSON é **livre
   de contexto**, porque o aninhamento exige pilha. O esquema é autorado à mão em GBNF, com
   `fonte ::= "1" | ... | "K"`, o que torna **impossível por construção** um índice de fonte
   fora da faixa. A alternância explícita foi escrita justamente porque o JSON Schema do motor
@@ -305,7 +305,7 @@ produto hoje.
 
 ## Decisões de design
 
-- **BM25 do zero** (`retrieval/esparsa.py`): índice invertido, IDF Okapi e normalização por
+- **BM25 do zero** (`recuperacao/esparsa.py`): índice invertido, IDF Okapi e normalização por
   tamanho, sem nenhuma biblioteca de busca pronta.
 - **Consulta canônica**: a frase do aluno nunca chega ao recuperador. A variação de escrita
   morre na análise léxica e a intenção é traduzida numa consulta escrita nas palavras do
@@ -328,24 +328,60 @@ produto hoje.
 
 ## Estrutura
 
+O corte que mais importa separa **o que entende a pergunta** do **que gera texto**. O primeiro
+é compilador e não usa aprendizado de máquina; o segundo é o plano B.
+
 ```
-config.yaml            parâmetros fixos do experimento
-src/rag/nlu/           o núcleo: léxico, gramática de intenções, parser, semântico, base e controlador
-src/rag/retrieval/     BM25 do zero, densa, híbrida e reranker
-src/rag/generation/    o plano B, mais o autômato e a gramática que restringem a saída
-src/rag/evaluation/    métricas, gold-sets e estatística (não entra no produto)
-src/rag/corpus/        carregamento de PDF, normalização e divisão em trechos
-servidor.py            servidor da biblioteca padrão que serve web/index.html
-web/index.html         a tela do produto: HTML, CSS e JS num arquivo só
-app.py                 a mesma conversa em Streamlit
-scripts/produto/       o assistente e as medições em uso (4)
-scripts/goldsets/      construção dos conjuntos de avaliação (3)
-scripts/estudo/        o comparativo de recuperação e a decodificação restrita (13)
+src/rag/compilador/    O NUCLEO, sem modelo e sem peso treinado
+    lexico.py            fase 1: tokeniza, normaliza e canoniza sinonimos
+    gramatica.py         fase 2: a notacao das regras de intencao
+    sintatico.py         fase 2: casa os simbolos com as regras
+    semantico.py         fase 3: preenche campos e monta a consulta
+    intencoes.py         os dados: 77 regras, vocabulario e acoes do Manual
+    base_conhecimento.py executa a consulta no Manual
+    dialogo.py           o controlador: decide entre nucleo e plano B
+
+src/rag/ia/            A INTELIGENCIA ARTIFICIAL, em papel secundario
+    generator.py         a interface do gerador
+    llamacpp.py          o modelo local
+    fabrica.py           escolhe a implementacao pelo config
+    chatbot.py           monta a resposta a partir dos trechos recuperados
+    gramatica_citacao.py gramatica e automato que restringem a SAIDA do modelo
+    json_estruturado.py  saida estruturada validada
+
+src/rag/recuperacao/   infraestrutura usada pelos dois
+    esparsa.py           BM25 escrito do zero (o que o nucleo usa)
+    densa.py             busca vetorial
+    hibrida.py           fusao das duas por RRF
+    reranker.py          reordenacao por cross-encoder
+    embeddings.py        o modelo de embedding
+    base.py, uniao.py    contrato comum e a fusao alternativa do estudo
+
+src/rag/corpus/        carregamento de PDF, normalizacao e divisao em trechos
+src/rag/avaliacao/     metricas, gold-sets e estatistica (nao entra no produto)
+src/rag/dados/         leitura dos conjuntos externos do estudo
+src/rag/config.py      o config.yaml tipado
+src/rag/pipeline.py    monta indice e recuperadores
+src/rag/apresentacao.py  formata a resposta para exibicao
+
+app.py                 a conversa em Streamlit
+servidor.py            servidor da biblioteca padrao que serve web/index.html
+web/index.html         a tela do produto: HTML, CSS e JS num arquivo so
+config.yaml            parametros fixos do experimento
+
+scripts/produto/       o assistente e as medicoes em uso (4)
+scripts/goldsets/      construcao dos conjuntos de avaliacao (3)
+scripts/estudo/        o comparativo de recuperacao e a decodificacao restrita (13)
 scripts/LEIA-ME.md     o que cada script faz
+
 tests/                 98 testes
-docs/decisoes.md       o porquê de cada decisão do núcleo, com as medições
+docs/decisoes.md       o porque de cada decisao do nucleo, com as medicoes
 docs/protocolo_rag_chatbot.md   o protocolo experimental
-data/raw/              corpora brutos, fora do git
 data/goldsets/         gold-sets validados (JSON)
-outputs/               métricas (CSV), regeneráveis
+data/raw/              corpora brutos, fora do git
+outputs/               metricas (CSV), regeneraveis
 ```
+
+A decodificacao restrita, em `ia/gramatica_citacao.py`, tambem e tecnica de compilador, mas
+aplicada a **saida** do modelo. Foi a intervencao anterior ao pivo de 13/08/2026 e hoje vale
+como resultado preliminar; o nucleo atual atua sobre a **entrada**.

@@ -3,16 +3,16 @@ from __future__ import annotations
 
 import pytest
 
-from rag.nlu.gramatica import Gramatica
-from rag.nlu.intencoes import (
+from rag.compilador.gramatica import Gramatica
+from rag.compilador.intencoes import (
     ACOES,
     GRAMATICA_MANUAL,
     LEXICO_MANUAL,
     SEMANTICA_MANUAL,
 )
-from rag.nlu.lexico import AnalisadorLexico, Lexico, TipoToken
-from rag.nlu.semantico import Acao, AnalisadorSemantico, Campo
-from rag.nlu.sintatico import AnalisadorSintatico
+from rag.compilador.lexico import AnalisadorLexico, Lexico, TipoToken
+from rag.compilador.semantico import Acao, AnalisadorSemantico, Campo
+from rag.compilador.sintatico import AnalisadorSintatico
 
 LEXICO_FALSO = Lexico.de_grupos(
     grupos={"QUANTIDADE": ["quantas"], "FALTA": ["faltas"], "DISCIPLINA": ["disciplina"]},

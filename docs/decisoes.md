@@ -1,6 +1,6 @@
 # Decisões de projeto do núcleo
 
-Registro do raciocínio por trás do código de `src/rag/nlu/` e da configuração do produto. Os
+Registro do raciocínio por trás do código de `src/rag/compilador/` e da configuração do produto. Os
 módulos têm docstrings curtas e apontam para cá; o detalhe, as medições e as alternativas
 rejeitadas ficam neste arquivo.
 

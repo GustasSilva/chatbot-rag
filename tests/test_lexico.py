@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from rag.nlu.intencoes import LEXICO_MANUAL
-from rag.nlu.lexico import AnalisadorLexico, Lexico, TipoToken, normalizar, simbolos
+from rag.compilador.intencoes import LEXICO_MANUAL
+from rag.compilador.lexico import AnalisadorLexico, Lexico, TipoToken, normalizar, simbolos
 
 # Léxico mínimo e isolado: os testes de mecanismo não devem quebrar quando o vocabulário
 # do Manual crescer (esse é testado à parte, no fim do arquivo).

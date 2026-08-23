@@ -3,7 +3,7 @@
 A normalização é canônica e feita ANTES do chunking: colapsa qualquer sequência de
 espaços em branco (incl. quebras de linha) num único espaço. Isso deixa o texto do
 corpus como uma string contínua, o que permite ao gold-set guardar o trecho-fonte
-como um substring exato do corpus (ver ``evaluation.goldset``).
+como um substring exato do corpus (ver ``avaliacao.goldset``).
 """
 from __future__ import annotations
 

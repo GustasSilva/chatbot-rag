@@ -18,7 +18,7 @@ import os
 
 from rag.config import carregar_config
 from rag.corpus.chunking import Chunk
-from rag.generation.llamacpp import GeradorLlamaCpp
+from rag.ia.llamacpp import GeradorLlamaCpp
 
 
 def _trecho(id_: int, texto: str) -> Chunk:

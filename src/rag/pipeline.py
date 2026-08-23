@@ -13,12 +13,12 @@ import numpy as np
 
 from .config import Config
 from .corpus.chunking import Chunk, dividir_em_chunks
-from .embeddings import Embedder
-from .retrieval.base import Recuperador
-from .retrieval.densa import RecuperadorDenso
-from .retrieval.esparsa import RecuperadorBM25
-from .retrieval.hibrida import RecuperadorHibrido
-from .retrieval.reranker import Reranker
+from .recuperacao.embeddings import Embedder
+from .recuperacao.base import Recuperador
+from .recuperacao.densa import RecuperadorDenso
+from .recuperacao.esparsa import RecuperadorBM25
+from .recuperacao.hibrida import RecuperadorHibrido
+from .recuperacao.reranker import Reranker
 
 ESTRATEGIAS_PADRAO = ("densa", "esparsa", "hibrida")
 

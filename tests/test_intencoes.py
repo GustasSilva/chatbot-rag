@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import pytest
 
-from rag.nlu.gramatica import Gramatica, Juncao, compilar_elementos
-from rag.nlu.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS
-from rag.nlu.lexico import Lexico
+from rag.compilador.gramatica import Gramatica, Juncao, compilar_elementos
+from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS
+from rag.compilador.lexico import Lexico
 
 LEXICO_FALSO = Lexico.de_grupos(
     grupos={

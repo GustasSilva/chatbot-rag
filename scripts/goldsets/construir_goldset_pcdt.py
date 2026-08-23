@@ -13,7 +13,7 @@ import sys
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.evaluation.goldset import ItemGold, construir_relevancia, salvar_goldset
+from rag.avaliacao.goldset import ItemGold, construir_relevancia, salvar_goldset
 from rag.pipeline import construir_indice
 
 PDFS = {

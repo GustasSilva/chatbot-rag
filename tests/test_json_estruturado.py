@@ -1,7 +1,7 @@
 """Testes do validador de saída estruturada (puro, sem LLM)."""
 from __future__ import annotations
 
-from rag.generation.json_estruturado import construir_gbnf, validar
+from rag.ia.json_estruturado import construir_gbnf, validar
 
 
 def test_json_valido():
