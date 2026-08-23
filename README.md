@@ -67,18 +67,23 @@ o Manual do Aluno UNIP 2026 dividido em 173 trechos.
 | Medida | Valor |
 |---|---|
 | Perguntas reconhecidas pelo núcleo | **44/50 = 88%** |
-| Trecho correto entre os recuperados | **44/44 = 100%** |
+| Trecho correto entre os recuperados | **43/44 = 98%** |
 | Intenção errada (falso positivo) | **0** |
 | Empates na gramática | **0/50** |
-| Frase destacada exata | 26/44 = 59% |
+| Frase destacada exata | 30/44 = 68% |
 | Recusa fora de escopo (31 adversariais) | **31/31 = 100%** |
 | Robustez a paráfrase | 23/25 |
 | Tempo de resposta | **~1,2 s** pelo núcleo · ~19 s pelo plano B |
 | Testes | **98**, todos passando |
 
+Os números acima são do **caminho do produto**, BM25 mais reranker. Rodando só com BM25
+(`COBERTURA_RAPIDA=1`), a recuperação sobe para 44/44 e o destaque cai para 26/44: o reranker
+troca um acerto de recuperação por quatro de destaque. A troca compensa e por isso ele fica,
+mas a tabela precisa ser a do caminho que o aluno usa, e não a do modo rápido.
+
 Duas observações honestas sobre a tabela. A **frase destacada** é o ponto fraco conhecido: o
-trecho certo é recuperado em 100% dos casos, mas a sentença exata que responde é acertada em
-59%. Quatro critérios alternativos foram implementados e medidos, e todos ficaram piores; a
+trecho certo é recuperado em 98% dos casos, mas a sentença exata que responde é acertada em
+68%. Quatro critérios alternativos foram implementados e medidos, e todos ficaram piores; a
 tabela está em [`docs/decisoes.md`](docs/decisoes.md) §9. E o **teste adversarial** roda pelo
 `Dialogo`, ou seja, pelo mesmo caminho do produto: uma resposta de origem `NUCLEO` numa
 pergunta adversarial conta como vazamento por definição, independente do texto. Quando o
@@ -154,9 +159,9 @@ Por isso a medição de cobertura não é *in sample* (§8).
 | | `rag.recuperacao.hibrida` | Fusão por RRF ou soma ponderada |
 | | `rag.recuperacao.reranker` | Cross-encoder de segundo estágio |
 | **Plano B** | `rag.ia.chatbot` · `generator` · `fabrica` | Chatbot RAG com guardrail e piso de score, sobre Ollama ou llama.cpp |
-| | `rag.ia.gramatica` · `json_estruturado` | Autômato e gramática que restringem a saída do modelo |
-| **Avaliação** | `rag.avaliacao.metrics` · `stats` · `goldset` | Recall@k, MRR, Wilcoxon pareado com Holm e tamanho de efeito |
-| **Montagem** | `rag.pipeline` · `rag.config` · `rag.apresentacao` | Índice, parâmetros fixos e a formatação comum às três interfaces |
+| | `rag.ia.gramatica_citacao` · `json_estruturado` | Autômato e gramática que restringem a saída do modelo |
+| **Avaliação** | `rag.avaliacao.metricas` · `stats` · `goldset` | Recall@k, MRR, Wilcoxon pareado com Holm e tamanho de efeito |
+| **Montagem** | `rag.pipeline` · `rag.config` · `rag.apresentacao` | Índice, parâmetros fixos e a formatação comum à tela e ao terminal |
 
 O pacote `rag.compilador`, com exceção do controlador, **não importa nada além da biblioteca padrão**:
 só `re`, `unicodedata`, `dataclasses`, `enum` e `collections.abc`. Nenhum gerador de parser,
@@ -181,17 +186,17 @@ pytest                                        # 98 testes, rápidos, sem baixar 
 O produto, sobre o Manual do Aluno:
 
 ```bash
-python servidor.py                            # tela em http://localhost:8000, sem dependência extra
-python scripts/produto/assistente_institucional.py    # a mesma conversa no terminal
+python servidor.py                                  # tela em http://localhost:8000, sem dependência extra
+python scripts/produto/assistente_institucional.py  # a mesma conversa no terminal
 ```
 
 As medições:
 
 ```bash
-python scripts/produto/cobertura_nucleo.py            # quanto o núcleo responde sem IA
-COBERTURA_RAPIDA=1 python scripts/produto/cobertura_nucleo.py   # só BM25, sem carregar o cross-encoder
-python scripts/produto/institucional_acuracia.py      # acurácia de resposta, 50 perguntas
-python scripts/produto/institucional_guardrail.py     # guardrail adversarial, 31 perguntas fora de escopo
+python scripts/produto/cobertura_nucleo.py                     # quanto o núcleo responde sem IA
+COBERTURA_RAPIDA=1 python scripts/produto/cobertura_nucleo.py  # só BM25, sem carregar o cross-encoder
+python scripts/produto/institucional_acuracia.py               # acurácia de resposta, 50 perguntas
+python scripts/produto/institucional_guardrail.py              # guardrail adversarial, 31 perguntas fora de escopo
 ```
 
 O plano B exige [Ollama](https://ollama.com) com `ollama pull llama3.1:8b`. Sem ele, o núcleo
@@ -202,10 +207,10 @@ O estudo comparativo, que é reprodutível independentemente do produto:
 
 ```bash
 python scripts/estudo/marco0_smoke.py                # baixa o e5 (~440 MB) na primeira vez
-python scripts/goldsets/construir_goldset_manual.py    # reconstrói e valida o gold-set do Manual
+python scripts/goldsets/construir_goldset_manual.py  # reconstrói e valida o gold-set do Manual
 python scripts/estudo/marco1_manual.py               # Marco 1, escreve outputs/marco1_*.csv
 python scripts/estudo/marco2_pira.py                 # Marco 2, Pirá 2.0
-python scripts/goldsets/construir_goldset_pcdt.py      # gold-set de saúde, pares leigo e técnico
+python scripts/goldsets/construir_goldset_pcdt.py    # gold-set de saúde, pares leigo e técnico
 python scripts/estudo/marco3_pcdt.py                 # Marco 3, PCDT com reranker
 ```
 
@@ -316,7 +321,7 @@ produto hoje.
   sobreposição, para que a comparação medisse a busca e não o pré-processamento.
 - **Relevância por sobreposição de offsets**: o trecho-fonte é substring exato do corpus
   limpo, o que é robusto à fronteira dos trechos.
-- **Pareamento explícito no Wilcoxon** (`avaliacao.series_pareadas`), alinhando os vetores
+- **Pareamento explícito no Wilcoxon** (`avaliacao.execucao.series_pareadas`), alinhando os vetores
   pela mesma ordem de perguntas.
 - **Duas limitações conhecidas e não corrigidas**, por decisão registrada: o plano B às vezes
   cita um índice diferente do da fonte real, e a tela reporta isso fielmente; e cabeçalhos de

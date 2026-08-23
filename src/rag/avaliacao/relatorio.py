@@ -7,8 +7,8 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from .avaliacao import LinhaAvaliacao, agregar
-from .stats import ComparacaoPar
+from .execucao import LinhaAvaliacao, agregar
+from .estatistica import ComparacaoPar
 
 
 def salvar_por_pergunta(

@@ -235,11 +235,15 @@ respostas curtas do gold-set: a conclusão não estava errada, estava incompleta
 | Medida | Valor |
 |---|---|
 | Reconhecidas pelo núcleo | 44/50 |
-| Trecho certo recuperado | 44/44 |
+| Trecho certo recuperado | 43/44 |
 | Intenção errada | 0 |
-| Frase destacada exata | 26/44 |
+| Frase destacada exata | 30/44 |
 | Empates na gramática | 0/50 |
 | Recusa fora de escopo | 31/31 |
 | Robustez a paráfrase | 23/25 |
 | Tempo de resposta | ~1,2 s (núcleo) · ~19 s (plano B) |
 | Testes | 98 |
+
+Medido pelo **caminho do produto** (BM25 mais reranker), como manda o §14. Com
+`COBERTURA_RAPIDA=1`, que usa só BM25, sai 44/44 de recuperação e 26/44 de destaque: o
+reranker troca um acerto de recuperação (a pergunta `n20`) por quatro de destaque.

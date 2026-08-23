@@ -11,7 +11,7 @@ import numpy as np
 
 from ..recuperacao.base import Recuperador
 from .goldset import ItemGold
-from .metrics import recall_em_k, reciprocal_rank
+from .metricas import recall_em_k, reciprocal_rank
 
 
 @dataclass(frozen=True)

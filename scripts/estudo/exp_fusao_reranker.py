@@ -21,14 +21,14 @@ import sys
 from rag.config import ConfigChunking, carregar_config
 from rag.corpus.loaders import carregar_pdf
 from rag.dados.pira import carregar_pira
-from rag.avaliacao.avaliacao import avaliar_recuperador, series_pareadas
+from rag.avaliacao.execucao import avaliar_recuperador, series_pareadas
 from rag.avaliacao.goldset import (
     carregar_goldset,
     construir_relevancia,
     construir_relevancia_por_documento,
 )
 from rag.avaliacao.relatorio import salvar_agregado
-from rag.avaliacao.stats import comparar_estrategias
+from rag.avaliacao.estatistica import comparar_estrategias
 from rag.pipeline import construir_indice, montar_reranker, montar_recuperadores
 from rag.recuperacao.uniao import RecuperadorUniao
 

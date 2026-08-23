@@ -13,14 +13,14 @@ import pytest
 
 from rag.corpus.chunking import dividir_em_chunks
 from rag.corpus.loaders import limpar_texto
-from rag.avaliacao import stats
+from rag.avaliacao import estatistica
 from rag.avaliacao.goldset import (
     GoldSetError,
     ItemGold,
     construir_relevancia,
     construir_relevancia_por_documento,
 )
-from rag.avaliacao.metrics import recall_em_k, reciprocal_rank
+from rag.avaliacao.metricas import recall_em_k, reciprocal_rank
 from rag.recuperacao.densa import RecuperadorDenso
 from rag.recuperacao.esparsa import RecuperadorBM25, tokenizar
 from rag.recuperacao.hibrida import RecuperadorHibrido
@@ -167,26 +167,26 @@ def test_recall_e_mrr():
 
 # ------------------------------- estatística ------------------------------- #
 def test_holm_ajusta_valores():
-    ajustado = stats.holm([0.01, 0.04, 0.03])
+    ajustado = estatistica.holm([0.01, 0.04, 0.03])
     assert ajustado == pytest.approx([0.03, 0.06, 0.06])
 
 
 def test_wilcoxon_seguro_empate_total():
     a = np.array([1.0, 1.0, 1.0])
-    est, p, n_ef = stats._wilcoxon_seguro(a, a.copy())
+    est, p, n_ef = estatistica._wilcoxon_seguro(a, a.copy())
     assert n_ef == 0 and p == 1.0 and np.isnan(est)
 
 
 def test_efeito_rank_biserial_direcao():
     a = np.array([0.0, 0.0, 0.0])
     b = np.array([1.0, 1.0, 1.0])
-    assert stats.efeito_rank_biserial(a, b) == pytest.approx(1.0)   # b supera a
-    assert stats.efeito_rank_biserial(b, a) == pytest.approx(-1.0)  # simétrico
+    assert estatistica.efeito_rank_biserial(a, b) == pytest.approx(1.0)   # b supera a
+    assert estatistica.efeito_rank_biserial(b, a) == pytest.approx(-1.0)  # simétrico
 
 
 def test_comparar_exige_pareamento():
     with pytest.raises(ValueError):
-        stats.comparar_estrategias({"a": np.array([1, 2, 3]), "b": np.array([1, 2])})
+        estatistica.comparar_estrategias({"a": np.array([1, 2, 3]), "b": np.array([1, 2])})
 
 
 # ------------------------------- gold-set ---------------------------------- #

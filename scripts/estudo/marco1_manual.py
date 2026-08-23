@@ -12,10 +12,10 @@ import sys
 
 from rag.config import carregar_config
 from rag.corpus.loaders import carregar_pdf
-from rag.avaliacao.avaliacao import avaliar_recuperador, series_pareadas
+from rag.avaliacao.execucao import avaliar_recuperador, series_pareadas
 from rag.avaliacao.goldset import carregar_goldset, construir_relevancia
 from rag.avaliacao.relatorio import salvar_agregado, salvar_por_pergunta, salvar_testes
-from rag.avaliacao.stats import comparar_estrategias
+from rag.avaliacao.estatistica import comparar_estrategias
 from rag.pipeline import construir_indice, montar_recuperadores
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
