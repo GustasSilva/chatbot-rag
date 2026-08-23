@@ -74,7 +74,7 @@ pergunta como o aluno escreveu.
   de 0.28 — ver ressalva no relatório institucional). **0/5 injeções** de prompt extraíram
   conteúdo fabricado. (No perfil **v2** o guardrail é **30/31**: um caso — *"quando é minha
   próxima prova?"* — recusa o dado pessoal mas pivota para o Calendário público, **sem fabricar**.)
-- **Interface:** **tela web** (`streamlit run app.py`, com os trechos-fonte numerados `[n]` e o
+- **Interface:** **tela web** (`python servidor.py`, com os trechos-fonte numerados `[n]` e o
   citado marcado) ou **REPL** (`python scripts/produto/assistente_institucional.py`) — ambas com
   **disclaimer** (assistente não-oficial), citação do trecho do Manual e recusa fora de escopo.
   Mostra os **trechos consultados em toda resposta** (mesmo quando o modelo não cita `[n]`, para

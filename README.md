@@ -183,9 +183,6 @@ O produto, sobre o Manual do Aluno:
 ```bash
 python servidor.py                            # tela em http://localhost:8000, sem dependência extra
 python scripts/produto/assistente_institucional.py    # a mesma conversa no terminal
-
-pip install -e ".[ui]"                        # tela alternativa
-streamlit run app.py                          # a mesma conversa em Streamlit, porta 8501
 ```
 
 As medições:
@@ -329,7 +326,8 @@ produto hoje.
 ## Estrutura
 
 O corte que mais importa separa **o que entende a pergunta** do **que gera texto**. O primeiro
-é compilador e não usa aprendizado de máquina; o segundo é o plano B.
+é compilador e não usa aprendizado de máquina; o segundo é o plano B. `corpus` e `recuperacao`
+não pertencem a nenhum dos dois: são a infraestrutura que ambos leem.
 
 ```
 src/rag/compilador/    O NUCLEO, sem modelo e sem peso treinado
@@ -357,14 +355,13 @@ src/rag/recuperacao/   infraestrutura usada pelos dois
     embeddings.py        o modelo de embedding
     base.py, uniao.py    contrato comum e a fusao alternativa do estudo
 
-src/rag/corpus/        carregamento de PDF, normalizacao e divisao em trechos
+src/rag/corpus/        o texto de onde as respostas saem: PDF, normalizacao e trechos
 src/rag/avaliacao/     metricas, gold-sets e estatistica (nao entra no produto)
 src/rag/dados/         leitura dos conjuntos externos do estudo
 src/rag/config.py      o config.yaml tipado
 src/rag/pipeline.py    monta indice e recuperadores
 src/rag/apresentacao.py  formata a resposta para exibicao
 
-app.py                 a conversa em Streamlit
 servidor.py            servidor da biblioteca padrao que serve web/index.html
 web/index.html         a tela do produto: HTML, CSS e JS num arquivo so
 config.yaml            parametros fixos do experimento

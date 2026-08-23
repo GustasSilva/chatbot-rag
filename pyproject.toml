@@ -17,7 +17,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
-ui = ["streamlit>=1.30"]  # tela de chat do produto (app.py)
 
 [tool.setuptools.packages.find]
 where = ["src"]
