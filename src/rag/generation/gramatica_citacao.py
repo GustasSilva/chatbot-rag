@@ -2,7 +2,7 @@
 
 Núcleo de Ciência da Computação da intervenção de decodificação restrita (Estágio 1). É
 **puro Python** (o autômato) + numpy (só a máscara), independente da LLM e da ``llama_cpp`` —
-por isso é testável isoladamente (ver ``tests/test_gramatica.py``).
+por isso é testável isoladamente (ver ``tests/test_gramatica_citacao.py``).
 
 A ideia, na cadeia clássica *gramática → autômato → tradução*:
 

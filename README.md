@@ -61,7 +61,7 @@ mesmo texto, e não entre a gíria do aluno e o juridiquês do regimento.
 
 ## Cobertura do núcleo
 
-Medido em 50 perguntas escritas em linguagem de aluno (`scripts/cobertura_nucleo.py`), sobre
+Medido em 50 perguntas escritas em linguagem de aluno (`scripts/produto/cobertura_nucleo.py`), sobre
 o Manual do Aluno UNIP 2026 dividido em 173 trechos.
 
 | Medida | Valor |
@@ -182,7 +182,7 @@ O produto, sobre o Manual do Aluno:
 
 ```bash
 python servidor.py                            # tela em http://localhost:8000, sem dependência extra
-python scripts/assistente_institucional.py    # a mesma conversa no terminal
+python scripts/produto/assistente_institucional.py    # a mesma conversa no terminal
 
 pip install -e ".[ui]"                        # tela alternativa
 streamlit run app.py                          # a mesma conversa em Streamlit, porta 8501
@@ -191,10 +191,10 @@ streamlit run app.py                          # a mesma conversa em Streamlit, p
 As medições:
 
 ```bash
-python scripts/cobertura_nucleo.py            # quanto o núcleo responde sem IA
-COBERTURA_RAPIDA=1 python scripts/cobertura_nucleo.py   # só BM25, sem carregar o cross-encoder
-python scripts/institucional_acuracia.py      # acurácia de resposta, 50 perguntas
-python scripts/institucional_guardrail.py     # guardrail adversarial, 31 perguntas fora de escopo
+python scripts/produto/cobertura_nucleo.py            # quanto o núcleo responde sem IA
+COBERTURA_RAPIDA=1 python scripts/produto/cobertura_nucleo.py   # só BM25, sem carregar o cross-encoder
+python scripts/produto/institucional_acuracia.py      # acurácia de resposta, 50 perguntas
+python scripts/produto/institucional_guardrail.py     # guardrail adversarial, 31 perguntas fora de escopo
 ```
 
 O plano B exige [Ollama](https://ollama.com) com `ollama pull llama3.1:8b`. Sem ele, o núcleo
@@ -204,12 +204,12 @@ justamente a demonstração de que o assistente funciona com a IA desligada.
 O estudo comparativo, que é reprodutível independentemente do produto:
 
 ```bash
-python scripts/marco0_smoke.py                # baixa o e5 (~440 MB) na primeira vez
-python scripts/construir_goldset_manual.py    # reconstrói e valida o gold-set do Manual
-python scripts/marco1_manual.py               # Marco 1, escreve outputs/marco1_*.csv
-python scripts/marco2_pira.py                 # Marco 2, Pirá 2.0
-python scripts/construir_goldset_pcdt.py      # gold-set de saúde, pares leigo e técnico
-python scripts/marco3_pcdt.py                 # Marco 3, PCDT com reranker
+python scripts/estudo/marco0_smoke.py                # baixa o e5 (~440 MB) na primeira vez
+python scripts/goldsets/construir_goldset_manual.py    # reconstrói e valida o gold-set do Manual
+python scripts/estudo/marco1_manual.py               # Marco 1, escreve outputs/marco1_*.csv
+python scripts/estudo/marco2_pira.py                 # Marco 2, Pirá 2.0
+python scripts/goldsets/construir_goldset_pcdt.py      # gold-set de saúde, pares leigo e técnico
+python scripts/estudo/marco3_pcdt.py                 # Marco 3, PCDT com reranker
 ```
 
 Dados do Pirá, baixados do repositório oficial
@@ -222,7 +222,7 @@ for f in train validation test; do \
 ```
 
 Os PCDTs vêm da CONITEC para `data/raw/pcdt/`; as URLs oficiais estão no cabeçalho de
-`scripts/construir_goldset_pcdt.py`.
+`scripts/goldsets/construir_goldset_pcdt.py`.
 
 ## O estudo comparativo que sustenta a recuperação
 
@@ -280,14 +280,14 @@ quando a primeira fonte é a que vira resposta.
 Uma limitação registrada: a fusão por RRF pode ficar **abaixo da densa pura** quando um
 recuperador acerta forte e o outro falha, porque a média de ranks dilui o acerto isolado. O
 caso foi diagnosticado em detalhe e um experimento de fusão alternativa está em
-`scripts/exp_fusao_reranker.py`, mantido para reprodução e sem efeito no produto.
+`scripts/estudo/exp_fusao_reranker.py`, mantido para reprodução e sem efeito no produto.
 
 ## A intervenção anterior: gramática na decodificação
 
 Antes do pivô para a entrada, a contribuição de Ciência da Computação atacava a **saída** do
 modelo de linguagem. Os dois módulos continuam no repositório, testados isoladamente:
 
-- **`generation/gramatica.py`** define a gramática regular do formato de citação `[n]` e o
+- **`generation/gramatica_citacao.py`** define a gramática regular do formato de citação `[n]` e o
   **autômato finito determinístico que a reconhece, escrito à mão**. O número é casado por um
   autômato de prefixos, o que elimina becos sem saída por construção. `RestritorCitacao` é um
   *logits processor*: a cada passo avança o autômato e põe `-inf` no logit de todo token que
@@ -299,7 +299,7 @@ modelo de linguagem. Os dois módulos continuam no repositório, testados isolad
   garante apenas que o valor é inteiro, e não que ele está dentro do intervalo de trechos
   efetivamente presentes no contexto.
 
-Os experimentos são `scripts/exp_gramatica.py` e `scripts/exp_json.py`, e exigem
+Os experimentos são `scripts/estudo/exp_gramatica.py` e `scripts/estudo/exp_json.py`, e exigem
 `llama-cpp-python` com um GGUF apontado por `GGUF_MODEL`. Nenhum dos dois está no caminho do
 produto hoje.
 
@@ -330,7 +330,7 @@ produto hoje.
 
 ```
 config.yaml            parâmetros fixos do experimento
-src/rag/nlu/           o núcleo: léxico, gramática, parser, semântico, base e controlador
+src/rag/nlu/           o núcleo: léxico, gramática de intenções, parser, semântico, base e controlador
 src/rag/retrieval/     BM25 do zero, densa, híbrida e reranker
 src/rag/generation/    o plano B, mais o autômato e a gramática que restringem a saída
 src/rag/evaluation/    métricas, gold-sets e estatística (não entra no produto)
@@ -338,7 +338,10 @@ src/rag/corpus/        carregamento de PDF, normalização e divisão em trechos
 servidor.py            servidor da biblioteca padrão que serve web/index.html
 web/index.html         a tela do produto: HTML, CSS e JS num arquivo só
 app.py                 a mesma conversa em Streamlit
-scripts/               marcos, gold-sets, cobertura, guardrail e experimentos (21 scripts)
+scripts/produto/       o assistente e as medições em uso (4)
+scripts/goldsets/      construção dos conjuntos de avaliação (3)
+scripts/estudo/        o comparativo de recuperação e a decodificação restrita (13)
+scripts/LEIA-ME.md     o que cada script faz
 tests/                 98 testes
 docs/decisoes.md       o porquê de cada decisão do núcleo, com as medições
 docs/protocolo_rag_chatbot.md   o protocolo experimental

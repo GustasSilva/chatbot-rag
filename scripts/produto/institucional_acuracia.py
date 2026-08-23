@@ -12,7 +12,7 @@ A correção de conteúdo ("contém a info certa?") NÃO é decidida por LLM-jui
 lado da resposta-gabarito e do trecho-fonte. Assim os erros podem ser classificados em
 recuperação vs geração vs citação, sem misturar os tipos.
 
-Exige Ollama + o modelo. Uso: python scripts/institucional_acuracia.py
+Exige Ollama + o modelo. Uso: python scripts/produto/institucional_acuracia.py
 """
 from __future__ import annotations
 

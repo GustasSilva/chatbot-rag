@@ -1,6 +1,6 @@
 """Tela de chat do Assistente do Manual do Aluno (interface web do produto).
 
-Mesma pilha do REPL `scripts/assistente_institucional.py`, agora numa interface visual. Quem
+Mesma pilha do REPL `scripts/produto/assistente_institucional.py`, agora numa interface visual. Quem
 responde é o **controlador** (`rag.nlu.dialogo`): o núcleo de compilador entende a pergunta
 (léxico → gramática de intenções → parser → semântica) e responde direto do Manual, **sem
 passar por modelo de linguagem**; o que a gramática não reconhece cai no **plano B**, o chatbot

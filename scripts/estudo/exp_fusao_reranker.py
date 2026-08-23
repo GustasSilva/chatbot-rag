@@ -11,7 +11,7 @@ Métrica: Recall@k e MRR por pergunta; Wilcoxon pareado + tamanho de efeito (ran
 Corpora: saúde (PCDT, onde o miss foi achado) e Pirá 2.0 (poder estatístico, n=227).
 
 Exige os modelos (e5 + cross-encoder) e os corpora em data/raw/. Uso:
-    python scripts/exp_fusao_reranker.py
+    python scripts/estudo/exp_fusao_reranker.py
 """
 from __future__ import annotations
 

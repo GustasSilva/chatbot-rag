@@ -20,8 +20,8 @@ Ressalva de leitura: medir cobertura nas mesmas perguntas que serviram para escr
 derive as regras dos tópicos do Manual e deixe parte das perguntas de fora ao escrever.
 
 Uso:
-    python scripts/cobertura_nucleo.py       # pilha do produto (BM25 + reranker)
-    COBERTURA_RAPIDA=1 python scripts/cobertura_nucleo.py   # só BM25, sem carregar modelo
+    python scripts/produto/cobertura_nucleo.py       # pilha do produto (BM25 + reranker)
+    COBERTURA_RAPIDA=1 python scripts/produto/cobertura_nucleo.py   # só BM25, sem carregar modelo
 """
 from __future__ import annotations
 

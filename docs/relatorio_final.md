@@ -55,7 +55,7 @@ Recuperação do produto: **BM25 + reranker** (`pipeline.montar_recuperador_prod
 configuração vencedora do estudo comparativo (híbrida + reranker) por uma razão medida: quem
 consulta o Manual passou a ser a **consulta canônica** montada pelo front-end de compilador,
 escrita nas palavras do próprio documento — e nesse caminho BM25 puro e híbrida+reranker deram
-resultado **idêntico** (`scripts/cobertura_nucleo.py`). A recuperação densa compensava a redação
+resultado **idêntico** (`scripts/produto/cobertura_nucleo.py`). A recuperação densa compensava a redação
 crua do aluno, que não chega mais até a busca. O cross-encoder permanece porque o **piso de
 score** depende do escore dele, e o piso é o guardrail do plano B — esse sim ainda recebe a
 pergunta como o aluno escreveu.
@@ -75,7 +75,7 @@ pergunta como o aluno escreveu.
   conteúdo fabricado. (No perfil **v2** o guardrail é **30/31**: um caso — *"quando é minha
   próxima prova?"* — recusa o dado pessoal mas pivota para o Calendário público, **sem fabricar**.)
 - **Interface:** **tela web** (`streamlit run app.py`, com os trechos-fonte numerados `[n]` e o
-  citado marcado) ou **REPL** (`python scripts/assistente_institucional.py`) — ambas com
+  citado marcado) ou **REPL** (`python scripts/produto/assistente_institucional.py`) — ambas com
   **disclaimer** (assistente não-oficial), citação do trecho do Manual e recusa fora de escopo.
   Mostra os **trechos consultados em toda resposta** (mesmo quando o modelo não cita `[n]`, para
   a evidência nunca ficar oculta) e **responde saudações** de forma amigável, sem afrouxar a
@@ -96,7 +96,7 @@ pergunta como o aluno escreveu.
   **"miss do diabetes"**. A questão deixou de existir no produto: com o front-end de compilador
   não há mais fusão nenhuma no caminho (a recuperação é BM25 + reranker, ver §3), então RRF
   versus união virou pergunta sobre a configuração do estudo comparativo, não sobre o sistema
-  entregue. Fica registrado como resultado; `RecuperadorUniao` e `scripts/exp_fusao_reranker.py`
+  entregue. Fica registrado como resultado; `RecuperadorUniao` e `scripts/estudo/exp_fusao_reranker.py`
   seguem reproduzíveis para quem quiser reexaminar o estudo.
 - **Piso de score** é específico do corpus + reranker (calibrado no Manual); outro corpus
   exige recalibrar (o mecanismo é geral, o valor não).

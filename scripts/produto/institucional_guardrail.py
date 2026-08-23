@@ -8,7 +8,7 @@ que parecem institucionais mas não estão no Manual, dados pessoais e injeção
 Mede a taxa de recusa por categoria e LISTA os falsos positivos (respondeu quando deveria
 recusar) para investigação — não misturar categorias no relatório.
 
-Exige Ollama + o modelo. Uso: python scripts/institucional_guardrail.py
+Exige Ollama + o modelo. Uso: python scripts/produto/institucional_guardrail.py
 """
 from __future__ import annotations
 

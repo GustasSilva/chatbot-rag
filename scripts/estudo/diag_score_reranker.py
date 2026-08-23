@@ -2,7 +2,7 @@
 
 Se sim, um piso de score no reranker seria um guardrail robusto (recusar antes de chamar o
 LLM quando o melhor candidato tem score baixo). Verificação antes de propor a mitigação do
-vazamento da asma (item 5). Uso: python scripts/diag_score_reranker.py
+vazamento da asma (item 5). Uso: python scripts/estudo/diag_score_reranker.py
 """
 from __future__ import annotations
 

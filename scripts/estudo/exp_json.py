@@ -10,7 +10,7 @@ Mede a **taxa de JSON válido no esquema** (``json.loads`` + chaves/tipos/faixa 
 uma. A expectativa: baseline < 100% (preâmbulo, cerca de markdown, chave errada) e gramática = 100%.
 
 Envs: GGUF_MODEL, GGUF_NGL, GGUF_NCTX, EXP_LIMITE (roda só as N primeiras).
-Uso:  GGUF_MODEL=<caminho> python scripts/exp_json.py
+Uso:  GGUF_MODEL=<caminho> python scripts/estudo/exp_json.py
 """
 from __future__ import annotations
 

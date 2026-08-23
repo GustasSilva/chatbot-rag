@@ -14,7 +14,7 @@ Pré-requisitos: ``llama-cpp-python`` instalado + GGUF (env ``GGUF_MODEL`` ou
 ``config.geracao.caminho_modelo_gguf``). Variáveis úteis: ``GGUF_NGL`` (camadas na GPU),
 ``EXP_LIMITE`` (roda só as N primeiras perguntas, para um teste rápido).
 
-Uso:  GGUF_MODEL=<caminho> python scripts/exp_gramatica.py
+Uso:  GGUF_MODEL=<caminho> python scripts/estudo/exp_gramatica.py
 """
 from __future__ import annotations
 

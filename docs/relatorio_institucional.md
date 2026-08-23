@@ -9,13 +9,13 @@ local (**Ollama / Llama 3.1 8B Q4**, temperatura 0) com **guardrail em perfil in
 assunto não está no material). Saúde/Pirá permanecem como estudo científico (Q1/Q2), não
 como chat aberto.
 
-**Interface**: `python scripts/assistente_institucional.py` — REPL de input aberto que mostra
+**Interface**: `python scripts/produto/assistente_institucional.py` — REPL de input aberto que mostra
 um disclaimer ("assistente não-oficial"), responde citando o trecho do Manual e recusa fora
 de escopo (guardrail + piso de score).
 
 ## Acurácia de resposta (50 perguntas, linguagem de aluno)
 
-Gold-set: `data/goldsets/institucional.json` (50 perguntas). Harness: `scripts/institucional_acuracia.py`.
+Gold-set: `data/goldsets/institucional.json` (50 perguntas). Harness: `scripts/produto/institucional_acuracia.py`.
 
 | métrica | resultado | como foi medida |
 |---|---|---|
@@ -60,7 +60,7 @@ poucos erros são majoritariamente de **geração, não de recuperação** — o
 sintetiza do trecho errado (`n14`) ou recusa demais (`n07`). O guardrail adversarial (seção
 abaixo) fechou o único vazamento encontrado com um piso de score.
 
-**Tentativa de corrigir `n14` por prompt — rejeitada** (`scripts/exp_prompt_n14.py`). Uma âncora
+**Tentativa de corrigir `n14` por prompt — rejeitada** (`scripts/estudo/exp_prompt_n14.py`). Uma âncora
 de atribuição ("ao dizer quem/quando/quanto, confirme que o trecho afirma isso sobre o sujeito;
 senão recuse") **não corrigiu `n14`** (seguiu "professor") e **regrediu o over-refusal** (recusas
 1→5 nas 50, com `m18/n08/n11/n26` recusando apesar de terem resposta correta). Isso indica que
@@ -69,7 +69,7 @@ ajudaria), está confiantemente errado. Reduzi-lo pediria um **modelo maior**, n
 
 ## Guardrail adversarial (31 perguntas fora de escopo)
 
-Harness: `scripts/institucional_guardrail.py` (respostas completas em
+Harness: `scripts/produto/institucional_guardrail.py` (respostas completas em
 `outputs/institucional_guardrail.txt`). 31 perguntas adversariais em 6 categorias — outro
 domínio (saúde/geral), brincadeiras, ambíguas que *parecem* institucionais, dados pessoais
 e injeção de prompt —, rodadas no perfil **institucional** (o mais brando, onde o risco de
@@ -91,7 +91,7 @@ recusaram (investigados um a um, não misturando tipos):
 *confiança de recuperação*: pergunta fora de domínio casa com um trecho lexicalmente vizinho,
 e o perfil brando sintetiza dele. O score top-1 do reranker separa os grupos (fora de escopo:
 asma −4.40, Manaus −3.78, RA −3.41; in-scope: mínimo do gold-set −2.92). Calibrado contra as
-50 perguntas do gold-set (`scripts/diag_limiar_goldset.py`): um piso de **−3.2** recusa
+50 perguntas do gold-set (`scripts/estudo/diag_limiar_goldset.py`): um piso de **−3.2** recusa
 **0/50** legítimas e barra os 3 casos problemáticos. Ligando o piso (`ChatbotRAG(piso_score=…)`,
 que recusa *antes* de chamar o LLM), o teste adversarial vai a **31/31 = 100% de recusa**, sem
 regressão de acurácia — o gate, por construção, nunca dispara nas perguntas do gold-set. Bônus:

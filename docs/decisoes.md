@@ -5,7 +5,7 @@ módulos têm docstrings curtas e apontam para cá; o detalhe, as medições e a
 rejeitadas ficam neste arquivo.
 
 Todos os números vêm das 50 perguntas de `data/goldsets/institucional.json`, medidas por
-`scripts/cobertura_nucleo.py` e `scripts/institucional_guardrail.py`.
+`scripts/produto/cobertura_nucleo.py` e `scripts/produto/institucional_guardrail.py`.
 
 ---
 
@@ -198,7 +198,7 @@ modal, o que deixaria a gramática frouxa.
 
 ## 14. O teste adversarial tem de passar pelo caminho do produto
 
-`scripts/institucional_guardrail.py` instanciava o `ChatbotRAG` diretamente. Com o núcleo
+`scripts/produto/institucional_guardrail.py` instanciava o `ChatbotRAG` diretamente. Com o núcleo
 respondendo antes do modelo, o teste ficou cego: qualquer regra genérica demais passava sem ser
 notada.
 

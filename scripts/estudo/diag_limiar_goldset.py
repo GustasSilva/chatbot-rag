@@ -3,7 +3,7 @@
 Um piso só é seguro se as perguntas LEGÍTIMAS ficarem acima dele (senão reintroduz a
 over-refusal que o perfil institucional resolveu). Mede a distribuição do score top-1 das
 50 perguntas do gold-set e quantas cairiam abaixo de limiares candidatos.
-Uso: python scripts/diag_limiar_goldset.py
+Uso: python scripts/estudo/diag_limiar_goldset.py
 """
 from __future__ import annotations
 

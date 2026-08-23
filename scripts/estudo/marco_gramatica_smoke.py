@@ -10,7 +10,7 @@ Pré-requisitos:
   - ``pip install llama-cpp-python`` (com CUDA — ver README/handoff)
   - ``geracao.caminho_modelo_gguf`` no ``config.yaml`` apontando para o GGUF do Llama 3.1 8B Q4
 
-Uso:  python scripts/marco_gramatica_smoke.py
+Uso:  python scripts/estudo/marco_gramatica_smoke.py
 """
 from __future__ import annotations
 

@@ -10,7 +10,7 @@ institucional existir). Por isso mede as 50 do gold-set, não só n14.
 baseline). Confirma que n14 é limite de compreensão do 8B (o modelo não está "em dúvida", está
 confiantemente errado), não de prompt. Script mantido como registro; a âncora NÃO virou padrão.
 
-Compare com o baseline em outputs/institucional_respostas.txt. Uso: python scripts/exp_prompt_n14.py
+Compare com o baseline em outputs/institucional_respostas.txt. Uso: python scripts/estudo/exp_prompt_n14.py
 """
 from __future__ import annotations
 

@@ -10,9 +10,9 @@ oficial — mostra um disclaimer no cabeçalho e cita a fonte (trecho do Manual)
 
 Exige Ollama no ar + o modelo do config **para o plano B**; as intenções que o núcleo reconhece
 respondem sem ele. Uso:
-    python scripts/assistente_institucional.py
+    python scripts/produto/assistente_institucional.py
 Encerra com 'sair'/'exit'/'quit', Ctrl-C ou fim da entrada (EOF). Também aceita perguntas
-por pipe (ex.: echo "qual o limite de faltas?" | python scripts/assistente_institucional.py).
+por pipe (ex.: echo "qual o limite de faltas?" | python scripts/produto/assistente_institucional.py).
 """
 from __future__ import annotations
 

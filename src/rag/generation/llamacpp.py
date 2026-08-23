@@ -25,7 +25,7 @@ from .generator import (
     Turno,
     extrair_fontes_citadas,
 )
-from .gramatica import AutomatoCitacao, RestritorCitacao, token_eh_especial
+from .gramatica_citacao import AutomatoCitacao, RestritorCitacao, token_eh_especial
 from .json_estruturado import SISTEMA_JSON, construir_gbnf, validar
 
 

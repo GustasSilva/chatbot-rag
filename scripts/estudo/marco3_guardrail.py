@@ -8,7 +8,7 @@ Perguntas fora do escopo dos 4 PCDTs (asma, hipertensão, diabetes t2, dor crôn
 médicas de outros protocolos (esquizofrenia, hepatite C, HPV, dengue) — o caso mais difícil,
 porque o retriever traz chunks clínicos parecidos — e umas não-médicas (âncora óbvia).
 
-Exige Ollama + o modelo baixado. Uso: python scripts/marco3_guardrail.py [--fallback]
+Exige Ollama + o modelo baixado. Uso: python scripts/estudo/marco3_guardrail.py [--fallback]
 """
 from __future__ import annotations
 

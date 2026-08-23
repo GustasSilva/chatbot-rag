@@ -5,7 +5,7 @@ Usa a melhor recuperação medida (híbrida + reranker) sobre os 4 PCDTs e um ge
 resposta em PT citando o trecho e mostra as fontes. Mede a latência de geração — se o 8B
 ficar lento demais, rodar com ``--fallback`` (Llama 3.2 3B).
 
-Uso:  python scripts/marco3_chatbot.py [--fallback]
+Uso:  python scripts/estudo/marco3_chatbot.py [--fallback]
 """
 from __future__ import annotations
 
