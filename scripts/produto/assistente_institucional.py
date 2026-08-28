@@ -44,7 +44,7 @@ DISCLAIMER = (
 def main() -> int:
     cfg = carregar_config()
     print("Carregando indice e modelos (pode levar alguns segundos)...", flush=True)
-    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg, calcular_densa=False)
+    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
     rer = montar_recuperador_produto(indice, cfg)
     gerador = construir_gerador(cfg.geracao, perfil="institucional")
     plano_b = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,

@@ -36,7 +36,7 @@ from rag.compilador.base_conhecimento import BaseConhecimento
 from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS, SEMANTICA_MANUAL
 from rag.compilador.lexico import AnalisadorLexico, simbolos
 from rag.compilador.sintatico import AnalisadorSintatico
-from rag.pipeline import construir_indice, montar_recuperador_produto, montar_recuperadores
+from rag.pipeline import construir_indice, montar_esparsa, montar_recuperador_produto
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 CAMINHO_GOLD = "data/goldsets/institucional.json"
@@ -47,9 +47,9 @@ TOP_K = 3  # mesmo padrão que o produto usa em BaseConhecimento
 
 def _montar_recuperador(cfg, rapido: bool):
     """Recuperador do produto (BM25 + reranker) ou só BM25, para o laço de feedback."""
-    indice = construir_indice({DOC: carregar_pdf(CAMINHO_PDF)}, cfg, calcular_densa=False)
+    indice = construir_indice({DOC: carregar_pdf(CAMINHO_PDF)}, cfg)
     if rapido:
-        return indice, montar_recuperadores(indice, cfg, incluir=["esparsa"])["esparsa"]
+        return indice, montar_esparsa(indice, cfg)
     return indice, montar_recuperador_produto(indice, cfg)
 
 

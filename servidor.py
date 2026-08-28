@@ -36,7 +36,7 @@ PORTA = 8000
 def montar_dialogo() -> Dialogo:
     """Núcleo de compilador respondendo do Manual, com o chatbot RAG como plano B."""
     cfg = carregar_config()
-    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg, calcular_densa=False)
+    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
     recuperador = montar_recuperador_produto(indice, cfg)
     plano_b = ChatbotRAG(
         recuperador,

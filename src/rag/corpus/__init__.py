@@ -10,6 +10,5 @@ e por isso este pacote nao pertence a nenhum dos dois.
 - ``chunking``: divide o texto normalizado em ``Chunk``, a unidade que os recuperadores
   indexam e que as respostas citam.
 
-O corpus em uso e o Manual do Aluno; os quatro PCDTs do SUS vieram do estudo comparativo. Os
-arquivos ficam em ``data/`` e estao fora do Git, reconstruidos pelos scripts de ``goldsets``.
+O corpus em uso e o Manual do Aluno. O PDF fica em ``data/raw/``, fora do Git.
 """

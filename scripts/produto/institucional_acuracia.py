@@ -43,7 +43,7 @@ def main() -> int:
     corpus = carregar_pdf(CAMINHO_PDF)
     itens = carregar_goldset(CAMINHO_GOLD)
 
-    indice = construir_indice({DOC: corpus}, cfg, calcular_densa=False)
+    indice = construir_indice({DOC: corpus}, cfg)
     relevancia = construir_relevancia(itens, indice.chunks, indice.textos_doc,
                                       cfg.recuperacao.limiar_relevancia)
     rer = montar_recuperador_produto(indice, cfg)

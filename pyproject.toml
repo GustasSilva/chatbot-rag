@@ -8,8 +8,6 @@ version = "0.1.0"
 description = "Assistente de perguntas e respostas em português cujo núcleo é um front-end de compilador, com modelo de linguagem como plano B"
 requires-python = ">=3.10"
 dependencies = [
-    "numpy>=1.24",
-    "scipy>=1.10",
     "pyyaml>=6.0",
     "pymupdf>=1.23",
     "sentence-transformers>=2.2",

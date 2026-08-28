@@ -1,11 +1,11 @@
 """Gold-set INSTITUCIONAL ampliado (produto: assistente do Manual do Aluno).
 
 ~50 perguntas em linguagem de aluno real (não a linguagem formal do documento), cobrindo
-bem as seções do Manual. Reusa os 18 trechos já validados do gold-set do Marco 1 e adiciona
-~32 novos. Cada trecho-fonte é substring EXATO do Manual (validado por count()).
+bem as seções do Manual. Reusa os 18 trechos já validados de ``manual_aluno.json`` e
+adiciona ~32 novos. Cada trecho-fonte é substring EXATO do Manual (validado por count()).
 
-Diferente do gold-set científico (Recall@k): este sustenta a métrica de ACURÁCIA DE RESPOSTA
-do produto (contém a info certa? cita a fonte certa?).
+Sustenta a métrica de ACURÁCIA DE RESPOSTA do produto: contém a informação certa? cita a
+fonte certa?
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from rag.avaliacao.goldset import ItemGold, carregar_goldset, construir_relevanc
 from rag.pipeline import construir_indice
 
 CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
-GOLD_MARCO1 = "data/goldsets/manual_aluno.json"
+GOLD_BASE = "data/goldsets/manual_aluno.json"
 CAMINHO_GOLD = "data/goldsets/institucional.json"
 DOC = "manual"
 
@@ -118,8 +118,8 @@ def main() -> int:
     cfg = carregar_config()
     corpus = carregar_pdf(CAMINHO_PDF)
 
-    # 18 do Marco 1 (trechos já validados) + novos.
-    itens = list(carregar_goldset(GOLD_MARCO1))
+    # 18 trechos já validados + os novos.
+    itens = list(carregar_goldset(GOLD_BASE))
     for i, p, r, t in NOVOS:
         itens.append(ItemGold(id=i, pergunta=p, resposta=r, trecho_fonte=t, doc_id=DOC))
 
@@ -131,7 +131,7 @@ def main() -> int:
                 print(f"  {it.id}: «{it.trecho_fonte[:70]}»")
         return 1
 
-    indice = construir_indice({DOC: corpus}, cfg, calcular_densa=False)
+    indice = construir_indice({DOC: corpus}, cfg)
     construir_relevancia(itens, indice.chunks, indice.textos_doc, cfg.recuperacao.limiar_relevancia)
 
     salvar_goldset(itens, CAMINHO_GOLD, corpus="institucional")

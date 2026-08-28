@@ -1,8 +1,7 @@
-"""Contrato comum das estratégias de recuperação.
+"""Contrato comum dos recuperadores.
 
-Todas as estratégias (densa, esparsa, híbrida) e o reranker devolvem a mesma
-estrutura — uma lista de ``Resultado`` ordenada do mais para o menos relevante —
-para que a avaliação (Recall@k, MRR) seja idêntica entre elas.
+O BM25 e o reranker devolvem a mesma estrutura, uma lista de ``Resultado`` ordenada do mais
+para o menos relevante, de modo que um pode envolver o outro sem que nada em volta mude.
 """
 from __future__ import annotations
 

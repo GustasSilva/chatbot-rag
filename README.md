@@ -9,10 +9,6 @@ Desligar a IA não desliga o assistente: ele continua respondendo tudo o que a g
 cobre, hoje **44 das 50 perguntas** do conjunto de avaliação. Essa é a tese do projeto, e é
 verificável a qualquer momento pela procedência que acompanha cada resposta.
 
-A escolha da estratégia de busca que sustenta esse núcleo não foi arbitrada: veio de um
-**estudo comparativo medido** (densa, esparsa e híbrida, com teste estatístico pareado) que
-está documentado mais abaixo.
-
 ## A ideia
 
 Um compilador não entende o programa inteiro por adivinhação. Ele reconhece uma linguagem
@@ -155,23 +151,20 @@ Por isso a medição de cobertura não é *in sample* (§8).
 | **Controlador** | `rag.compilador.dialogo` | Orquestra as fases e decide o plano B. Marca a origem de cada resposta |
 | **Corpus** | `rag.corpus.loaders` · `chunking` | Carrega o PDF, normaliza e divide em trechos com sobreposição |
 | **Recuperação** | `rag.recuperacao.esparsa` | **BM25 Okapi do zero**, com índice invertido |
-| | `rag.recuperacao.densa` | Similaridade de cosseno sobre embeddings |
-| | `rag.recuperacao.hibrida` | Fusão por RRF ou soma ponderada |
 | | `rag.recuperacao.reranker` | Cross-encoder de segundo estágio |
-| **Plano B** | `rag.ia.chatbot` · `generator` · `fabrica` | Chatbot RAG com guardrail e piso de score, sobre Ollama ou llama.cpp |
-| | `rag.ia.gramatica_citacao` · `json_estruturado` | Autômato e gramática que restringem a saída do modelo |
-| **Avaliação** | `rag.avaliacao.metricas` · `stats` · `goldset` | Recall@k, MRR, Wilcoxon pareado com Holm e tamanho de efeito |
+| **Plano B** | `rag.ia.chatbot` · `generator` · `fabrica` | Chatbot RAG com guardrail e piso de score, sobre Ollama |
+| **Medição** | `rag.avaliacao.goldset` | Carrega o conjunto de perguntas de referência e resolve a relevância de cada trecho |
 | **Montagem** | `rag.pipeline` · `rag.config` · `rag.apresentacao` | Índice, parâmetros fixos e a formatação comum à tela e ao terminal |
 
 O pacote `rag.compilador`, com exceção do controlador, **não importa nada além da biblioteca padrão**:
 só `re`, `unicodedata`, `dataclasses`, `enum` e `collections.abc`. Nenhum gerador de parser,
 nenhuma biblioteca de processamento de linguagem. É verificável por `grep`.
 
-A recuperação do produto é **BM25 mais reranker**, e não a híbrida vencedora do estudo
-comparativo. O motivo está em [`docs/decisoes.md`](docs/decisoes.md) §10: quem consulta o
-Manual é a consulta canônica, já escrita nas palavras do documento, e nesse caminho o BM25
-puro empata com a híbrida. O cross-encoder permanece porque o **piso de score** de −3,2, que é
-o guardrail do plano B, depende do escore dele.
+A recuperação do produto é **BM25 mais reranker**. Quem consulta o Manual é a consulta
+canônica, já escrita nas palavras do documento, e nesse caminho o BM25 basta: a medição que
+levou a essa escolha está em [`docs/decisoes.md`](docs/decisoes.md) §10. O cross-encoder
+permanece porque o **piso de score** de −3,2, que é o guardrail do plano B, depende do
+escore dele.
 
 ## Como rodar
 
@@ -180,7 +173,7 @@ python -m venv .venv
 # Windows:  .venv\Scripts\activate     |  Linux/Mac:  source .venv/bin/activate
 pip install -e ".[dev]"
 
-pytest                                        # 98 testes, rápidos, sem baixar modelo
+pytest                                        # 77 testes, rápidos, sem baixar modelo
 ```
 
 O produto, sobre o Manual do Aluno:
@@ -203,108 +196,6 @@ O plano B exige [Ollama](https://ollama.com) com `ollama pull llama3.1:8b`. Sem 
 responde normalmente e o que não é reconhecido devolve a mensagem de não entendimento, que é
 justamente a demonstração de que o assistente funciona com a IA desligada.
 
-O estudo comparativo, que é reprodutível independentemente do produto:
-
-```bash
-python scripts/estudo/marco0_smoke.py                # baixa o e5 (~440 MB) na primeira vez
-python scripts/goldsets/construir_goldset_manual.py  # reconstrói e valida o gold-set do Manual
-python scripts/estudo/marco1_manual.py               # Marco 1, escreve outputs/marco1_*.csv
-python scripts/estudo/marco2_pira.py                 # Marco 2, Pirá 2.0
-python scripts/goldsets/construir_goldset_pcdt.py    # gold-set de saúde, pares leigo e técnico
-python scripts/estudo/marco3_pcdt.py                 # Marco 3, PCDT com reranker
-```
-
-Dados do Pirá, baixados do repositório oficial
-([C4AI/Pira](https://github.com/C4AI/Pira), CC BY 4.0) para `data/raw/pira/`, fora do git:
-
-```bash
-for f in train validation test; do \
-  gh api "repos/C4AI/Pira/contents/Data/$f.csv" -H "Accept: application/vnd.github.raw" \
-    > "data/raw/pira/$f.csv"; done
-```
-
-Os PCDTs vêm da CONITEC para `data/raw/pcdt/`; as URLs oficiais estão no cabeçalho de
-`scripts/goldsets/construir_goldset_pcdt.py`.
-
-## O estudo comparativo que sustenta a recuperação
-
-Antes do núcleo existir, o projeto mediu qual estratégia de busca recupera melhor o trecho
-correto: **densa** (vetorial), **esparsa** (BM25) ou **híbrida**. A metodologia é de marcos
-incrementais, seguindo [`docs/protocolo_rag_chatbot.md`](docs/protocolo_rag_chatbot.md): dado
-fácil e controlado primeiro, para caçar bug barato, e dado real e difícil depois, para
-responder a pergunta de verdade, sempre com teste estatístico pareado.
-
-| Marco | Corpus | Portão | Resultado |
-|---|---|---|---|
-| **0** Smoke test | Texto curto, 5 perguntas triviais | as 3 recuperam o trecho óbvio | passou |
-| **1** Manual do Aluno | Manual UNIP 2026, 18 perguntas | ≥1 estratégia com recall@5 > 70% | passou, e satura em 100% |
-| **2** Pirá 2.0 | 757 abstracts científicos, 227 perguntas | BM25 na faixa da literatura | passou, e **Q1 discrimina** |
-| **3** Saúde | 4 PCDTs do SUS, 1330 trechos, 24 perguntas | gap leigo e técnico, mais o reranker | direção sustentada |
-
-**Marco 1.** As três chegam a recall@5 de 100%, então o corpus **satura e não discrimina**. O
-marco cumpre o papel de validar o encanamento, não o de responder à pergunta de pesquisa. A
-híbrida lidera em MRR (0,917 contra 0,903 da esparsa e 0,880 da densa), mas nada sobrevive a
-Holm com n=18.
-
-**Marco 2 (Pirá 2.0).** Com n=227 o teste tem poder real.
-
-| estratégia | R@1 | R@3 | R@5 | R@10 | MRR |
-|---|---|---|---|---|---|
-| densa (e5) | 0.52 | 0.71 | 0.78 | 0.87 | 0.642 |
-| esparsa (BM25) | 0.56 | 0.83 | 0.86 | 0.90 | 0.698 |
-| **híbrida** | 0.52 | 0.81 | **0.89** | **0.93** | 0.680 |
-
-Portão: BM25 com recall@10 de 0,90, batendo o valor do paper e confirmando que o corpus e a
-tokenização estão corretos. Em recall@5, **híbrida > densa** com efeito +0,71 e p_holm=0,0001,
-e **esparsa > densa** com efeito +0,35 e p_holm=0,025. **Híbrida e esparsa empatam
-estatisticamente** (p=0,178). O achado replica o do paper: no Pirá o BM25 supera o denso zero
-shot, porque o domínio técnico favorece o casamento léxico e o e5 trunca abstracts longos.
-
-**Marco 3 (saúde).** Corpus difícil de propósito, com 24 perguntas em **pares de vocabulário
-leigo e técnico** apontando para o mesmo trecho. Com n=24 valem direção e tamanho de efeito.
-
-| estratégia | R@5 leigo | R@5 técnico | p pareado |
-|---|---|---|---|
-| densa | 0.33 | 0.67 | 0.125 |
-| esparsa (BM25) | **0.17** | **0.83** | **0.008** |
-| híbrida | 0.42 | 0.83 | 0.062 |
-
-Todas pioram no vocabulário leigo, mas o **BM25 desaba** (0,17 contra 0,83, significativo),
-que é dependência léxica pura. A **densa é a que menos sofre**, porque a busca semântica
-atravessa parte da distância entre o termo do aluno e o termo do documento. É exatamente o
-fenômeno que o corpus foi desenhado para expor, e é a razão de o produto **não** entregar a
-frase crua do usuário à busca.
-
-O **reranker** (cross-encoder sobre a híbrida) leva o R@1 de 0,29 para 0,50 e o MRR de 0,411
-para 0,581, com efeito +0,58. O ganho se concentra no topo do ranking, que é o que importa
-quando a primeira fonte é a que vira resposta.
-
-Uma limitação registrada: a fusão por RRF pode ficar **abaixo da densa pura** quando um
-recuperador acerta forte e o outro falha, porque a média de ranks dilui o acerto isolado. O
-caso foi diagnosticado em detalhe e um experimento de fusão alternativa está em
-`scripts/estudo/exp_fusao_reranker.py`, mantido para reprodução e sem efeito no produto.
-
-## A intervenção anterior: gramática na decodificação
-
-Antes do pivô para a entrada, a contribuição de Ciência da Computação atacava a **saída** do
-modelo de linguagem. Os dois módulos continuam no repositório, testados isoladamente:
-
-- **`ia/gramatica_citacao.py`** define a gramática regular do formato de citação `[n]` e o
-  **autômato finito determinístico que a reconhece, escrito à mão**. O número é casado por um
-  autômato de prefixos, o que elimina becos sem saída por construção. `RestritorCitacao` é um
-  *logits processor*: a cada passo avança o autômato e põe `-inf` no logit de todo token que
-  levaria a uma cadeia inválida.
-- **`ia/json_estruturado.py`** sobe um nível na hierarquia. Um objeto JSON é **livre
-  de contexto**, porque o aninhamento exige pilha. O esquema é autorado à mão em GBNF, com
-  `fonte ::= "1" | ... | "K"`, o que torna **impossível por construção** um índice de fonte
-  fora da faixa. A alternância explícita foi escrita justamente porque o JSON Schema do motor
-  garante apenas que o valor é inteiro, e não que ele está dentro do intervalo de trechos
-  efetivamente presentes no contexto.
-
-Os experimentos são `scripts/estudo/exp_gramatica.py` e `scripts/estudo/exp_json.py`, e exigem
-`llama-cpp-python` com um GGUF apontado por `GGUF_MODEL`. Nenhum dos dois está no caminho do
-produto hoje.
-
 ## Decisões de design
 
 - **BM25 do zero** (`recuperacao/esparsa.py`): índice invertido, IDF Okapi e normalização por
@@ -321,8 +212,6 @@ produto hoje.
   sobreposição, para que a comparação medisse a busca e não o pré-processamento.
 - **Relevância por sobreposição de offsets**: o trecho-fonte é substring exato do corpus
   limpo, o que é robusto à fronteira dos trechos.
-- **Pareamento explícito no Wilcoxon** (`avaliacao.execucao.series_pareadas`), alinhando os vetores
-  pela mesma ordem de perguntas.
 - **Duas limitações conhecidas e não corrigidas**, por decisão registrada: o plano B às vezes
   cita um índice diferente do da fonte real, e a tela reporta isso fielmente; e cabeçalhos de
   página do PDF aparecem dentro dos trechos, porque limpá-los mudaria as fronteiras e
@@ -345,45 +234,32 @@ src/rag/compilador/    O NUCLEO, sem modelo e sem peso treinado
     dialogo.py           o controlador: decide entre nucleo e plano B
 
 src/rag/ia/            A INTELIGENCIA ARTIFICIAL, em papel secundario
-    generator.py         a interface do gerador
-    llamacpp.py          o modelo local
-    fabrica.py           escolhe a implementacao pelo config
+    generator.py         a interface do gerador e o backend Ollama
+    fabrica.py           monta o gerador a partir do config
     chatbot.py           monta a resposta a partir dos trechos recuperados
-    gramatica_citacao.py gramatica e automato que restringem a SAIDA do modelo
-    json_estruturado.py  saida estruturada validada
 
 src/rag/recuperacao/   infraestrutura usada pelos dois
     esparsa.py           BM25 escrito do zero (o que o nucleo usa)
-    densa.py             busca vetorial
-    hibrida.py           fusao das duas por RRF
-    reranker.py          reordenacao por cross-encoder
-    embeddings.py        o modelo de embedding
-    base.py, uniao.py    contrato comum e a fusao alternativa do estudo
+    reranker.py          reordenacao por cross-encoder; sustenta o piso de score
+    base.py              o contrato comum
 
 src/rag/corpus/        o texto de onde as respostas saem: PDF, normalizacao e trechos
-src/rag/avaliacao/     metricas, gold-sets e estatistica (nao entra no produto)
-src/rag/dados/         leitura dos conjuntos externos do estudo
+src/rag/avaliacao/     carga do conjunto de perguntas de referencia
 src/rag/config.py      o config.yaml tipado
-src/rag/pipeline.py    monta indice e recuperadores
+src/rag/pipeline.py    monta indice e recuperador
 src/rag/apresentacao.py  formata a resposta para exibicao
 
 servidor.py            servidor da biblioteca padrao que serve web/index.html
 web/index.html         a tela do produto: HTML, CSS e JS num arquivo so
-config.yaml            parametros fixos do experimento
+config.yaml            parametros fixos
 
 scripts/produto/       o assistente e as medicoes em uso (4)
-scripts/goldsets/      construcao dos conjuntos de avaliacao (3)
-scripts/estudo/        o comparativo de recuperacao e a decodificacao restrita (13)
+scripts/goldsets/      construcao do conjunto de referencia (1)
 scripts/LEIA-ME.md     o que cada script faz
 
-tests/                 98 testes
+tests/                 77 testes
 docs/decisoes.md       o porque de cada decisao do nucleo, com as medicoes
-docs/protocolo_rag_chatbot.md   o protocolo experimental
-data/goldsets/         gold-sets validados (JSON)
+data/goldsets/         o conjunto de referencia validado (JSON)
 data/raw/              corpora brutos, fora do git
 outputs/               metricas (CSV), regeneraveis
 ```
-
-A decodificacao restrita, em `ia/gramatica_citacao.py`, tambem e tecnica de compilador, mas
-aplicada a **saida** do modelo. Foi a intervencao anterior ao pivo de 13/08/2026 e hoje vale
-como resultado preliminar; o nucleo atual atua sobre a **entrada**.

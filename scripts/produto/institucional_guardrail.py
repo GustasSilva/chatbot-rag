@@ -99,7 +99,7 @@ def _recusou_outra(texto: str) -> bool:
 
 def main() -> int:
     cfg = carregar_config()
-    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg, calcular_densa=False)
+    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
     rer = montar_recuperador_produto(indice, cfg)
     gerador = GeradorOllama.de_config(cfg.geracao, perfil="institucional")
     plano_b = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,

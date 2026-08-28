@@ -20,10 +20,10 @@ Os pacotes estão separados pelo que cada um é, e a fronteira que mais importa 
 
 **A infraestrutura que os dois usam**
 
-- ``recuperacao``: BM25 escrito do zero, recuperação densa, híbrida, reranker e o modelo de
-  embeddings. O núcleo usa a parte esparsa; o plano B usa a pilha completa.
+- ``recuperacao``: BM25 escrito do zero e o reranker por cross-encoder. O núcleo usa o
+  BM25; o plano B usa os dois.
 - ``corpus``: carregamento de PDF, normalização e divisão em trechos.
-- ``avaliacao``: métricas, gold-sets e testes estatísticos. Não entra no produto.
+- ``avaliacao``: carga do conjunto de perguntas de referência, usada pelas medições.
 - ``dados``: leitura dos conjuntos externos usados no estudo comparativo.
 
 **Transversais**, na raiz do pacote: ``config`` (o ``config.yaml`` tipado), ``pipeline``

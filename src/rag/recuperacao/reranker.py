@@ -1,11 +1,9 @@
 """Reranker: segundo estágio que reordena o top-k de um recuperador base.
 
 Um cross-encoder lê a pergunta e cada candidato JUNTOS (não vetores separados como no
-1º estágio), então é mais preciso e mais caro. O estudo comparativo mediu se esse ganho
-de qualidade compensa a latência extra — por isso o reranker é um ``Recuperador`` como os
-outros e passa exatamente pela mesma avaliação (Recall@k, MRR). No produto ele permanece
-por um segundo motivo: o **piso de score** que recusa fora de escopo é calculado sobre o
-escore dele.
+1º estágio), então é mais preciso e mais caro. É um ``Recuperador`` como o BM25, e por
+isso se encaixa no mesmo lugar do pipeline. Permanece no produto por um motivo prático: o
+**piso de score** que recusa fora de escopo é calculado sobre o escore dele.
 """
 from __future__ import annotations
 

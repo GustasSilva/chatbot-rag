@@ -21,28 +21,10 @@ class ConfigChunking:
 
 
 @dataclass(frozen=True)
-class ConfigEmbeddings:
-    modelo: str
-    prefixo_consulta: str
-    prefixo_documento: str
-    normalizar_l2: bool
-    batch_size: int
-    dispositivo: str | None
-
-
-@dataclass(frozen=True)
 class ConfigBM25:
     k1: float
     b: float
     dobrar_acentos: bool
-
-
-@dataclass(frozen=True)
-class ConfigHibrida:
-    metodo: str
-    rrf_k: int
-    peso_densa: float
-    peso_esparsa: float
 
 
 @dataclass(frozen=True)
@@ -53,7 +35,6 @@ class ConfigReranker:
 
 @dataclass(frozen=True)
 class ConfigRecuperacao:
-    ks: tuple[int, ...]
     top_k: int
     limiar_relevancia: float
 
@@ -72,21 +53,13 @@ class ConfigGeracao:
     # score. Calibrado contra o gold-set institucional (0/50 legítimas barradas em -3.2, mas
     # captura fora-de-escopo como asma/-4.40). None = sem piso (padrão da via científica).
     piso_score_reranker: float | None = None
-    # Backend llama-cpp (decodificação restrita por gramática). Opcionais — só usados por
-    # GeradorLlamaCpp; o backend Ollama ignora. caminho_modelo_gguf aponta para o GGUF Q4.
-    caminho_modelo_gguf: str | None = None
-    n_ctx: int = 4096
-    n_gpu_layers: int = -1  # -1 = todas as camadas na GPU (usa a CUDA já instalada)
-    restringir_citacao: bool = True
 
 
 @dataclass(frozen=True)
 class Config:
     seed: int
     chunking: ConfigChunking
-    embeddings: ConfigEmbeddings
     bm25: ConfigBM25
-    hibrida: ConfigHibrida
     reranker: ConfigReranker
     recuperacao: ConfigRecuperacao
     geracao: ConfigGeracao
@@ -101,12 +74,9 @@ def carregar_config(caminho: str | Path | None = None) -> Config:
     return Config(
         seed=int(bruto["seed"]),
         chunking=ConfigChunking(**bruto["chunking"]),
-        embeddings=ConfigEmbeddings(**bruto["embeddings"]),
         bm25=ConfigBM25(**bruto["bm25"]),
-        hibrida=ConfigHibrida(**bruto["hibrida"]),
         reranker=ConfigReranker(**bruto["reranker"]),
         recuperacao=ConfigRecuperacao(
-            ks=tuple(bruto["recuperacao"]["ks"]),
             top_k=int(bruto["recuperacao"]["top_k"]),
             limiar_relevancia=float(bruto["recuperacao"]["limiar_relevancia"]),
         ),

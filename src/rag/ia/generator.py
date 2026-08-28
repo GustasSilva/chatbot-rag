@@ -2,8 +2,8 @@
 
 A geração é o **plano B** do assistente: entra apenas quando o pacote ``rag.compilador``
 não reconhece a pergunta. O modelo é fixo e a temperatura é 0, para que o comportamento seja
-reprodutível. Aqui ficam o contrato ``Gerador`` e a implementação sobre Ollama, que é o
-caminho padrão do produto; o backend com decodificação restrita está em ``llamacpp.py``.
+reprodutível. Aqui ficam o contrato ``Gerador`` e a implementação sobre Ollama, único backend
+do produto.
 """
 from __future__ import annotations
 
@@ -86,7 +86,7 @@ _SISTEMA_REESCRITA = (
     "Se a pergunta já for autônoma, repita-a sem mudanças."
 )
 # Nota: uma variante "ancorada" (âncora de atribuição p/ o erro n14) foi testada e REJEITADA —
-# não corrigiu n14 e regrediu o over-refusal (recusas 1→5 nas 50). Ver scripts/estudo/exp_prompt_n14.py.
+# não corrigiu n14 e regrediu o over-refusal (recusas 1→5 nas 50).
 
 # Captura números de citação em [1], [1, 2], [1,2] etc. (vários dígitos por colchete).
 _CITACAO = re.compile(r"\[([\d,\s]+)\]")
