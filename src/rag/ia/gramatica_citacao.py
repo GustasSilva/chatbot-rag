@@ -1,6 +1,6 @@
 """Gramática regular do formato de citação ``[n]`` e o autômato que a reconhece.
 
-Núcleo de Ciência da Computação da intervenção de decodificação restrita (Estágio 1). É
+Parte da decodificação restrita, hoje resultado preliminar do trabalho (ver ``llamacpp.py``). É
 **puro Python** (o autômato) + numpy (só a máscara), independente da LLM e da ``llama_cpp`` —
 por isso é testável isoladamente (ver ``tests/test_gramatica_citacao.py``).
 
@@ -15,8 +15,9 @@ A ideia, na cadeia clássica *gramática → autômato → tradução*:
 - **Tradução (máscara).** Na decodificação, o AFD diz, a cada passo, quais caracteres — logo,
   quais *tokens* — mantêm a saída dentro da linguagem; os demais têm o logit posto em ``-inf``.
 
-Estágio 2 (futuro): trocar a gramática regular por uma **livre de contexto** (saída JSON),
-que exige **pilha** — um autômato de pilha — para casar colchetes/chaves aninhados.
+O passo seguinte, **já implementado** em ``json_estruturado.py``, troca a gramática regular
+por uma **livre de contexto** (saída JSON), que exige **pilha**, um autômato de pilha, para
+casar colchetes e chaves aninhados.
 """
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
 """Gerador local via ``llama-cpp-python`` com decodificação restrita por gramática.
 
-É a **intervenção de compiladores** do trabalho: em vez de apenas *pedir* no prompt que o
-modelo cite a fonte (o que o Ollama faz, e que às vezes falha), aqui a saída é *restringida*
-na própria decodificação por um autômato (ver ``gramatica.py``). Implementa o mesmo contrato
+Técnica de compilador aplicada à **saída** do modelo: em vez de apenas *pedir* no prompt que
+o modelo cite a fonte (o que o Ollama faz, e que às vezes falha), aqui a saída é *restringida*
+na própria decodificação por um autômato (ver ``gramatica_citacao.py``). Implementa o mesmo contrato
 ``Gerador`` do backend Ollama, então pluga no ``ChatbotRAG`` sem tocar em nada da recuperação.
 
 Instalação (com CUDA já presente na máquina):
@@ -13,6 +13,10 @@ Instalação (com CUDA já presente na máquina):
 e aponte ``geracao.caminho_modelo_gguf`` (no ``config.yaml``) para o GGUF do Llama 3.1 8B Q4.
 A ``llama_cpp`` é importada de forma preguiçosa: este módulo pode ser importado (e o autômato,
 testado) sem a lib instalada.
+
+**Enquadramento.** Este caminho foi a intervenção do trabalho até o pivô de 13/08/2026 e hoje
+vale como resultado preliminar. A intervenção atual atua sobre a **entrada**, em
+``rag.compilador``.
 """
 from __future__ import annotations
 
@@ -34,10 +38,10 @@ class GeradorLlamaCpp(Gerador):
 
     Dois modos:
 
-    - ``modo="citacao"`` (Estágio 1): restringe o formato de citação ``[n]`` por um AFD feito à
+    - ``modo="citacao"`` (nível regular): restringe o formato de citação ``[n]`` por um AFD feito à
       mão (``restringir_citacao`` liga/desliga; ``exigir_citacao`` obriga ao menos uma citação).
       É o usado pelo experimento ``exp_gramatica``.
-    - ``modo="json"`` (Estágio 2): força a saída ao objeto ``{"resposta": ..., "fontes": [...]}``
+    - ``modo="json"`` (nível livre de contexto): força a saída ao objeto ``{"resposta": ..., "fontes": [...]}``
       por uma gramática livre de contexto (GBNF), com os índices restritos a ``1..K``. ``gerar``
       devolve um ``RespostaGerada`` normal (texto = ``resposta``, fontes = ids de chunk), então é
       **drop-in** no ``ChatbotRAG`` do produto.
@@ -54,7 +58,7 @@ class GeradorLlamaCpp(Gerador):
         n_ctx: int = 4096,
         n_gpu_layers: int = -1,  # -1 = todas as camadas na GPU (usa a CUDA já instalada)
         max_tokens: int = 512,
-        modo: str = "citacao",  # "citacao" (Estágio 1, AFD [n]) | "json" (Estágio 2, GBNF)
+        modo: str = "citacao",  # "citacao" (regular, AFD [n]) | "json" (livre de contexto, GBNF)
         restringir_citacao: bool = True,
         exigir_citacao: bool = True,
         verbose: bool = False,
@@ -181,7 +185,7 @@ class GeradorLlamaCpp(Gerador):
         historico: list[Turno] | None = None,
         usar_gramatica: bool = True,
     ) -> str:
-        """Gera a resposta como JSON estruturado (Estágio 2) e devolve o texto bruto.
+        """Gera a resposta como JSON estruturado, no nível livre de contexto, e devolve o texto bruto.
 
         ``usar_gramatica=True`` força o esquema via o motor de gramática da llama.cpp (JSON válido
         por construção); ``False`` é o baseline (mesmo prompt, sem restrição) — a única diferença

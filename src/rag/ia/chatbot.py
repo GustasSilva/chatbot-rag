@@ -1,7 +1,8 @@
-"""Chatbot RAG: liga a recuperação à geração (o artefato de demonstração, Q3).
+"""Chatbot RAG: liga a recuperação à geração. É o plano B do assistente.
 
-Usa a melhor recuperação medida nos marcos anteriores (idealmente híbrida + reranker),
-pega o top-k de trechos e pede ao gerador uma resposta em português citando a fonte.
+Recebe um recuperador já montado, pega o top-k de trechos e pede ao gerador uma resposta em
+português citando a fonte. No produto o recuperador é BM25 com reranker, e o piso de score
+do reranker é o guardrail que recusa antes de chamar o modelo.
 """
 from __future__ import annotations
 

@@ -103,7 +103,7 @@ def montar_recuperadores(
 
 
 def montar_reranker(base: Recuperador, indice: IndiceCorpus, cfg: Config) -> Reranker:
-    """Envolve um recuperador base com o cross-encoder de reranqueamento (Q2)."""
+    """Envolve um recuperador base com o cross-encoder de reranqueamento."""
     return Reranker(
         base=base,
         chunks=indice.chunks,

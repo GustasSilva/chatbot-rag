@@ -1,10 +1,11 @@
-"""Fábrica do gerador do produto: escolhe o backend conforme a configuração/ambiente.
+"""Fábrica do gerador do plano B: escolhe o backend conforme a configuração/ambiente.
 
 Mantém o produto (tela e REPL) desacoplado do backend concreto. Se houver um GGUF disponível
 (env ``GGUF_MODEL`` ou ``geracao.caminho_modelo_gguf``), usa o backend **llama-cpp com saída JSON
-garantida por gramática** — a intervenção de compiladores. Caso contrário, cai no backend
-**Ollama** (o comportamento validado até aqui). Assim, ligar a intervenção não exige commitar
-nenhum caminho de máquina: basta apontar o GGUF por env ou por config local.
+garantida por gramática**, que é a decodificação restrita mantida como resultado
+preliminar. Sem GGUF, cai no backend **Ollama**, que é o caminho padrão do produto. Ligar a
+decodificação restrita não exige commitar caminho de máquina: basta apontar o GGUF por env
+ou por config local.
 """
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
-"""Saída estruturada em JSON (Estágio 2 da intervenção — nível livre de contexto).
+"""Saída estruturada em JSON, no nível livre de contexto da hierarquia.
 
-Enquanto a citação ``[n]`` (ver ``gramatica.py``) é uma linguagem **regular** reconhecida por um
+Enquanto a citação ``[n]`` (ver ``gramatica_citacao.py``) é uma linguagem **regular** reconhecida por um
 AFD feito à mão, um objeto JSON é **livre de contexto**: o aninhamento de ``{}``/``[]`` exige uma
 **pilha** (autômato de pilha) para casar aberturas e fechamentos. Aqui autoramos o **esquema** do
 objeto de saída e deixamos o motor de gramática da ``llama.cpp`` (que realiza esse autômato de

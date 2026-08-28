@@ -25,7 +25,7 @@ class ItemGold:
     pergunta: str
     resposta: str
     trecho_fonte: str
-    tipo: str | None = None   # 'leigo' | 'tecnico' | None (usado no corpus de saúde, Marco 3)
+    tipo: str | None = None   # 'leigo' | 'tecnico' | None (usado no corpus de saúde do estudo)
     doc_id: str = "doc"
 
 

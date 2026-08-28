@@ -1,6 +1,6 @@
-# Parâmetros FIXOS do experimento.
-# Só a estratégia de recuperação varia entre as comparações de Q1/Q2 — embedding,
-# chunking e LLM ficam constantes para isolar o efeito da busca (protocolo §7).
+# Parâmetros FIXOS.
+# No estudo comparativo, só a estratégia de recuperação varia entre as comparações;
+# embedding, chunking e modelo ficam constantes para isolar o efeito da busca.
 
 seed: 42
 
@@ -34,7 +34,7 @@ hibrida:
   peso_esparsa: 0.5
 
 reranker:
-  # Q2 (opcional): cross-encoder multilíngue treinado em mMARCO (inclui PT).
+  # Cross-encoder multilíngue treinado em mMARCO (inclui PT). Sustenta o piso de score.
   modelo: "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
   top_k_entrada: 20          # reordena o top-k do 1º estágio
 
@@ -44,7 +44,7 @@ recuperacao:
   limiar_relevancia: 0.5     # fração do trecho-fonte que precisa cair no chunk p/ contar como relevante
 
 geracao:
-  # Q3 (Marco 3): gerador local via Ollama. LLM fixo, temperatura 0 (reprodutibilidade, §3).
+  # Plano B: gerador local via Ollama. LLM fixo, temperatura 0 para reprodutibilidade.
   backend: "ollama"
   modelo: "llama3.1:8b"           # 8B quantizado Q4 (padrão do Ollama)
   modelo_fallback: "llama3.2:3b"  # usado se a latência do 8B atrapalhar a demonstração

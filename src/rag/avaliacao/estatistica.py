@@ -1,4 +1,4 @@
-"""Testes estatísticos pareados para Q1/Q2.
+"""Testes estatísticos pareados do estudo comparativo de recuperação.
 
 Wilcoxon pareado sobre a métrica por pergunta, entre cada par de estratégias, com
 correção de Holm para as comparações múltiplas (protocolo §5). Reporta direção,

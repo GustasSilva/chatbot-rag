@@ -1,9 +1,9 @@
-"""Interface do gerador de respostas (Q3 / Marco 3).
+"""Interface do gerador de respostas e o backend Ollama.
 
-O núcleo científico (Q1/Q2) usa só métricas de recuperação e NÃO depende do LLM. A
-geração entra apenas no artefato de demonstração (Marco 3), com um LLM fixo e temperatura
-0 para reprodutibilidade (protocolo §3). O backend concreto (Claude API, local, ...) será
-escolhido e implementado quando o Marco 3 chegar — por isso aqui há só o contrato.
+A geração é o **plano B** do assistente: entra apenas quando o pacote ``rag.compilador``
+não reconhece a pergunta. O modelo é fixo e a temperatura é 0, para que o comportamento seja
+reprodutível. Aqui ficam o contrato ``Gerador`` e a implementação sobre Ollama, que é o
+caminho padrão do produto; o backend com decodificação restrita está em ``llamacpp.py``.
 """
 from __future__ import annotations
 
