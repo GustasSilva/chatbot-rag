@@ -3,7 +3,7 @@
 REPL de input aberto. Quem responde é o **controlador** (`rag.compilador.dialogo`): o núcleo de
 compilador entende a pergunta (léxico → gramática de intenções → parser → semântica) e responde
 direto do Manual, **sem modelo de linguagem no caminho**; o que a gramática não reconhece cai no
-**plano B**, a pilha validada cientificamente — recuperação **híbrida + reranker**, **piso de
+**plano B**, a pilha validada cientificamente — recuperação **BM25 + reranker**, **piso de
 score** (recusa fora-de-escopo antes do LLM) e gerador local (Ollama, temperatura 0) no
 **perfil institucional** do guardrail. Cada resposta indica de onde veio. Não é um serviço
 oficial — mostra um disclaimer no cabeçalho e cita a fonte (trecho do Manual).
