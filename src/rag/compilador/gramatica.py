@@ -1,27 +1,19 @@
-"""Gramática de intenções — as formas de pergunta que o núcleo reconhece, e como escrevê-las.
+"""A notação em que as regras de intenção são escritas, e sua compilação.
 
-Fase 2 do front-end. O alfabeto aqui **não é o caractere**: é o símbolo canônico produzido pela
-análise léxica (``FALTA``, ``TRANCAR``, ``QUANTIDADE``...). Cada regra é uma sequência desses
-símbolos e nomeia uma **intenção** — o que o aluno quer saber.
-
-A regra casa como **subsequência**, ignorando os tokens entre os seus símbolos, e ainda assim
-denota uma linguagem regular. Notação, escrita em ``intencoes``::
+O alfabeto aqui **não é o caractere**: é o símbolo canônico produzido pela análise léxica
+(``FALTA``, ``TRANCAR``, ``QUANTIDADE``). Cada regra é uma sequência desses símbolos e nomeia
+uma intenção. A regra casa como subsequência, ignorando os tokens entre os seus símbolos, e
+ainda assim denota uma linguagem regular. As regras do Manual estão em ``intencoes``::
 
     limite_faltas     := QUANTIDADE FALTA DISCIPLINA?
     prazo_rematricula := QUANDO|PRAZO MATRICULA
 
-- espaço separa os elementos, e a ordem importa;
-- ``?`` opcional;
-- ``|`` símbolos equivalentes na posição;
-- ``+`` adjacência: ``NEGACAO+TRANCAR`` exige ``TRANCAR`` como símbolo logo em seguida;
-- ``&`` ordem livre: ``QUANTIDADE&FALTA`` exige os dois, em qualquer ordem;
-- ``!`` exclusão: ``!NEGACAO`` só vale se o símbolo não aparecer.
+Espaço separa os elementos e a ordem importa; ``?`` opcional; ``|`` símbolos equivalentes na
+posição; ``+`` adjacência; ``&`` ordem livre; ``!`` exclusão.
 
-``de_notacao`` compila e confere contra o léxico. Rejeita símbolo fora do léxico (o análogo do
-identificador não declarado), regra só de opcionais (casaria qualquer pergunta) e símbolo
-repetido em dois elementos, que é a condição de exatidão do reconhecimento guloso.
-
-Por que cada mecanismo existe, com as medições: ``docs/decisoes.md`` (seções 2 a 5).
+``de_notacao`` compila e confere contra o léxico, rejeitando símbolo fora do léxico (o análogo
+do identificador não declarado), regra só de opcionais e símbolo repetido em dois elementos.
+Por que cada mecanismo existe, com as medições: ``docs/decisoes.md`` §2 a §5.
 """
 from __future__ import annotations
 
@@ -47,17 +39,13 @@ class Juncao(Enum):
 
 @dataclass(frozen=True)
 class Elemento:
-    """Um passo da regra: um símbolo, ou vários equivalentes, presente ou dispensável.
-
-    ``extras`` são os demais símbolos do mesmo passo e ``juncao`` diz como se ligam (colados ou
-    em qualquer ordem); ``excluido`` inverte o elemento (a regra vale se o símbolo não aparecer).
-    """
+    """Um passo da regra: um símbolo, ou vários equivalentes, presente ou dispensável."""
 
     alternativas: frozenset[str]
     opcional: bool = False
-    extras: tuple[frozenset[str], ...] = ()
+    extras: tuple[frozenset[str], ...] = ()   # os demais símbolos do mesmo passo
     juncao: Juncao = Juncao.ADJACENTE
-    excluido: bool = False
+    excluido: bool = False                    # inverte: a regra vale se o símbolo não aparecer
 
 
 @dataclass(frozen=True)
@@ -69,10 +57,7 @@ class Regra:
 
     @property
     def obrigatorios(self) -> int:
-        """Quantos símbolos a pergunta precisa conter: o peso da regra no desempate.
-
-        Conta símbolos e não elementos, e exclusão não conta — ver ``docs/decisoes.md`` §5.
-        """
+        """Quantos símbolos a pergunta precisa conter: o peso da regra no desempate (§5)."""
         return sum(
             1 + len(elemento.extras)
             for elemento in self.elementos
@@ -122,11 +107,7 @@ class Gramatica:
 
     @classmethod
     def de_notacao(cls, notacoes: Mapping[str, str], lexico: Lexico) -> Gramatica:
-        """Compila ``{intenção: notação}`` conferindo cada símbolo contra a tabela de símbolos.
-
-        Falha alto em erro de definição que, silencioso, viraria intenção que nunca casa ou que
-        casa demais.
-        """
+        """Compila ``{intenção: notação}`` conferindo cada símbolo contra a tabela de símbolos."""
         definidos = lexico.simbolos_definidos
         regras: list[Regra] = []
         for intencao, notacao in notacoes.items():

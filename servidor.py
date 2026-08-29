@@ -20,33 +20,16 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from rag.apresentacao import fontes_de
-from rag.config import carregar_config
-from rag.corpus.loaders import carregar_pdf
-from rag.ia.chatbot import ChatbotRAG
-from rag.ia.fabrica import construir_gerador
-from rag.compilador.base_conhecimento import BaseConhecimento
 from rag.compilador.dialogo import Dialogo
-from rag.pipeline import construir_indice, montar_recuperador_produto
+from rag.pipeline import montar_assistente
 
-CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 PAGINA = Path(__file__).parent / "web" / "index.html"
 PORTA = 8000
 
 
 def montar_dialogo() -> Dialogo:
     """Núcleo de compilador respondendo do Manual, com o chatbot RAG como plano B."""
-    cfg = carregar_config()
-    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
-    recuperador = montar_recuperador_produto(indice, cfg)
-    plano_b = ChatbotRAG(
-        recuperador,
-        indice.chunks,
-        construir_gerador(cfg.geracao, perfil="institucional"),
-        cfg.geracao.top_k_contexto,
-        piso_score=cfg.geracao.piso_score_reranker,
-        saudar=True,
-    )
-    dialogo = Dialogo.de_manual(BaseConhecimento(recuperador, indice.chunks), plano_b)
+    dialogo = montar_assistente()
     # Primeira inferência do cross-encoder custa alguns segundos. Pagando aqui, a primeira
     # pergunta de quem abre a tela já responde no tempo normal (~1,3 s).
     dialogo.responder("quantas faltas posso ter?")
@@ -89,7 +72,7 @@ class Assistente(BaseHTTPRequestHandler):
         self._json(200, {
             "texto": resposta.texto,
             "origem": resposta.origem.name,
-            "intencao": resposta.intencao,
+            "intencoes": list(resposta.intencoes),
             "ms": round((time.perf_counter() - inicio) * 1000),
             "fontes": fontes_de(resposta),
         })

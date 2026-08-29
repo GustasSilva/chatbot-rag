@@ -11,12 +11,11 @@ from __future__ import annotations
 
 import sys
 
-from rag.config import carregar_config
-from rag.corpus.loaders import carregar_pdf
-from rag.avaliacao.goldset import ItemGold, carregar_goldset, construir_relevancia, salvar_goldset
+from rag.config import Config
+from rag.corpus import carregar_pdf
+from rag.goldset import ItemGold, carregar_goldset, construir_relevancia, salvar_goldset
 from rag.pipeline import construir_indice
 
-CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 GOLD_BASE = "data/goldsets/manual_aluno.json"
 CAMINHO_GOLD = "data/goldsets/institucional.json"
 DOC = "manual"
@@ -115,8 +114,8 @@ NOVOS = [
 
 
 def main() -> int:
-    cfg = carregar_config()
-    corpus = carregar_pdf(CAMINHO_PDF)
+    cfg = Config()
+    corpus = carregar_pdf(cfg.caminho_manual)
 
     # 18 trechos já validados + os novos.
     itens = list(carregar_goldset(GOLD_BASE))
@@ -132,7 +131,7 @@ def main() -> int:
         return 1
 
     indice = construir_indice({DOC: corpus}, cfg)
-    construir_relevancia(itens, indice.chunks, indice.textos_doc, cfg.recuperacao.limiar_relevancia)
+    construir_relevancia(itens, indice.chunks, indice.textos_doc, cfg.limiar_relevancia)
 
     salvar_goldset(itens, CAMINHO_GOLD, corpus="institucional")
     ids = [it.id for it in itens]

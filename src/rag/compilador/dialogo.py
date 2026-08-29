@@ -4,17 +4,16 @@
 Manual; não reconheceu, ou reconheceu mas a busca voltou vazia, vai para o plano B.
 
 ``plano_b`` é opcional de propósito: sem ele o assistente responde o que conhece e diz que não
-entendeu o resto, que é a demonstração de que o núcleo é o compilador, não a LLM. :class:`Origem`
-deixa isso auditável resposta a resposta.
+entendeu o resto, que é a demonstração de que o núcleo é o compilador, e não a LLM.
+:class:`Origem` deixa isso auditável resposta a resposta.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from ..corpus.chunking import Chunk
-from ..ia.chatbot import ChatbotRAG
-from ..ia.generator import Turno
+from ..corpus import Chunk
+from ..ia import ChatbotRAG, Turno
 from .base_conhecimento import BaseConhecimento
 from .lexico import AnalisadorLexico
 from .semantico import AnalisadorSemantico
@@ -24,7 +23,7 @@ NAO_ENTENDI = "Não entendi a sua pergunta. Pode reformular?"
 
 
 class Origem(Enum):
-    """De onde veio a resposta — a medida de cobertura do núcleo, resposta a resposta."""
+    """De onde veio a resposta: a medida de cobertura do núcleo, resposta a resposta."""
 
     NUCLEO = auto()          # gramática reconheceu e o Manual respondeu, sem IA
     PLANO_B = auto()         # não reconheceu (ou não achou trecho): respondeu a LLM
@@ -34,11 +33,11 @@ class Origem(Enum):
 @dataclass(frozen=True)
 class RespostaDialogo:
     pergunta: str
-    texto: str                  # o que se mostra ao aluno
+    texto: str                    # o que se mostra ao aluno
     origem: Origem
-    trechos: tuple[Chunk, ...]  # trechos consultados (vazio quando não se entendeu)
+    trechos: tuple[Chunk, ...]    # trechos consultados (vazio quando não se entendeu)
     fontes: tuple[int, ...] = ()  # ids dos trechos que embasam a resposta
-    intencao: str | None = None
+    intencoes: tuple[str, ...] = ()  # uma por pergunta reconhecida, na ordem da frase
 
 
 class Dialogo:
@@ -51,7 +50,9 @@ class Dialogo:
         semantico: AnalisadorSemantico,
         base: BaseConhecimento,
         plano_b: ChatbotRAG | None = None,
+        max_intencoes: int = 3,
     ) -> None:
+        self._max_intencoes = max_intencoes
         self._lexico = lexico
         self._sintatico = sintatico
         self._semantico = semantico
@@ -63,6 +64,7 @@ class Dialogo:
         cls,
         base: BaseConhecimento,
         plano_b: ChatbotRAG | None = None,
+        max_intencoes: int = 3,
     ) -> Dialogo:
         """Monta o controlador com o léxico, a gramática e as ações do Manual do Aluno."""
         from .intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
@@ -73,6 +75,7 @@ class Dialogo:
             SEMANTICA_MANUAL,
             base,
             plano_b,
+            max_intencoes,
         )
 
     def responder(
@@ -80,23 +83,40 @@ class Dialogo:
     ) -> RespostaDialogo:
         """Responde pelo núcleo quando a gramática reconhece; senão, recorre ao plano B.
 
-        ``historico`` serve só ao plano B: o núcleo é sem estado por construção, cada intenção se
-        resolve na própria frase. Follow-up elíptico não casa regra e cai no plano B com ele.
+        Uma pergunta pode trazer mais de uma intenção; cada uma é consultada no Manual e as
+        respostas saem na ordem em que foram perguntadas. Basta uma intenção encontrar trecho
+        para o núcleo responder: só cai no plano B quando nenhuma encontra.
+
+        ``historico`` serve só ao plano B: o núcleo é sem estado por construção, cada intenção
+        se resolve na própria frase.
         """
-        reconhecimento = self._sintatico.analisar(self._lexico.analisar(pergunta))
-        if reconhecimento is not None:
-            resposta = self._base.consultar(self._semantico.analisar(reconhecimento))
-            if resposta.encontrou:
-                return RespostaDialogo(
-                    pergunta=pergunta,
-                    texto=resposta.destaque,
-                    origem=Origem.NUCLEO,
-                    trechos=resposta.trechos,
-                    # O destaque sai do 1º trecho: é ele, e só ele, que embasa a resposta.
-                    fontes=(resposta.trechos[0].id,),
-                    intencao=reconhecimento.intencao,
-                )
-        return self._recorrer_ao_plano_b(pergunta, historico)
+        reconhecidas = self._sintatico.analisar_todas(
+            self._lexico.analisar(pergunta), self._max_intencoes
+        )
+        respondidas = [
+            (reconhecimento, resposta)
+            for reconhecimento in reconhecidas
+            for resposta in [self._base.consultar(self._semantico.analisar(reconhecimento))]
+            if resposta.encontrou
+        ]
+        if not respondidas:
+            return self._recorrer_ao_plano_b(pergunta, historico)
+
+        # Ordem de leitura, e não de reconhecimento: o aluno lê na ordem em que perguntou.
+        respondidas.sort(key=lambda par: min(t.inicio for t in par[0].casados))
+        trechos: list[Chunk] = []
+        for _, resposta in respondidas:  # sem repetir trecho que duas intenções trouxeram
+            trechos += [t for t in resposta.trechos if t.id not in {x.id for x in trechos}]
+
+        return RespostaDialogo(
+            pergunta=pergunta,
+            texto="\n\n".join(resposta.destaque for _, resposta in respondidas),
+            origem=Origem.NUCLEO,
+            trechos=tuple(trechos),
+            # O destaque de cada intenção sai do 1º trecho dela: são esses que embasam.
+            fontes=tuple(resposta.trechos[0].id for _, resposta in respondidas),
+            intencoes=tuple(r.intencao for r, _ in respondidas),
+        )
 
     def _recorrer_ao_plano_b(
         self, pergunta: str, historico: list[Turno] | None
@@ -106,8 +126,8 @@ class Dialogo:
         resposta = self._plano_b.responder(pergunta, historico=historico)
         return RespostaDialogo(
             pergunta=pergunta,
-            texto=resposta.resposta.texto,
+            texto=resposta.texto,
             origem=Origem.PLANO_B,
-            trechos=tuple(resposta.contextos),
-            fontes=tuple(resposta.resposta.fontes),
+            trechos=tuple(resposta.trechos),
+            fontes=tuple(resposta.fontes),
         )

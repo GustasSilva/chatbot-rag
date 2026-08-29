@@ -1,35 +1,12 @@
-"""Assistente de perguntas e respostas em português cujo núcleo é um front-end de compilador.
+"""Assistente de perguntas e respostas cujo núcleo é um front-end de compilador.
 
-Quem entende a pergunta é o pacote ``compilador``. O modelo de linguagem, em ``ia``, é plano B:
-só entra quando a gramática não reconhece a pergunta.
+Quem entende a pergunta é o pacote ``compilador``: análise léxica, sintática e semântica sobre
+a frase do aluno, em Python puro, sem modelo e sem peso treinado. É a intervenção de Ciência da
+Computação do trabalho. O modelo de linguagem, em ``ia``, é o **plano B**, e só entra quando a
+gramática não reconhece a pergunta.
 
-Os pacotes estão separados pelo que cada um é, e a fronteira que mais importa é a primeira:
+O resto é infraestrutura que os dois usam: ``recuperacao`` (BM25 e reranker), ``corpus`` (o PDF
+em trechos), ``config``, ``pipeline``, ``apresentacao`` e ``goldset``.
 
-**O núcleo, sem aprendizado de máquina**
-
-- ``compilador``: análise léxica, sintática e semântica sobre a pergunta do aluno, mais a
-  consulta à base de conhecimento e o controlador de diálogo. Puro Python, sem modelo, sem
-  peso treinado. É a intervenção de Ciência da Computação do trabalho.
-
-**A inteligência artificial, em papel secundário**
-
-- ``ia``: o modelo de linguagem e o que o cerca, incluindo a decodificação restrita por
-  gramática. Essa restrição também é técnica de compilador, mas aplicada à **saída** do
-  modelo, e não à entrada do aluno. Foi a intervenção anterior ao pivô de 13/08/2026 e hoje
-  vale como resultado preliminar.
-
-**A infraestrutura que os dois usam**
-
-- ``recuperacao``: BM25 escrito do zero e o reranker por cross-encoder. O núcleo usa o
-  BM25; o plano B usa os dois.
-- ``corpus``: carregamento de PDF, normalização e divisão em trechos.
-- ``avaliacao``: carga do conjunto de perguntas de referência, usada pelas medições.
-- ``dados``: leitura dos conjuntos externos usados no estudo comparativo.
-
-**Transversais**, na raiz do pacote: ``config`` (o ``config.yaml`` tipado), ``pipeline``
-(monta índice e recuperadores) e ``apresentacao`` (formata a resposta para exibição).
-
-O raciocínio por trás de cada decisão está em ``docs/decisoes.md``.
+As decisões, com as medições que as sustentam, estão em ``docs/decisoes.md``.
 """
-
-__all__ = ["config"]

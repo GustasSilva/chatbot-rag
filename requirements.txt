@@ -1,0 +1,73 @@
+# Ambiente das medicoes deste trabalho (29/08/2026).
+#
+# So o fecho de dependencias das tres bibliotecas que o projeto realmente usa:
+#
+#   pymupdf                extrai o texto do PDF               (rag/corpus.py)
+#   sentence-transformers  o cross-encoder do reranker         (rag/recuperacao.py)
+#   pytest                 os testes
+#
+# O restante da lista sao dependencias transitivas dessas tres. NAO ha aqui nenhuma
+# biblioteca de busca, de RAG, de PLN ou gerador de analisador sintatico: o BM25, o
+# lexico, a gramatica de intencoes e o analisador sao escritos a mao (ver rag/compilador
+# e rag/recuperacao). Isso e verificavel com um grep dos imports.
+#
+# As versoes estao fixas de proposito: o piso de score de -3.2 do guardrail e calibrado
+# contra os escores DESTE cross-encoder sob ESTAS versoes. Trocar sentence-transformers ou
+# torch muda os escores e pode invalidar o 31/31 sem nenhum erro aparecer.
+#
+# Para reproduzir o ambiente exato:
+#
+#   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements.txt
+#   pip install -e . --no-deps
+#
+# ATENCAO ao torch: aqui vale o build **somente CPU** (torch.__version__ reporta "+cpu"),
+# e o `pip freeze` nao registra esse sufixo. Instalar do PyPI puxa o build com CUDA, que
+# nao e o que foi medido. Dai o --index-url acima.
+#
+# Para so USAR o projeto, o caminho normal e `pip install -e ".[dev]"`.
+
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+PyYAML==6.0.3
+Pygments==2.20.0
+annotated-doc==0.0.4
+anyio==4.14.2
+certifi==2026.6.17
+click==8.4.2
+colorama==0.4.6
+filelock==3.29.7
+fsspec==2026.6.0
+h11==0.16.0
+hf-xet==1.5.1
+httpcore==1.0.9
+httpx==0.28.1
+huggingface_hub==1.23.0
+idna==3.18
+iniconfig==2.3.0
+joblib==1.5.3
+markdown-it-py==4.2.0
+mdurl==0.1.2
+mpmath==1.3.0
+narwhals==2.23.0
+networkx==3.6.1
+numpy==2.4.6
+packaging==26.2
+pluggy==1.6.0
+pymupdf==1.28.0
+pytest==9.1.1
+regex==2026.7.10
+rich==15.0.0
+safetensors==0.8.0
+scikit-learn==1.9.0
+scipy==1.17.1
+sentence-transformers==5.6.0
+shellingham==1.5.4
+sympy==1.14.0
+threadpoolctl==3.6.0
+tokenizers==0.22.2
+torch==2.13.0
+tqdm==4.68.4
+transformers==5.13.1
+typer==0.26.8
+typing_extensions==4.16.0

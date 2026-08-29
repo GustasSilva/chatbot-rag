@@ -1,22 +1,21 @@
-"""Gold-set: perguntas com resposta e trecho-fonte conhecidos.
+"""Gold-set: perguntas com resposta e trecho-fonte conhecidos, usado pelas medições.
 
-Cada item guarda o ``trecho_fonte`` como texto — um substring EXATO do corpus limpo
-(ver ``corpus.loaders.limpar_texto``). Na avaliação, o conjunto de chunks relevantes de
-uma pergunta é resolvido geometricamente: um chunk é relevante se a interseção de seus
-offsets de caractere com os do trecho-fonte cobre pelo menos ``limiar`` do trecho. Isso
-é robusto à fronteira do chunking (com sobreposição, um trecho pode cair em 2 chunks).
+Cada item guarda o ``trecho_fonte`` como subcadeia EXATA do corpus limpo (``corpus.limpar_texto``).
+Os chunks relevantes de uma pergunta saem da geometria: um chunk conta se a interseção dos seus
+offsets com os do trecho-fonte cobre ao menos ``limiar`` do trecho. Assim a fronteira do
+chunking não atrapalha, porque com sobreposição um mesmo trecho pode cair em dois chunks.
 """
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from ..corpus.chunking import Chunk
+from .corpus import Chunk
 
 
 class GoldSetError(ValueError):
-    """Gold-set inconsistente com o corpus (portão de sanidade)."""
+    """Gold-set inconsistente com o corpus: o portão de sanidade das medições."""
 
 
 @dataclass(frozen=True)
@@ -25,7 +24,7 @@ class ItemGold:
     pergunta: str
     resposta: str
     trecho_fonte: str
-    tipo: str | None = None   # 'leigo' | 'tecnico' | None (usado no corpus de saúde do estudo)
+    tipo: str | None = None
     doc_id: str = "doc"
 
 
@@ -57,7 +56,7 @@ def resolver_relevancia(
     textos_doc: dict[str, str],
     limiar: float,
 ) -> set[int]:
-    """Ids dos chunks relevantes para ``item`` — os que contêm o trecho-fonte."""
+    """Ids dos chunks que contêm o trecho-fonte do item."""
     texto_doc = textos_doc.get(item.doc_id)
     if texto_doc is None:
         raise GoldSetError(f"item {item.id}: doc_id '{item.doc_id}' não existe no corpus")
@@ -66,7 +65,7 @@ def resolver_relevancia(
     if not ocorrencias:
         raise GoldSetError(
             f"item {item.id}: trecho-fonte não encontrado no doc '{item.doc_id}'. "
-            "O trecho precisa ser um substring EXATO do corpus limpo."
+            "O trecho precisa ser uma subcadeia EXATA do corpus limpo."
         )
 
     relevantes: set[int] = set()
@@ -81,42 +80,13 @@ def resolver_relevancia(
     return relevantes
 
 
-def construir_relevancia_por_documento(
-    itens: list[ItemGold],
-    chunks: list[Chunk],
-) -> dict[str, set[int]]:
-    """Relevância em nível de DOCUMENTO: o gold é o documento inteiro do item.
-
-    Usado em benchmarks como o Pirá, onde a tarefa é recuperar o texto-fonte correto
-    (não localizar um trecho dentro dele): todos os chunks do ``doc_id`` do item contam
-    como relevantes. Não depende de ``trecho_fonte``.
-    """
-    chunks_por_doc: dict[str, set[int]] = {}
-    for chunk in chunks:
-        chunks_por_doc.setdefault(chunk.doc_id, set()).add(chunk.id)
-
-    relevancia: dict[str, set[int]] = {}
-    for item in itens:
-        relevantes = chunks_por_doc.get(item.doc_id)
-        if not relevantes:
-            raise GoldSetError(
-                f"item {item.id}: doc_id '{item.doc_id}' não tem chunks no índice"
-            )
-        relevancia[item.id] = set(relevantes)
-    return relevancia
-
-
 def construir_relevancia(
     itens: list[ItemGold],
     chunks: list[Chunk],
     textos_doc: dict[str, str],
     limiar: float,
 ) -> dict[str, set[int]]:
-    """Mapa item_id -> conjunto de chunks relevantes, validando o gold-set inteiro.
-
-    Falha alto (``GoldSetError``) se algum item não localizar o trecho ou não casar com
-    nenhum chunk — é o portão que pega bug de chunking/normalização antes de medir nada.
-    """
+    """Mapa item -> chunks relevantes, falhando alto se algum item não casar com nenhum chunk."""
     relevancia: dict[str, set[int]] = {}
     for item in itens:
         relevantes = resolver_relevancia(item, chunks, textos_doc, limiar)

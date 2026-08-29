@@ -66,6 +66,43 @@ def test_ordem_dos_elementos_importa():
     assert reconhecer("faltas quantas") is None
 
 
+def test_duas_perguntas_dao_duas_intencoes():
+    """``pergunta := regra+``: cada intenção é reconhecida no que a anterior não consumiu."""
+    tokens = LEXER.analisar("quantas faltas e como trancar")
+    assert [r.intencao for r in PARSER.analisar_todas(tokens)] == [
+        "limite_faltas",
+        "como_trancar",
+    ]
+
+
+def test_pergunta_simples_nao_inventa_segunda_intencao():
+    tokens = LEXER.analisar("quantas faltas na disciplina")
+    assert [r.intencao for r in PARSER.analisar_todas(tokens)] == ["limite_faltas"]
+
+
+def test_simbolo_repetido_nao_alimenta_intencao_extra():
+    """Duas palavras que dão o MESMO símbolo são uma menção só, não duas perguntas.
+
+    Sem isso, "trancar trancamento" reconhecia trancamento duas vezes: consumir um símbolo
+    leva junto as outras ocorrências dele (``docs/decisoes.md`` §22).
+    """
+    tokens = LEXER.analisar("trancar trancar")
+    assert [r.intencao for r in PARSER.analisar_todas(tokens)] == ["trancamento"]
+
+
+def test_teto_limita_quantas_intencoes_saem():
+    tokens = LEXER.analisar("quantas faltas e como trancar")
+    assert len(PARSER.analisar_todas(tokens, maximo=1)) == 1
+
+
+def test_analisar_devolve_a_mesma_intencao_principal():
+    """``analisar`` continua sendo o primeiro de ``analisar_todas``: nada mudou para quem só
+    quer a intenção principal."""
+    for pergunta in ["quantas faltas", "como trancar", "quantas faltas e como trancar"]:
+        tokens = LEXER.analisar(pergunta)
+        assert PARSER.analisar(tokens).intencao == PARSER.analisar_todas(tokens)[0].intencao
+
+
 def test_sem_regra_que_case_devolve_none():
     """O sinal de que a pergunta tem de ir para o plano B."""
     assert reconhecer("bandejão feriado") is None

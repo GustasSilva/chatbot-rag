@@ -8,9 +8,10 @@ version = "0.1.0"
 description = "Assistente de perguntas e respostas em português cujo núcleo é um front-end de compilador, com modelo de linguagem como plano B"
 requires-python = ">=3.10"
 dependencies = [
-    "pyyaml>=6.0",
     "pymupdf>=1.23",
-    "sentence-transformers>=2.2",
+    # >=5.6: e a partir dai que CrossEncoder aceita local_files_only, que o
+    # carregamento offline do reranker usa. Ver rag.recuperacao.
+    "sentence-transformers>=5.6",
 ]
 
 [project.optional-dependencies]

@@ -249,3 +249,329 @@ respostas curtas do gold-set: a conclusão não estava errada, estava incompleta
 Medido pelo **caminho do produto** (BM25 mais reranker), como manda o §14. Com
 `COBERTURA_RAPIDA=1`, que usa só BM25, sai 44/44 de recuperação e 26/44 de destaque: o
 reranker troca um acerto de recuperação (a pergunta `n20`) por quatro de destaque.
+
+---
+
+## 18. O que saiu do código na limpeza de 28/08/2026
+
+A limpeza cortou 5 subpacotes para 1 e 30% de prosa para 21%. O que era **justificativa** saiu
+do código e ficou aqui; o que era **código sem consumidor** foi removido. Registro do que sumiu,
+para não se tentar de novo:
+
+- **Perfil de guardrail "estrito".** Havia dois *system prompts*, um estrito (herdado do corpus
+  de saúde) e um institucional. O produto sempre usou o institucional; o estrito não tinha
+  chamador. Ficou um prompt só, em ``rag.ia._SISTEMA``.
+- **`modelo_fallback` / `usar_fallback`.** Um segundo modelo (3B) previsto para o caso de a
+  latência do 8B atrapalhar a demonstração. Nunca foi acionado em lugar nenhum do código.
+- **`construir_relevancia_por_documento`.** Relevância em nível de documento, exigida pelo
+  benchmark Pirá. O Pirá saiu do projeto no pivô; a função só era usada pelo próprio teste.
+- **`rag.ia.fabrica`.** Uma função de repasse para desacoplar do backend concreto. Com um único
+  backend, dois dos quatro chamadores já a ignoravam e chamavam ``GeradorOllama.de_config``
+  direto. Agora todos chamam.
+- **Reescrita "ancorada" da consulta multi-turn.** Uma variante do prompt de reescrita, com
+  âncora de atribuição para corrigir o erro n14, foi implementada e medida: **não corrigiu o
+  n14 e piorou o over-refusal** (recusas de 1 para 5, nas 50 perguntas). Rejeitada. O prompt em
+  uso é o simples, em ``rag.ia._SISTEMA_REESCRITA``.
+- **Três normalizadores de acento** (no léxico, no BM25 e no detector de saudação) viraram um,
+  ``rag.corpus.sem_acentos``. Eram idênticos e podiam divergir sem ninguém perceber.
+
+O campo ``ItemGold.tipo`` foi **mantido** mesmo sem uso: é ``None`` nos 68 itens dos dois
+gold-sets, mas a chave existe no JSON, e tirá-la obrigaria a reescrever o instrumento de
+medição para economizar uma linha.
+
+`Campo` e `Consulta.campos`, na fase semântica, também foram **mantidos** sem consumidor no
+produto: são o atributo sintetizado da tradução dirigida por sintaxe, e é o que separa a fase
+semântica de uma tabela de consulta.
+
+---
+
+## 19. Segunda passada de simplificação (29/08/2026)
+
+Três redundâncias que a passada anterior não tinha atacado:
+
+- **O `config.yaml` foi embora.** Eram 106 linhas (76 de `config.py` mais 30 de YAML), seis
+  dataclasses e a dependência `pyyaml`, para carregar doze valores. Uma varredura dos acessos
+  a `cfg.*` mostrou que `seed` e `recuperacao.top_k` **não eram lidos por ninguém**, e que os
+  seis chamadores de `carregar_config()` nunca passaram caminho customizado. Hoje é uma
+  dataclass congelada de campos planos, em `rag.config`. O argumento de reprodutibilidade não
+  se perde: a estrutura continua sendo o único lugar onde os parâmetros vivem, e agora o
+  interpretador confere nome e tipo de cada um.
+- **`RespostaChatbot` foi removida.** Era embalagem pura: o controlador desembrulhava
+  `resposta.resposta.texto` e `resposta.contextos` na linha seguinte. `RespostaGerada` passou a
+  carregar os trechos, e as respostas do sistema caíram de quatro tipos para três
+  (`RespostaGerada`, `RespostaNucleo`, `RespostaDialogo`), cada uma de uma camada distinta.
+- **`pipeline.montar_assistente`.** A montagem estava copiada em três pontos de entrada, e o
+  caminho do PDF em seis. Agora `montar_assistente(cfg, com_plano_b=..., saudar=...)` monta o
+  produto inteiro, e as medições usam os degraus (`indexar_manual`, `montar_esparsa`,
+  `montar_plano_b`) quando precisam de uma variação.
+
+A frase de recusa estava escrita em três lugares (a constante, o *system prompt* e o
+reconhecedor da tela). Agora é uma constante só, em `rag.apresentacao.RECUSA`, que o prompt
+interpola. O reconhecimento continua casando só o começo da frase, porque o modelo às vezes
+acrescenta ao final, e o prefixo tem nome próprio (`_INICIO_RECUSA`) ao lado dela.
+
+Verificado depois da mudança: 75 testes passando, cobertura do núcleo em **44/50** com 26/44 de
+destaque pelo caminho rápido (os mesmos números do §17), e o caminho do produto respondendo em
+**1,4 s** com e sem acento.
+
+---
+
+## 20. Comportamentos levantados em 29/08/2026, medidos e ainda não decididos
+
+Nada aqui foi alterado no código. São **três comportamentos do sistema que ninguém tinha
+medido**, levantados numa conversa de orientação. Ficam registrados para virarem decisão, num
+sentido ou no outro, depois de discutidos.
+
+### 20.1 Duas perguntas num único input: responde uma, descarta a outra em silêncio
+
+`AnalisadorSintatico.analisar` devolve **um** `Reconhecimento`, nunca uma lista. Quando a
+entrada contém mais de uma pergunta, várias regras casam e vence a de mais símbolos
+obrigatórios; as demais são descartadas **sem qualquer sinal para o aluno**.
+
+Medido:
+
+```
+"Quantas faltas posso ter e como faço o trancamento da matrícula?"
+   símbolos : QUANTIDADE FALTA PODER COMO TRANCAR MATRICULA
+   venceu   : limite_faltas (3 obrigatórios)
+   perderam : como_trancar (2), prazo_trancamento (2), matricula_ingressante (2)
+   consulta : "frequência obrigatória em cada disciplina, aulas dadas"
+```
+
+Três propriedades observadas:
+
+- **A ordem não importa.** Inverter as duas perguntas dá o mesmo vencedor, porque o desempate
+  é por peso da regra, não por posição na frase.
+- **A pontuação não separa.** Em "o que é jubilamento? e o trote é permitido?" o `?` é
+  descartado como separador no analisador léxico, e as duas perguntas viram um fluxo único de
+  símbolos. Ambas as regras têm um símbolo obrigatório, então vence **a primeira declarada** em
+  `REGRAS`, e a outra some.
+- A regra vencedora pode não ser a primeira pergunta da frase, o que torna o comportamento
+  difícil de prever para quem usa.
+
+O caminho mais barato para tratar isso seria **segmentar a entrada antes da fase 2** e rodar o
+analisador por segmento, sem tocar no reconhecedor. Não foi feito: muda a arquitetura e
+invalida a medição de cobertura de 44/50, que é sobre uma pergunta por vez.
+
+### 20.2 O plano B recebe a frase crua: o front-end é descartado
+
+Quando a gramática não reconhece, o controlador entrega ao plano B **exatamente o que o aluno
+digitou**:
+
+```python
+# compilador/dialogo.py
+return self._recorrer_ao_plano_b(pergunta, historico)   # a frase crua
+# ia.py
+consulta = pergunta                                      # busca com a frase crua
+```
+
+Tokens, símbolos canônicos e normalização de escrita **não chegam ao plano B**. A normalização
+existe só do lado do compilador.
+
+É o que explica o A/B do acento: sem acento o núcleo responde igual, e a mesma pergunta pelo
+plano B é recusada pelo piso de score. **A assimetria é o resultado, não um defeito** — mas é
+consequência de uma decisão que nunca foi escrita como tal.
+
+Duas leituras possíveis, ambas defensáveis, e é isso que precisa ser decidido:
+
+- **manter**: as duas vias ficam independentes, e é isso que permite medir uma contra a outra
+  sem contaminação;
+- **enriquecer**: usar os símbolos reconhecidos para melhorar a consulta do plano B, o que
+  provavelmente subiria a recuperação nas seis perguntas que hoje escapam do núcleo, ao custo
+  de as duas vias deixarem de ser comparáveis.
+
+### 20.3 O que a LLM recebe
+
+Ela **nunca vê o PDF**. Cada chamada leva:
+
+| | |
+|---|---|
+| system prompt | 632 caracteres, fixo |
+| contexto | 5 trechos (`top_k_contexto`), de 180 tokens cada |
+| total | ~900 palavras, de um corpus de 173 trechos |
+
+Algo em torno de **3% do Manual por pergunta**, escolhido pelo BM25 com o cross-encoder por
+cima. O restante do documento não existe para o modelo.
+
+### 20.4 Os campos da fase semântica seguem sem consumidor
+
+Já registrado no §18, e volta aqui porque foi apontado de fora: `Campo` e `Consulta.campos`
+colhem o dado solto da pergunta (`{"disciplina": "Cálculo"}`) e **nada no produto lê esse
+valor**. São ~20 linhas que sustentam chamar a fase de tradução dirigida por sintaxe em vez de
+tabela de consulta.
+
+A escolha é binária: **usar** o campo (exibindo ao aluno, ou filtrando o trecho) ou **cortar** e
+assumir que a fase é um mapeamento intenção → consulta. Manter inerte é o que faz a fase
+parecer mais complexa do que é.
+
+---
+
+## 21. Desempate por maximal munch (29/08/2026)
+
+### O bug que estava em produção
+
+`como_trancar` **nunca respondia**. Aparecia na lista de "nunca disparam" da medição de
+cobertura, e o motivo não era falta de vocabulário:
+
+```
+"como faço o trancamento da matrícula?"
+   símbolos : COMO TRANCAR MATRICULA
+   casaram  : matricula_ingressante (peso 2)  |  como_trancar (peso 2)
+   venceu   : matricula_ingressante   -- declarada na posição 13
+   perdeu   : como_trancar            -- declarada na posição 15
+
+   resposta dada    : "aluno ingressante matriculado automaticamente no regime de
+                       progressão tutelada"
+   resposta correta : "como solicitar o trancamento de matrícula"
+```
+
+O aluno perguntava como trancar e recebia a regra de matrícula automática de ingressantes.
+Resposta errada, entregue com confiança e marcada "sem IA".
+
+**Causa.** `como_trancar := COMO TRANCAR MATRICULA?` tem o terceiro símbolo **opcional**, então
+conta dois obrigatórios, exatamente como `matricula_ingressante := COMO MATRICULA`. Empate. E o
+desempate usava `>` e não `>=`, ficando a primeira declarada.
+
+**Por que a medição não pegou.** O gold-set tem três perguntas sobre trancamento (`m03` "o que
+é", `m04` "por quanto tempo", `m18` "consequência de não trancar") e **nenhuma "como trancar"**.
+O buraco estava fora do conjunto medido. Os 44/50 e os zero falsos positivos continuavam
+corretos.
+
+**Como apareceu.** Não foi por inspeção: surgiu ao prototipar o reconhecimento múltiplo (§20.1).
+O algoritmo de consumo iterado só funcionava com desempate por consumo, e ao trocar o critério o
+caso de pergunta única passou a acertar. O trabalho sobre multi-pergunta encontrou um bug de
+pergunta única.
+
+### A correção
+
+O desempate passa a ser **maximal munch**: vence a regra que consome mais símbolos da pergunta;
+só no empate entra o número de obrigatórios; persistindo, a primeira declarada. É a regra
+clássica do analisador léxico ("pegue o casamento mais longo"), aplicada no nível da regra.
+
+```python
+chave = (len(indices), regra.obrigatorios)     # antes: regra.obrigatorios
+if melhor is None or chave > melhor[0]:
+```
+
+Junto veio uma segunda correção, sem a qual a primeira não mede o que promete: `_casar` passa a
+reportar **todas** as posições consumidas por um elemento, e não só a primeira. Com os
+operadores `&` e `+` um elemento cobre mais de uma posição, e o contador de consumo precisa
+saber disso. O filtro por `conjuntos` evita levar junto uma palavra-chave que caia no meio do
+intervalo sem pertencer ao elemento. Efeito colateral bem-vindo: `casados` e `sobra` passam a
+ser uma partição de fato, o que antes não eram.
+
+### O que foi verificado
+
+| | antes | depois |
+|---|---|---|
+| testes | 75 | 75 |
+| regras que perdem para outra na própria entrada canônica | 1/77 | **0/77** |
+| cobertura, modo rápido | 44/50 · 44/44 · 26/44 · 0 FP | idêntico |
+| cobertura, caminho do produto | 44/50 · 43/44 · 30/44 | idêntico |
+| perguntas do gold-set que mudaram de intenção | — | **0 de 50** |
+| adversariais reconhecidas pelo núcleo | 0/31 | 0/31 |
+
+O **0 de 50** é o que sustenta os números publicados: nenhuma pergunta medida trocou de
+intenção, então a cobertura continua valendo pela mesma causa, e não por compensação entre
+acertos e erros. E como nenhuma das 31 adversariais é reconhecida pelo núcleo em nenhum dos dois
+critérios, todas seguem para o plano B e o 31/31 depende só do piso de score, que não foi
+tocado.
+
+### O que isto não resolve
+
+O reconhecimento continua devolvendo **uma** intenção. O comportamento de multi-pergunta do
+§20.1 permanece: duas perguntas num input, uma resposta, sem aviso. O munch é pré-requisito da
+mudança `pergunta := regra+`, não a mudança em si.
+
+---
+
+## 22. `pergunta := regra+` — reconhecimento múltiplo (29/08/2026)
+
+Fecha o comportamento levantado no §20.1: duas perguntas num input, uma resposta, sem aviso.
+
+### A mudança de gramática
+
+O símbolo inicial deixa de ser uma regra e passa a ser uma sequência delas. `analisar_todas`
+casa a regra que melhor cobre a pergunta, retira da frase os símbolos que ela usou e repete no
+que sobrou, até nada mais casar ou até o teto (`Config.max_intencoes`, 3 por padrão). É o que um
+compilador faz com uma sequência de comandos, e não exige heurística de segmentação nem tabela
+nova: reaproveita o casamento de ilha como está.
+
+`analisar` continua existindo e devolve a intenção principal, com semântica idêntica à anterior.
+Foi verificado nas 50 perguntas do gold-set que ele coincide sempre com `analisar_todas[0]`.
+
+O controlador consulta cada intenção no Manual e compõe a resposta **na ordem em que o aluno
+perguntou**, não na ordem de reconhecimento. Basta uma intenção encontrar trecho para o núcleo
+responder; só cai no plano B quando nenhuma encontra.
+
+### Dois problemas que só apareceram na execução
+
+**1. Símbolo repetido virava pergunta nova.** Em `n30`, "Para colar grau preciso estar regular
+no ENADE", tanto "colar" quanto "grau" produzem `COLACAO`. A primeira regra consumia um, o outro
+sobrava e alimentava `colacao_obrigatoria`, uma segunda intenção que ninguém perguntou.
+
+Consumir um símbolo passou a **levar junto as outras ocorrências dele**. Aqui um símbolo nomeia
+um assunto, não uma posição: "colar grau" é uma menção dita duas vezes.
+
+**2. Símbolos de perguntas diferentes se costuravam.** Com três perguntas num input, o `QUE` de
+"o que é jubilamento" casou com o `TRANCAR` de "como trancar a matrícula", produzindo
+`definicao_trancamento` em vez de `como_trancar`. Regra nenhuma foi violada: o casamento de ilha
+pula o que está no meio, e "no meio" passou a incluir outra pergunta.
+
+### O desempate final, e por que é esse
+
+Quatro combinações foram medidas antes de escolher:
+
+| critério | espúrios em 50 | intenção principal | 3 perguntas |
+|---|---|---|---|
+| posições consumidas | 0 | 0 mudou | errado |
+| posições + dispersão | 0 | **1 mudou** | certo |
+| símbolos distintos | 0 | 0 mudou | errado |
+| **distintos + dispersão** | **0** | **0 mudou** | **certo** |
+
+Só a combinação passa em tudo, e cada metade resolve uma coisa:
+
+- **símbolos distintos**, e não posições, remove a inflação do `COLACAO` duplicado — sem isso,
+  quem alcança as duas ocorrências parece cobrir mais da pergunta do que cobre;
+- **menor dispersão** entre a primeira e a última posição usada desempata a favor do casamento
+  mais compacto, que é o que impede uma regra de costurar perguntas diferentes.
+
+Sozinha, a dispersão trocava a intenção do `n30` para a errada. É a razão de as duas entrarem
+juntas. A ordem completa do desempate está em `AnalisadorSintatico._melhor_regra`: distintos,
+dispersão, obrigatórios, e persistindo o empate a primeira declarada.
+
+### O que foi verificado
+
+| | |
+|---|---|
+| testes | **81** (75 + 6 novos) |
+| perguntas simples que produzem 2+ intenções | **0 de 50** |
+| `analisar` vs `analisar_todas[0]` | **0 divergências em 50** |
+| adversariais reconhecidas pelo núcleo | 0/31 |
+| 77 regras contra a própria entrada canônica | 0 perdem |
+| cobertura, caminho do produto | **44/50 · 43/44 · 30/44**, idêntico |
+
+Ponta a ponta:
+
+```
+"como faço o trancamento da matrícula e quantas faltas posso ter?"
+   origem=NUCLEO  intencoes=['como_trancar', 'limite_faltas']
+   trechos=6  fontes=[57, 92]
+```
+
+### O que mudou fora do núcleo
+
+`RespostaDialogo.intencao` virou `intencoes: tuple[str, ...]`, e acompanharam o JSON do
+`servidor.py`, a tela (junta com " + "), o relatório do guardrail e os testes. `Config` ganhou
+`max_intencoes`. O `janela` da apresentação passou a centrar no destaque certo quando a resposta
+reúne mais de um.
+
+### Limitação que fica
+
+A dispersão **reduz** a costura entre perguntas, não a elimina. Uma frase longa o bastante, com
+símbolos compatíveis espalhados, ainda pode produzir uma intenção que ninguém pediu. A saída
+definitiva seria segmentar a entrada antes da fase 2, o que foi deliberadamente evitado: exige
+heurística de separação (conjunção, pontuação) que erra em "faltas em Cálculo **e** Física".
+
+O gold-set continua sendo de perguntas simples. **Medir a capacidade nova exige itens
+multi-pergunta e uma métrica própria** — ao lado da cobertura atual, não no lugar dela.

@@ -1,9 +1,9 @@
 """Guardrail adversarial do assistente institucional (item 5 do plano).
 
-Chat livre = mais exposição. Aqui o guardrail roda no perfil INSTITUCIONAL (o mais brando —
-onde o risco de FALSO POSITIVO, responder quando deveria recusar, é maior). ~34 perguntas
-adversariais realistas, por categoria: outro domínio (saúde/geral), brincadeiras, ambíguas
-que parecem institucionais mas não estão no Manual, dados pessoais e injeção de prompt.
+Chat livre = mais exposição, e é aqui que o risco de FALSO POSITIVO (responder quando
+deveria recusar) aparece. Perguntas adversariais realistas, por categoria: outro domínio
+(saúde/geral), brincadeiras, ambíguas que parecem institucionais mas não estão no Manual,
+dados pessoais e injeção de prompt.
 
 Mede a taxa de recusa por categoria e LISTA os falsos positivos (respondeu quando deveria
 recusar) para investigação — não misturar categorias no relatório.
@@ -16,15 +16,10 @@ import sys
 import unicodedata
 from pathlib import Path
 
-from rag.config import carregar_config
-from rag.corpus.loaders import carregar_pdf
-from rag.ia.chatbot import ChatbotRAG
-from rag.ia.generator import GeradorOllama
-from rag.compilador.base_conhecimento import BaseConhecimento
-from rag.compilador.dialogo import Dialogo, Origem
-from rag.pipeline import construir_indice, montar_recuperador_produto
+from rag.compilador.dialogo import Origem
+from rag.config import Config
+from rag.pipeline import montar_assistente
 
-CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 
 ADVERSARIAIS = {
     "outro domínio (saúde)": [
@@ -98,19 +93,15 @@ def _recusou_outra(texto: str) -> bool:
 
 
 def main() -> int:
-    cfg = carregar_config()
-    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
-    rer = montar_recuperador_produto(indice, cfg)
-    gerador = GeradorOllama.de_config(cfg.geracao, perfil="institucional")
-    plano_b = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,
-                         piso_score=cfg.geracao.piso_score_reranker)
+    cfg = Config()
     # Pelo CAMINHO DO PRODUTO, não pelo plano B direto: o núcleo responde antes do LLM, então
     # uma regra genérica demais pode responder o que o piso de score recusaria. Testar só o
     # ChatbotRAG deixaria esse vazamento invisível.
-    dialogo = Dialogo.de_manual(BaseConhecimento(rer, indice.chunks), plano_b)
+    # ``saudar=False`` mantém o comportamento medido: nenhum atalho antes da recuperação.
+    dialogo = montar_assistente(cfg, saudar=False)
 
     total = sum(len(v) for v in ADVERSARIAIS.values())
-    print(f"Guardrail adversarial institucional | {total} perguntas | perfil={gerador.perfil}\n")
+    print(f"Guardrail adversarial institucional | {total} perguntas | modelo={cfg.modelo_llm}\n")
 
     canonicas = 0
     outras = 0
@@ -126,7 +117,7 @@ def main() -> int:
                 # O núcleo não recusa: se ele respondeu uma pergunta desta lista, a regra que
                 # casou é genérica demais. Vazamento, independente do que o texto diga.
                 marca = "RESPONDEU"
-                nao_recusou.append((f"{categoria} | {r.intencao}", q, texto))
+                nao_recusou.append((f"{categoria} | {', '.join(r.intencoes)}", q, texto))
             elif _recusou_canonico(texto):
                 marca, c_cat = "RECUSA", c_cat + 1
                 canonicas += 1

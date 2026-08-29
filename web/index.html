@@ -157,7 +157,7 @@
 <div class="folha">
   <header>
     <h1>Assistente do Manual do Aluno</h1>
-    <p class="chamada">Pergunte sobre a vida acadêmica. As respostas saem do Manual do Aluno da
+    <p class="chamada">Pergunte sobre a vida acadêmica. As respostas saem do Manual do Aluno 2026 da
       UNIP, e cada uma mostra de onde veio.</p>
     <p class="aviso">
       <svg class="ico"><use href="#i-aviso"/></svg>
@@ -228,7 +228,8 @@ function mostrarSugestoes() {
 function selo(dados) {
   const via = VIA[dados.origem];
   const partes = [icone(via.icone), `<span>${via.rotulo}</span>`];
-  if (dados.intencao) partes.push('<span class="sep">·</span>', `<span>${dados.intencao}</span>`);
+  if (dados.intencoes?.length)
+    partes.push('<span class="sep">·</span>', `<span>${dados.intencoes.join(" + ")}</span>`);
   partes.push('<span class="sep">·</span>', `<span class="tempo">${duracao(dados.ms)}</span>`);
   const div = elemento("div", "selo");
   div.innerHTML = partes.join(" ");

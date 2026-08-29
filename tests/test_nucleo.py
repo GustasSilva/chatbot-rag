@@ -11,20 +11,15 @@ import re
 
 import pytest
 
-from rag.corpus.chunking import dividir_em_chunks
-from rag.corpus.loaders import limpar_texto
-from rag.avaliacao.goldset import (
-    GoldSetError,
-    ItemGold,
-    construir_relevancia,
-    construir_relevancia_por_documento,
-)
-from rag.recuperacao.esparsa import RecuperadorBM25, tokenizar
+from rag.corpus import dividir_em_chunks
+from rag.corpus import limpar_texto
+from rag.goldset import GoldSetError, ItemGold, construir_relevancia
+from rag.recuperacao import RecuperadorBM25, tokenizar
 
 
 def _chunks_de(textos: list[str]):
     """Um chunk por texto (tamanho grande o bastante para não subdividir)."""
-    from rag.corpus.chunking import Chunk
+    from rag.corpus import Chunk
 
     return [
         Chunk(id=i, doc_id="d", texto=t, inicio_char=0, fim_char=len(t), indice_no_doc=i)
@@ -101,29 +96,11 @@ def test_relevancia_trecho_inexistente_falha():
         construir_relevancia([item], chunks, {"doc": texto}, limiar=0.5)
 
 
-def test_relevancia_por_documento():
-    """Relevância em nível de documento (usada no Pirá): todos os chunks do doc do item."""
-    from rag.corpus.chunking import Chunk
-
-    chunks = [
-        Chunk(id=0, doc_id="A", texto="a1", inicio_char=0, fim_char=2, indice_no_doc=0),
-        Chunk(id=1, doc_id="A", texto="a2", inicio_char=0, fim_char=2, indice_no_doc=1),
-        Chunk(id=2, doc_id="B", texto="b1", inicio_char=0, fim_char=2, indice_no_doc=0),
-    ]
-    item = ItemGold(id="q", pergunta="?", resposta="x", trecho_fonte="", doc_id="A")
-    relevancia = construir_relevancia_por_documento([item], chunks)
-    assert relevancia["q"] == {0, 1}  # ambos os chunks do doc A, nenhum do B
-
-    item_orfao = ItemGold(id="q2", pergunta="?", resposta="x", trecho_fonte="", doc_id="Z")
-    with pytest.raises(GoldSetError):
-        construir_relevancia_por_documento([item_orfao], chunks)
-
-
 # ------------------------------- geração ----------------------------------- #
 def test_extrair_fontes_citadas():
     """Parser de citação: aceita [1], [1, 2] e [1,2]; ignora fora do intervalo."""
-    from rag.corpus.chunking import Chunk
-    from rag.ia.generator import extrair_fontes_citadas
+    from rag.corpus import Chunk
+    from rag.ia import extrair_fontes_citadas
 
     ctx = [
         Chunk(id=10, doc_id="d", texto="a", inicio_char=0, fim_char=1, indice_no_doc=0),
@@ -138,7 +115,7 @@ def test_extrair_fontes_citadas():
 
 def test_guardrail_contexto_vazio_recusa():
     """Sem contexto recuperado, o gerador recusa sem sequer chamar o LLM (não alucina)."""
-    from rag.ia.generator import GeradorOllama
+    from rag.ia import GeradorOllama
 
     g = GeradorOllama(modelo="inexistente")  # __init__ não conecta em lugar nenhum
     r = g.gerar("qualquer pergunta", [])
@@ -146,24 +123,10 @@ def test_guardrail_contexto_vazio_recusa():
     assert "não encontrei" in r.texto.lower()
 
 
-def test_perfil_guardrail_seleciona_prompt():
-    """O perfil escolhe o system prompt; perfil inválido falha alto."""
-    from rag.ia.generator import (
-        _SISTEMA_ESTRITO,
-        _SISTEMA_INSTITUCIONAL,
-        GeradorOllama,
-    )
-
-    assert GeradorOllama(modelo="x", perfil="estrito")._sistema == _SISTEMA_ESTRITO
-    assert GeradorOllama(modelo="x", perfil="institucional")._sistema == _SISTEMA_INSTITUCIONAL
-    with pytest.raises(ValueError):
-        GeradorOllama(modelo="x", perfil="inexistente")
-
-
 def test_eh_saudacao_dispara_so_em_saudacao_pura():
     """O detector é conservador: True só quando a mensagem é SÓ saudação; qualquer
     pergunta substantiva (inclusive fora de escopo) devolve False e segue para o pipeline."""
-    from rag.ia.chatbot import eh_saudacao
+    from rag.apresentacao import eh_saudacao
 
     for t in ["olá", "Oi!", "bom dia", "tudo bem?", "Olá, tudo bem?",
               "e aí, beleza?", "boa noite", "opa"]:
@@ -177,10 +140,11 @@ def test_eh_saudacao_dispara_so_em_saudacao_pura():
 def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
     """Com saudar=True, uma saudação pura devolve a mensagem amigável sem tocar no
     recuperador nem no gerador; sem saudar=True, segue o fluxo normal."""
-    from rag.corpus.chunking import Chunk
-    from rag.ia.chatbot import ChatbotRAG, RESPOSTAS_SAUDACAO
-    from rag.ia.generator import Gerador, RespostaGerada
-    from rag.recuperacao.base import Recuperador, Resultado
+    from rag.corpus import Chunk
+    from rag.apresentacao import RESPOSTAS_SAUDACAO
+    from rag.ia import ChatbotRAG
+    from rag.ia import Gerador, RespostaGerada
+    from rag.recuperacao import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="x", inicio_char=0, fim_char=1, indice_no_doc=0)
 
@@ -199,24 +163,24 @@ def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
     _RecEspiao.chamado = False
     bot = ChatbotRAG(_RecEspiao(), [chunk], _GerFixo(), piso_score=None, saudar=True)
     r = bot.responder("olá, tudo bem?")
-    assert r.resposta.texto in RESPOSTAS_SAUDACAO
-    assert r.contextos == [] and r.resposta.fontes == []
+    assert r.texto in RESPOSTAS_SAUDACAO
+    assert r.trechos == [] and r.fontes == []
     assert _RecEspiao.chamado is False  # não recuperou nada
 
     # Pergunta de verdade passa pelo pipeline mesmo com saudar=True.
     _RecEspiao.chamado = False
     r2 = bot.responder("qual o limite de faltas?")
-    assert r2.resposta.texto == "resposta do LLM"
+    assert r2.texto == "resposta do LLM"
     assert _RecEspiao.chamado is True
 
 
 def test_multiturn_recupera_pela_pergunta_reescrita_e_gera_com_historico():
     """Com histórico, o ChatbotRAG recupera pela pergunta REESCRITA (autônoma) e passa o
     histórico ao gerador. Sem histórico, usa a pergunta original e não reescreve."""
-    from rag.corpus.chunking import Chunk
-    from rag.ia.chatbot import ChatbotRAG
-    from rag.ia.generator import Gerador, RespostaGerada
-    from rag.recuperacao.base import Recuperador, Resultado
+    from rag.corpus import Chunk
+    from rag.ia import ChatbotRAG
+    from rag.ia import Gerador, RespostaGerada
+    from rag.recuperacao import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="x", inicio_char=0, fim_char=1, indice_no_doc=0)
 
@@ -260,10 +224,10 @@ def test_multiturn_recupera_pela_pergunta_reescrita_e_gera_com_historico():
 def test_piso_score_recusa_antes_de_gerar():
     """O piso de score recusa fora-de-escopo (score baixo) SEM chamar o gerador; acima
     do piso, gera normalmente."""
-    from rag.corpus.chunking import Chunk
-    from rag.ia.chatbot import ChatbotRAG
-    from rag.ia.generator import Gerador, RespostaGerada
-    from rag.recuperacao.base import Recuperador, Resultado
+    from rag.corpus import Chunk
+    from rag.ia import ChatbotRAG
+    from rag.ia import Gerador, RespostaGerada
+    from rag.recuperacao import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="conteúdo", inicio_char=0, fim_char=8, indice_no_doc=0)
 
@@ -287,13 +251,13 @@ def test_piso_score_recusa_antes_de_gerar():
     _GeradorEspiao.chamado = False
     bot = ChatbotRAG(_RecFixo(-4.0), [chunk], _GeradorEspiao(), top_k_contexto=5, piso_score=-3.2)
     r = bot.responder("pergunta fora de escopo")
-    assert "não encontrei" in r.resposta.texto.lower()
-    assert r.contextos == []
+    assert "não encontrei" in r.texto.lower()
+    assert r.trechos == []
     assert _GeradorEspiao.chamado is False
 
     # Acima do piso: gera normalmente.
     _GeradorEspiao.chamado = False
     bot_ok = ChatbotRAG(_RecFixo(1.5), [chunk], _GeradorEspiao(), top_k_contexto=5, piso_score=-3.2)
     r_ok = bot_ok.responder("pergunta in-scope")
-    assert r_ok.resposta.texto == "resposta gerada"
+    assert r_ok.texto == "resposta gerada"
     assert _GeradorEspiao.chamado is True

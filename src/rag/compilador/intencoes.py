@@ -2,12 +2,12 @@
 
 Só definição, sem lógica, e é essa separação que permite ampliar o assistente sem tocar em
 código. Três tabelas, na ordem em que o compilador as usa: **léxico** (palavra do aluno →
-símbolo), **gramática** (sequência de símbolos → intenção) e **ações** (intenção → consulta ao
-Manual). Cada uma é conferida contra a anterior na construção, então erro de definição aparece
-na importação, não em produção.
+símbolo), **gramática** (símbolos → intenção) e **ações** (intenção → consulta ao Manual).
+Cada uma é conferida contra a anterior na construção, então erro de definição estoura na
+importação, e não em produção.
 
-Cada símbolo nomeia um assunto ou marcador, não uma palavra: ``FALTA`` cobre "faltas",
-"ausências" e "frequência", que para a gramática apontam para a mesma regra do Manual.
+Um símbolo nomeia um assunto, não uma palavra: ``FALTA`` cobre "faltas", "ausências" e
+"frequência", que apontam para a mesma regra do Manual.
 """
 from __future__ import annotations
 
@@ -15,8 +15,7 @@ from .gramatica import Gramatica
 from .lexico import Lexico, TipoToken
 from .semantico import Acao, AnalisadorSemantico, Campo
 
-# Marcadores: dizem QUE TIPO de resposta o aluno quer (definição, procedimento, quantidade),
-# não o assunto. São eles que separam "o que é trancamento" de "como faço o trancamento".
+# Marcadores: que TIPO de resposta o aluno quer. Separam "o que é trancamento" de "como trancar".
 MARCADORES: dict[str, list[str]] = {
     "QUAL": ["qual", "quais"],
     "COMO": ["como"],
@@ -43,8 +42,7 @@ ASSUNTOS: dict[str, list[str]] = {
     "ABONO": ["abono", "abonada", "abonadas", "abonado", "abonados",
               "compensada", "compensadas", "compensar"],
     "MATRICULA": ["matrícula", "matrículas", "matricular", "rematrícula"],
-    # Símbolo próprio, não variante de MATRICULA: o Manual fala em renovar a matrícula e em
-    # renovar o empréstimo da biblioteca. Quem compõe é a gramática.
+    # símbolo próprio, não variante de MATRICULA: renova-se matrícula e empréstimo
     "RENOVACAO": ["renovação", "renovar", "renovada", "renovado"],
     "TRANCAR": ["trancar", "trancamento", "trancada", "trancado",
                 "interromper", "interrupção"],
@@ -58,8 +56,6 @@ ASSUNTOS: dict[str, list[str]] = {
     "APROVACAO": ["aprovado", "aprovada", "aprovação", "aprovar"],
     "REPROVACAO": ["reprovado", "reprovada", "reprovação"],
     "ESTAGIO": ["estágio", "estágios"],
-    # "obrigado" também é agradecimento. Sozinho não casa regra nenhuma (toda regra pede dois
-    # símbolos ou um termo inequívoco), então o risco de confundir um "obrigado!" solto é nulo.
     "OBRIGATORIO": ["obrigatório", "obrigatória", "obrigatoriedade", "obrigado", "obrigada"],
     "BIBLIOTECA": ["biblioteca"],
     "EMPRESTIMO": ["empréstimo", "emprestar", "devolução", "devolver", "devolvi", "devolvido"],
@@ -72,8 +68,7 @@ ASSUNTOS: dict[str, list[str]] = {
                    "sanção", "sanções", "suspensão", "advertência", "repreensão"],
     "PRAZO": ["prazo", "prazos", "data", "datas", "dia", "dias"],
     "ALUNO": ["aluno", "aluna", "alunos", "estudante", "estudantes"],
-    # Símbolo próprio, não variante de ALUNO: "aluno-atleta" chega como ALUNO ATLETA e é a
-    # gramática que compõe os dois — mesma lógica de qualquer qualificador do Manual.
+    # símbolo próprio: "aluno-atleta" chega como ALUNO ATLETA e a gramática compõe os dois
     "ATLETA": ["atleta", "atletas"],
     "PERIODO": ["período", "períodos", "semestre", "semestres", "bimestre", "bimestres"],
     "INSTITUICAO": ["faculdade", "universidade", "unip", "instituição", "instituições"],
@@ -141,9 +136,8 @@ ASSUNTOS: dict[str, list[str]] = {
 
 GRUPOS: dict[str, list[str]] = {**MARCADORES, **ASSUNTOS}
 
-# Ruído: o análogo do espaço em branco de um compilador. Reconhecido para ser descartado —
-# artigos, preposições, pronomes, verbos de ligação e enfeites de conversa. Palavra que não
-# está aqui nem no léxico não é ruído: vira DESCONHECIDO e segue (pode ser nome de disciplina).
+# Ruído: o análogo do espaço em branco de um compilador, reconhecido para ser descartado.
+# Palavra que não está aqui nem no léxico vira DESCONHECIDO e segue (pode ser disciplina).
 RUIDO: list[str] = [
     # artigos e preposições
     "o", "a", "os", "as", "um", "uma", "uns", "umas",
@@ -169,24 +163,14 @@ RUIDO: list[str] = [
 LEXICO_MANUAL = Lexico.de_grupos(GRUPOS, RUIDO)
 
 
-# --------------------------------------------------------------------------------------------
-# Gramática de intenções. Notação: espaço separa os elementos (a ordem importa), "?" marca
-# opcional e "|" separa símbolos equivalentes. A regra casa como subsequência, ignorando o que
-# sobra na frase — ver ``gramatica`` para a semântica completa.
-#
-# As regras derivam dos TÍTULOS DE SEÇÃO do Manual, não das perguntas do gold-set: escrever
-# regra olhando as perguntas que depois medem a cobertura daria um número in-sample.
-#
-# Regra de um único símbolo obrigatório é reservada a termo inequívoco do documento
-# ("jubilamento", "trote"). Palavra que pergunta fora de escopo possa carregar exige um segundo
-# símbolo. Ver docs/decisoes.md §6 e §8.
+# Gramática de intenções; a notação está em ``gramatica``. As regras derivam dos TÍTULOS DE
+# SEÇÃO do Manual, e não das perguntas do gold-set, senão a cobertura seria in-sample. Regra
+# de um símbolo só é reservada a termo inequívoco (decisoes.md §6 e §8).
 REGRAS: dict[str, str] = {
     # --- frequência, notas e avaliação ---
-    # O terceiro símbolo separa a pergunta sobre a NORMA da pergunta sobre o ALUNO: sem ele,
-    # "quantas faltas eu já tenho" era respondida com a regra dos 75% (decisoes.md §6).
+    # o 3º símbolo separa a norma do caso do aluno (decisoes.md §6)
     "limite_faltas":            "QUANTIDADE&FALTA&PODER|OBRIGATORIO|DISCIPLINA",
-    # As duas do aluno-atleta vencem limite_faltas pelo número de obrigatórios, e são duas porque
-    # o Manual trata os dois fatos em frases separadas: quanto compensa e que não há abono.
+    # vencem limite_faltas por número de obrigatórios; o Manual trata os dois fatos separados
     "limite_atleta":            "QUANTIDADE ALUNO ATLETA ABONO",
     "abono_falta_atleta":       "ALUNO ATLETA ABONO",
     "consulta_notas_faltas":    "LOCALIZAR NOTA|FALTA",
@@ -278,8 +262,7 @@ REGRAS: dict[str, str] = {
     "palestras_visitas":        "PALESTRA",
 
     # --- conduta e espaços ---
-    # A exclusão cede a vez para a regra da biblioteca: sem ela, "qual a multa da biblioteca"
-    # empatava aqui e podia ser respondida com o regime disciplinar, que é outro assunto.
+    # a exclusão cede a vez à regra da biblioteca (decisoes.md §4)
     "penalidades_disciplinares": "PENALIDADE !BIBLIOTECA !EMPRESTIMO",
     "proibicao_fumar":          "FUMAR",
     "armas":                    "ARMA",
@@ -291,10 +274,8 @@ REGRAS: dict[str, str] = {
 GRAMATICA_MANUAL = Gramatica.de_notacao(REGRAS, LEXICO_MANUAL)
 
 
-# --------------------------------------------------------------------------------------------
 # Ações: a consulta que vai ao recuperador, escrita no vocabulário do Manual e não no do aluno.
-# Onde o trecho-fonte do gold-set foi conferido, as palavras vêm dele; onde não, a consulta fica
-# no tema, sem afirmar conteúdo. Ver docs/decisoes.md §7.
+# Onde o trecho-fonte foi conferido, as palavras vêm dele (decisoes.md §7).
 ACOES: dict[str, Acao] = {
     "limite_faltas": Acao(
         "frequência obrigatória em cada disciplina, aulas dadas",

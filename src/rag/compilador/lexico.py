@@ -1,30 +1,27 @@
-"""Fase 1 do front-end: quebra a pergunta em símbolos tipados.
+"""Fase 1: quebra a pergunta em símbolos tipados.
 
-Normaliza a escrita (minúsculas, sem acento) e traduz sinônimos para um símbolo único, de modo
-que a variação morre aqui. Descarta ruído como um scanner descarta espaço e comentário, e deixa
-passar a palavra desconhecida, que pode ser valor de campo.
-
-Mecanismo aqui; vocabulário do Manual em ``intencoes``. Limitações e decisões em
-``docs/decisoes.md`` (seção 12).
+Normaliza a escrita e traduz sinônimos para um símbolo único, de modo que a variação morre
+aqui. Descarta ruído como um scanner descarta espaço e comentário, e deixa passar a palavra
+desconhecida, que pode ser valor de campo. O vocabulário está em ``intencoes``.
 """
 from __future__ import annotations
 
 import re
-import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 
-# Uma "palavra" para o scanner: letras (acentuadas inclusive) e dígitos. Todo o resto
-# (pontuação, símbolos) é separador e não gera token.
+from ..corpus import sem_acentos
+
+# Uma "palavra" para o scanner: letras e dígitos. O resto é separador e não gera token.
 _PALAVRA = re.compile(r"\w+", re.UNICODE)
 
 
 class TipoToken(Enum):
     PALAVRA_CHAVE = auto()  # está no léxico; ``valor`` é o símbolo canônico (ex.: FALTA)
-    NUMERO = auto()         # literal numérico (ex.: 25)
-    RUIDO = auto()          # palavra irrelevante para a gramática; descartada por padrão
-    DESCONHECIDO = auto()   # fora do léxico; segue adiante como possível valor de campo
+    NUMERO = auto()         # literal numérico
+    RUIDO = auto()          # irrelevante para a gramática; descartado por padrão
+    DESCONHECIDO = auto()   # fora do léxico; segue como possível valor de campo
 
 
 @dataclass(frozen=True)
@@ -32,28 +29,24 @@ class Token:
     tipo: TipoToken
     valor: str    # símbolo canônico, ou a forma normalizada quando não há símbolo
     lexema: str   # o texto exatamente como o aluno escreveu
-    inicio: int   # posição do lexema no texto original (para mensagens de erro)
+    inicio: int   # posição do lexema no texto original
 
 
 def normalizar(texto: str) -> str:
-    """Forma canônica de escrita: minúsculas e sem acentos ("Ausências" -> "ausencias")."""
-    nfkd = unicodedata.normalize("NFKD", texto.lower())
-    return "".join(c for c in nfkd if not unicodedata.combining(c))
+    """Forma canônica de escrita: minúsculas e sem acento ("Ausências" -> "ausencias")."""
+    return sem_acentos(texto.lower())
 
 
 @dataclass(frozen=True)
 class Lexico:
-    """Tabela de símbolos: forma normalizada -> símbolo canônico, mais as palavras de ruído.
-
-    Construa por :meth:`de_grupos`, que é como o vocabulário é escrito à mão.
-    """
+    """Tabela de símbolos: forma normalizada -> símbolo canônico, mais as palavras de ruído."""
 
     simbolo_por_variante: Mapping[str, str]
     ruido: frozenset[str]
 
     @property
     def simbolos_definidos(self) -> frozenset[str]:
-        """Todos os símbolos que o léxico sabe produzir — o alfabeto da gramática de intenções."""
+        """Tudo que o léxico sabe produzir: o alfabeto da gramática de intenções."""
         return frozenset(self.simbolo_por_variante.values())
 
     @classmethod
@@ -64,8 +57,7 @@ class Lexico:
     ) -> Lexico:
         """Inverte ``{símbolo: [variantes]}`` para o mapa de consulta, normalizando tudo.
 
-        Falha alto em definição inconsistente (palavra apontando para dois símbolos, ou listada
-        como ruído e como variante): silenciosas, viram bug difícil de achar depois.
+        Falha alto em definição inconsistente: silenciosa, vira bug difícil de achar depois.
         """
         simbolo_por_variante: dict[str, str] = {}
         for simbolo, variantes in grupos.items():
@@ -93,7 +85,6 @@ class AnalisadorLexico:
         self._lexico = lexico
 
     def analisar(self, texto: str, descartar_ruido: bool = True) -> list[Token]:
-        """Tokeniza ``texto``. O ruído sai da lista por padrão (mantê-lo só serve para inspeção)."""
         tokens = [self._classificar(casamento) for casamento in _PALAVRA.finditer(texto)]
         if descartar_ruido:
             return [token for token in tokens if token.tipo is not TipoToken.RUIDO]
@@ -115,5 +106,5 @@ class AnalisadorLexico:
 
 
 def simbolos(tokens: Iterable[Token]) -> list[str]:
-    """Só os símbolos das palavras-chave, na ordem — a visão que a gramática enxerga."""
+    """Só os símbolos das palavras-chave, na ordem: a visão que a gramática enxerga."""
     return [t.valor for t in tokens if t.tipo is TipoToken.PALAVRA_CHAVE]

@@ -1,14 +1,14 @@
 """Testes da base de conhecimento — inclusive o caminho completo do núcleo, sem LLM."""
 from __future__ import annotations
 
-from rag.corpus.chunking import Chunk
+from rag.corpus import Chunk
 from rag.compilador.base_conhecimento import BaseConhecimento, destacar
 from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
 from rag.compilador.lexico import AnalisadorLexico
 from rag.compilador.semantico import Consulta
 from rag.compilador.sintatico import AnalisadorSintatico
-from rag.recuperacao.base import Recuperador, Resultado
-from rag.recuperacao.esparsa import RecuperadorBM25
+from rag.recuperacao import Recuperador, Resultado
+from rag.recuperacao import RecuperadorBM25
 
 # Corpus minúsculo no estilo do Manual: BM25 é determinístico e não baixa modelo nenhum.
 CORPUS = [

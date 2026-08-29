@@ -29,25 +29,21 @@ import csv
 import os
 import sys
 
-from rag.config import carregar_config
-from rag.corpus.loaders import carregar_pdf
-from rag.avaliacao.goldset import carregar_goldset, construir_relevancia
+from rag.config import Config
+from rag.goldset import carregar_goldset, construir_relevancia
 from rag.compilador.base_conhecimento import BaseConhecimento
 from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS, SEMANTICA_MANUAL
 from rag.compilador.lexico import AnalisadorLexico, simbolos
 from rag.compilador.sintatico import AnalisadorSintatico
-from rag.pipeline import construir_indice, montar_esparsa, montar_recuperador_produto
+from rag.pipeline import indexar_manual, montar_esparsa, montar_recuperador_produto
 
-CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 CAMINHO_GOLD = "data/goldsets/institucional.json"
 CAMINHO_CSV = "outputs/cobertura_nucleo.csv"
-DOC = "manual"
-TOP_K = 3  # mesmo padrão que o produto usa em BaseConhecimento
 
 
 def _montar_recuperador(cfg, rapido: bool):
     """Recuperador do produto (BM25 + reranker) ou só BM25, para o laço de feedback."""
-    indice = construir_indice({DOC: carregar_pdf(CAMINHO_PDF)}, cfg)
+    indice = indexar_manual(cfg)
     if rapido:
         return indice, montar_esparsa(indice, cfg)
     return indice, montar_recuperador_produto(indice, cfg)
@@ -55,18 +51,18 @@ def _montar_recuperador(cfg, rapido: bool):
 
 def main() -> int:
     rapido = bool(os.environ.get("COBERTURA_RAPIDA"))
-    cfg = carregar_config()
+    cfg = Config()
     itens = carregar_goldset(CAMINHO_GOLD)
 
     print("Carregando indice" + ("" if rapido else " e modelos") + "...", flush=True)
     indice, recuperador = _montar_recuperador(cfg, rapido)
     relevancia = construir_relevancia(
-        itens, indice.chunks, indice.textos_doc, cfg.recuperacao.limiar_relevancia
+        itens, indice.chunks, indice.textos_doc, cfg.limiar_relevancia
     )
 
     lexico = AnalisadorLexico(LEXICO_MANUAL)
     sintatico = AnalisadorSintatico(GRAMATICA_MANUAL)
-    base = BaseConhecimento(recuperador, indice.chunks, TOP_K)
+    base = BaseConhecimento(recuperador, indice.chunks, cfg.top_k_nucleo)
 
     linhas = []
     por_regra: dict[str, list[str]] = {}
@@ -109,14 +105,16 @@ def main() -> int:
         escritor.writeheader()
         escritor.writerows(linhas)
 
-    _relatar(itens, linhas, por_regra, n_reconhecidas, n_hit, n_destaque, recuperador.nome)
+    _relatar(itens, linhas, por_regra, n_reconhecidas, n_hit, n_destaque,
+             recuperador.nome, cfg.top_k_nucleo)
     return 0
 
 
-def _relatar(itens, linhas, por_regra, n_reconhecidas, n_hit, n_destaque, nome_recuperador):
+def _relatar(itens, linhas, por_regra, n_reconhecidas, n_hit, n_destaque,
+             nome_recuperador, top_k):
     total = len(itens)
     print(f"\nCobertura do nucleo | {total} perguntas | recuperador={nome_recuperador} "
-          f"| top-{TOP_K} | sem LLM\n")
+          f"| top-{top_k} | sem LLM\n")
     print(f"reconhecidas pelo nucleo: {n_reconhecidas}/{total} = {n_reconhecidas/total:.0%}")
     print(f"sobra para o plano B:     {total - n_reconhecidas}/{total}")
 

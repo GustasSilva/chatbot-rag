@@ -111,7 +111,7 @@ pergunta como o aluno escreveu.
 
 ## 5. Reprodutibilidade
 
-Parâmetros fixos em `config.yaml` (embedding, chunking, temperatura 0, piso de score). Como
+Parâmetros fixos em `src/rag/config.py` (chunking, temperatura 0, piso de score). Como
 rodar cada marco e o produto: seção "Como rodar" do `README.md`. Métricas regeneráveis em
 `outputs/*.csv`; gold-sets versionados em `data/goldsets/`; corpora brutos fora do git (fontes
 oficiais no README e nos scripts de construção dos gold-sets).

@@ -1,12 +1,11 @@
 """Testes do controlador: quem responde o quê, e o que acontece com a IA desligada."""
 from __future__ import annotations
 
-from rag.corpus.chunking import Chunk
-from rag.ia.chatbot import RespostaChatbot
-from rag.ia.generator import RespostaGerada
+from rag.corpus import Chunk
+from rag.ia import RespostaGerada
 from rag.compilador.base_conhecimento import BaseConhecimento
 from rag.compilador.dialogo import NAO_ENTENDI, Dialogo, Origem
-from rag.recuperacao.esparsa import RecuperadorBM25
+from rag.recuperacao import RecuperadorBM25
 
 CORPUS = [
     Chunk(0, "manual", "A frequência obrigatória, em cada disciplina, é de 75% das aulas "
@@ -23,20 +22,36 @@ class PlanoBEspiao:
         self.perguntas: list[str] = []
         self.historicos: list[list[tuple[str, str]] | None] = []
 
-    def responder(self, pergunta: str, historico=None) -> RespostaChatbot:
+    def responder(self, pergunta: str, historico=None) -> RespostaGerada:
         self.perguntas.append(pergunta)
         self.historicos.append(historico)
-        return RespostaChatbot(pergunta, RespostaGerada("resposta do plano B", [1]), [CORPUS[1]])
+        return RespostaGerada("resposta do plano B", [1], [CORPUS[1]])
 
 
 def montar(plano_b=None, corpus=CORPUS) -> Dialogo:
     return Dialogo.de_manual(BaseConhecimento(RecuperadorBM25(corpus), corpus, top_k=1), plano_b)
 
 
+def test_pergunta_reconhecida_e_respondida_pelo_nucleo():_ = None
+
+
+def test_duas_perguntas_recebem_duas_respostas():
+    """Uma resposta por intenção, na ordem em que o aluno perguntou."""
+    dialogo = montar()
+    resposta = dialogo.responder(
+        "quantas faltas posso ter e o que é trancamento de matrícula"
+    )
+    assert resposta.origem is Origem.NUCLEO
+    assert len(resposta.intencoes) == 2
+    assert len(resposta.texto.split("\n\n")) == 2
+    assert resposta.intencoes == ("limite_faltas", "definicao_trancamento")
+    assert len(resposta.fontes) == 2, "uma fonte por intenção respondida"
+
+
 def test_pergunta_reconhecida_e_respondida_pelo_nucleo():
     resposta = montar().responder("poxa, quantas faltas eu posso ter?")
     assert resposta.origem is Origem.NUCLEO
-    assert resposta.intencao == "limite_faltas"
+    assert resposta.intencoes == ("limite_faltas",)
     assert "75%" in resposta.texto
     assert [t.id for t in resposta.trechos] == [0]
     assert resposta.fontes == (0,)  # o trecho que embasa a resposta, para a interface marcar

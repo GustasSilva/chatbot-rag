@@ -19,15 +19,9 @@ from __future__ import annotations
 import sys
 
 from rag.apresentacao import fontes_de
-from rag.config import carregar_config
-from rag.corpus.loaders import carregar_pdf
-from rag.ia.chatbot import ChatbotRAG
-from rag.ia.fabrica import construir_gerador
-from rag.compilador.base_conhecimento import BaseConhecimento
-from rag.compilador.dialogo import Dialogo, Origem
-from rag.pipeline import construir_indice, montar_recuperador_produto
+from rag.compilador.dialogo import Origem
+from rag.pipeline import montar_assistente
 
-CAMINHO_PDF = "data/raw/manual_aluno_unip_2026.pdf"
 SAIR = {"sair", "exit", "quit"}
 RODAPE_ORIGEM = {
     Origem.NUCLEO: "(trecho do Manual, localizado pela gramatica de intencoes -- sem IA)",
@@ -39,17 +33,9 @@ DISCLAIMER = (
 )
 
 
-
-
 def main() -> int:
-    cfg = carregar_config()
     print("Carregando indice e modelos (pode levar alguns segundos)...", flush=True)
-    indice = construir_indice({"manual": carregar_pdf(CAMINHO_PDF)}, cfg)
-    rer = montar_recuperador_produto(indice, cfg)
-    gerador = construir_gerador(cfg.geracao, perfil="institucional")
-    plano_b = ChatbotRAG(rer, indice.chunks, gerador, cfg.geracao.top_k_contexto,
-                         piso_score=cfg.geracao.piso_score_reranker, saudar=True)
-    dialogo = Dialogo.de_manual(BaseConhecimento(rer, indice.chunks), plano_b)
+    dialogo = montar_assistente()
 
     print("\n" + "=" * 72)
     print("  Assistente do Manual do Aluno")

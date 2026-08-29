@@ -140,6 +140,19 @@ Por isso a medição de cobertura não é *in sample* (§8).
 
 ## Arquitetura
 
+Montar o assistente inteiro é uma chamada, e desligar a inteligência artificial é um argumento:
+
+```python
+from rag.pipeline import montar_assistente
+
+dialogo = montar_assistente()                      # núcleo + plano B
+dialogo = montar_assistente(com_plano_b=False)     # só o compilador, sem modelo nenhum
+
+resposta = dialogo.responder("Quantas faltas posso ter?")
+resposta.origem      # Origem.NUCLEO | Origem.PLANO_B | Origem.NAO_ENTENDIDA
+```
+
+
 | Camada | Módulo | Papel |
 |---|---|---|
 | **Núcleo (compilador)** | `rag.compilador.lexico` | Tokeniza, normaliza a escrita e traduz variantes em símbolos. É a tabela de símbolos do reconhecedor: fixa, carregada antes da análise, e é contra ela que cada símbolo usado numa regra é validado |
@@ -149,16 +162,22 @@ Por isso a medição de cobertura não é *in sample* (§8).
 | | `rag.compilador.base_conhecimento` | Executa a consulta contra o Manual e destaca a frase que responde |
 | | `rag.compilador.intencoes` | Só dados: léxico, gramática e ações, sem lógica |
 | **Controlador** | `rag.compilador.dialogo` | Orquestra as fases e decide o plano B. Marca a origem de cada resposta |
-| **Corpus** | `rag.corpus.loaders` · `chunking` | Carrega o PDF, normaliza e divide em trechos com sobreposição |
-| **Recuperação** | `rag.recuperacao.esparsa` | **BM25 Okapi do zero**, com índice invertido |
-| | `rag.recuperacao.reranker` | Cross-encoder de segundo estágio |
-| **Plano B** | `rag.ia.chatbot` · `generator` · `fabrica` | Chatbot RAG com guardrail e piso de score, sobre Ollama |
-| **Medição** | `rag.avaliacao.goldset` | Carrega o conjunto de perguntas de referência e resolve a relevância de cada trecho |
-| **Montagem** | `rag.pipeline` · `rag.config` · `rag.apresentacao` | Índice, parâmetros fixos e a formatação comum à tela e ao terminal |
+| **Corpus** | `rag.corpus` | Carrega o PDF, normaliza e divide em trechos com sobreposição |
+| **Recuperação** | `rag.recuperacao` | **BM25 Okapi do zero** com índice invertido, e o cross-encoder de segundo estágio |
+| **Plano B** | `rag.ia` | Chatbot RAG com guardrail e piso de score, sobre Ollama |
+| **Medição** | `rag.goldset` | Carrega o conjunto de perguntas de referência e resolve a relevância de cada trecho |
+| **Montagem** | `rag.pipeline` | `montar_assistente(cfg)` monta o produto inteiro: é a única chamada que um ponto de entrada precisa fazer |
+| **Parâmetros** | `rag.config` | Uma estrutura imutável com todos os valores fixos do trabalho |
+| **Exibição** | `rag.apresentacao` | Saudação, recusa e o recorte dos trechos, igual na tela e no terminal |
 
-O pacote `rag.compilador`, com exceção do controlador, **não importa nada além da biblioteca padrão**:
-só `re`, `unicodedata`, `dataclasses`, `enum` e `collections.abc`. Nenhum gerador de parser,
-nenhuma biblioteca de processamento de linguagem. É verificável por `grep`.
+O pacote `rag.compilador`, com exceção do controlador, **não importa nada além da biblioteca
+padrão**: só `re`, `dataclasses`, `enum` e `collections.abc`. Nenhum gerador de parser, nenhuma
+biblioteca de processamento de linguagem. É verificável por `grep`, inclusive contra `import`
+escondido dentro de função:
+
+```bash
+grep -rhoE "^\s*(import|from) [a-z_.]+" src/rag/compilador/*.py | awk '{print $2}' | grep -v "^\." | sort -u
+```
 
 A recuperação do produto é **BM25 mais reranker**. Quem consulta o Manual é a consulta
 canônica, já escrita nas palavras do documento, e nesse caminho o BM25 basta: a medição que
@@ -168,37 +187,73 @@ escore dele.
 
 ## Como rodar
 
+**1. Ambiente**
+
 ```bash
 python -m venv .venv
 # Windows:  .venv\Scripts\activate     |  Linux/Mac:  source .venv/bin/activate
 pip install -e ".[dev]"
 
-pytest                                        # 77 testes, rápidos, sem baixar modelo
+pytest                                        # 75 testes, rápidos, sem baixar modelo
 ```
 
-O produto, sobre o Manual do Aluno:
+Para **reproduzir as medições**, e não só usar o projeto, instale o ambiente exato em que elas
+foram feitas — o piso de score do guardrail é calibrado contra os escores destas versões:
+
+```bash
+pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu   # build só CPU
+pip install -r requirements.txt
+pip install -e . --no-deps
+```
+
+**2. O corpus.** O Manual do Aluno **não vem no repositório** (`data/raw/` está no `.gitignore`).
+Sem ele, tudo abaixo falha com `FileNotFoundError`. Coloque o PDF em:
+
+```
+data/raw/manual_aluno_unip_2026.pdf
+```
+
+O nome do arquivo é o padrão de `rag.config.Config.caminho_manual`; para usar outro, mude lá.
+
+**3. O produto**
 
 ```bash
 python servidor.py                                  # tela em http://localhost:8000, sem dependência extra
 python scripts/produto/assistente_institucional.py  # a mesma conversa no terminal
 ```
 
-As medições:
+O plano B exige [Ollama](https://ollama.com) no ar, com `ollama pull llama3.1:8b`. **Sem ele o
+núcleo responde normalmente**, e o que a gramática não reconhece devolve a mensagem de não
+entendimento: é a demonstração de que o assistente funciona com a IA desligada.
+
+Na primeira execução o cross-encoder (470 MB) é baixado do HuggingFace. Depois disso ele sai do
+cache local, e a partida não depende mais de rede.
+
+**4. As medições**
 
 ```bash
-python scripts/produto/cobertura_nucleo.py                     # quanto o núcleo responde sem IA
-COBERTURA_RAPIDA=1 python scripts/produto/cobertura_nucleo.py  # só BM25, sem carregar o cross-encoder
-python scripts/produto/institucional_acuracia.py               # acurácia de resposta, 50 perguntas
-python scripts/produto/institucional_guardrail.py              # guardrail adversarial, 31 perguntas fora de escopo
+python scripts/produto/cobertura_nucleo.py            # quanto o núcleo responde sem IA
+python scripts/produto/institucional_guardrail.py     # guardrail adversarial, 31 perguntas fora de escopo
+python scripts/produto/institucional_acuracia.py      # acurácia de resposta, 50 perguntas (exige Ollama)
 ```
 
-O plano B exige [Ollama](https://ollama.com) com `ollama pull llama3.1:8b`. Sem ele, o núcleo
-responde normalmente e o que não é reconhecido devolve a mensagem de não entendimento, que é
-justamente a demonstração de que o assistente funciona com a IA desligada.
+A cobertura tem um modo rápido, que pula o cross-encoder e roda em segundos:
+
+```bash
+COBERTURA_RAPIDA=1 python scripts/produto/cobertura_nucleo.py     # bash
+$env:COBERTURA_RAPIDA=1; python scripts/produto/cobertura_nucleo.py   # PowerShell
+```
+
+Para reconstruir o conjunto de perguntas de referência a partir do PDF (só é preciso quando o
+corpus muda; o JSON pronto está versionado em `data/goldsets/`):
+
+```bash
+python scripts/goldsets/construir_goldset_institucional.py
+```
 
 ## Decisões de design
 
-- **BM25 do zero** (`recuperacao/esparsa.py`): índice invertido, IDF Okapi e normalização por
+- **BM25 do zero** (`recuperacao.py`): índice invertido, IDF Okapi e normalização por
   tamanho, sem nenhuma biblioteca de busca pronta.
 - **Consulta canônica**: a frase do aluno nunca chega ao recuperador. A variação de escrita
   morre na análise léxica e a intenção é traduzida numa consulta escrita nas palavras do
@@ -208,8 +263,8 @@ justamente a demonstração de que o assistente funciona com a IA desligada.
 - **Regra de um símbolo obrigatório só para termo inequívoco** do documento. Palavra que uma
   pergunta fora de escopo possa carregar exige um segundo símbolo, senão vira superfície de
   vazamento (§6).
-- **Embedding fixo** (`multilingual-e5-base`) e chunking fixo em 180 tokens com 45 de
-  sobreposição, para que a comparação medisse a busca e não o pré-processamento.
+- **Chunking fixo** em 180 tokens com 45 de sobreposição: mudar aqui invalidaria todas as
+  medições já feitas, porque move a fronteira dos trechos.
 - **Relevância por sobreposição de offsets**: o trecho-fonte é substring exato do corpus
   limpo, o que é robusto à fronteira dos trechos.
 - **Duas limitações conhecidas e não corrigidas**, por decisão registrada: o plano B às vezes
@@ -223,41 +278,36 @@ O corte que mais importa separa **o que entende a pergunta** do **que gera texto
 é compilador e não usa aprendizado de máquina; o segundo é o plano B. `corpus` e `recuperacao`
 não pertencem a nenhum dos dois: são a infraestrutura que ambos leem.
 
+A assimetria e proposital: **o nucleo e uma pasta com sete arquivos; a IA inteira e um arquivo
+so.** A forma do diretorio ja diz onde esta a intervencao.
+
 ```
 src/rag/compilador/    O NUCLEO, sem modelo e sem peso treinado
     lexico.py            fase 1: tokeniza, normaliza e canoniza sinonimos
-    gramatica.py         fase 2: a notacao das regras de intencao
+    gramatica.py         fase 2: a notacao das regras de intencao e a compilacao dela
     sintatico.py         fase 2: casa os simbolos com as regras
-    semantico.py         fase 3: preenche campos e monta a consulta
+    semantico.py         fase 3: preenche campos e monta a consulta canonica
     intencoes.py         os dados: 77 regras, vocabulario e acoes do Manual
-    base_conhecimento.py executa a consulta no Manual
+    base_conhecimento.py executa a consulta no Manual e destaca a frase que responde
     dialogo.py           o controlador: decide entre nucleo e plano B
 
-src/rag/ia/            A INTELIGENCIA ARTIFICIAL, em papel secundario
-    generator.py         a interface do gerador e o backend Ollama
-    fabrica.py           monta o gerador a partir do config
-    chatbot.py           monta a resposta a partir dos trechos recuperados
-
-src/rag/recuperacao/   infraestrutura usada pelos dois
-    esparsa.py           BM25 escrito do zero (o que o nucleo usa)
-    reranker.py          reordenacao por cross-encoder; sustenta o piso de score
-    base.py              o contrato comum
-
-src/rag/corpus/        o texto de onde as respostas saem: PDF, normalizacao e trechos
-src/rag/avaliacao/     carga do conjunto de perguntas de referencia
-src/rag/config.py      o config.yaml tipado
-src/rag/pipeline.py    monta indice e recuperador
-src/rag/apresentacao.py  formata a resposta para exibicao
+src/rag/ia.py          A INTELIGENCIA ARTIFICIAL, em papel secundario:
+                       o gerador sobre Ollama e o chatbot RAG com o piso de score
+src/rag/recuperacao.py BM25 do zero e o reranker; infraestrutura usada pelos dois
+src/rag/corpus.py      o texto de onde as respostas saem: PDF, normalizacao e trechos
+src/rag/goldset.py     carga do conjunto de perguntas de referencia
+src/rag/config.py      todos os parametros fixos, numa dataclass congelada
+src/rag/pipeline.py    montar_assistente(): do PDF ao assistente pronto
+src/rag/apresentacao.py  saudacao, recusa e o recorte dos trechos citados
 
 servidor.py            servidor da biblioteca padrao que serve web/index.html
 web/index.html         a tela do produto: HTML, CSS e JS num arquivo so
-config.yaml            parametros fixos
 
 scripts/produto/       o assistente e as medicoes em uso (4)
 scripts/goldsets/      construcao do conjunto de referencia (1)
 scripts/LEIA-ME.md     o que cada script faz
 
-tests/                 77 testes
+tests/                 75 testes
 docs/decisoes.md       o porque de cada decisao do nucleo, com as medicoes
 data/goldsets/         o conjunto de referencia validado (JSON)
 data/raw/              corpora brutos, fora do git
