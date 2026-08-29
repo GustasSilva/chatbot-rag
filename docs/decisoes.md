@@ -566,12 +566,48 @@ Ponta a ponta:
 `max_intencoes`. O `janela` da apresentação passou a centrar no destaque certo quando a resposta
 reúne mais de um.
 
+### Cada resposta é rotulada pela intenção que a produziu
+
+Com mais de uma intenção, o controlador prefixa cada resposta com `[intencao]`. Duas respostas
+seguidas não dizem sozinhas qual delas responde o quê, e o rótulo tem o efeito colateral de
+mostrar, na tela, qual regra disparou.
+
+Com **uma** intenção o texto sai limpo, exatamente como sempre saiu: nada muda para a pergunta
+simples, que é o caso das cinquenta do gold-set. Quem exibe tira o rótulo antes de procurar o
+destaque dentro do trecho (`apresentacao._SEM_ROTULO`), senão a janela da fonte deixaria de
+centrar na frase que respondeu.
+
 ### Limitação que fica
 
-A dispersão **reduz** a costura entre perguntas, não a elimina. Uma frase longa o bastante, com
+**1. A costura entre perguntas foi reduzida, não eliminada.** Uma frase longa o bastante, com
 símbolos compatíveis espalhados, ainda pode produzir uma intenção que ninguém pediu. A saída
 definitiva seria segmentar a entrada antes da fase 2, o que foi deliberadamente evitado: exige
 heurística de separação (conjunção, pontuação) que erra em "faltas em Cálculo **e** Física".
 
-O gold-set continua sendo de perguntas simples. **Medir a capacidade nova exige itens
-multi-pergunta e uma métrica própria** — ao lado da cobertura atual, não no lugar dela.
+**2. Quando só uma das perguntas é reconhecida, o núcleo responde essa e não avisa do resto.**
+
+```
+"quantas faltas posso ter e qual o tratamento para asma?"
+   reconhecidas: ['limite_faltas']     sobrou: ['QUAL']
+```
+
+E **não há sinal confiável para detectar isso**. O candidato óbvio seria "sobrou símbolo sem
+consumir", mas a medição desqualifica o critério: **39 das 50 perguntas do gold-set deixam
+símbolo sem consumir**, e todas são perguntas simples respondidas corretamente.
+
+```
+m01  "Qual o percentual mínimo de frequência..."   sobrou: QUAL, DISCIPLINA
+m04  "Por quanto tempo o trancamento..."           sobrou: PODER
+m13  "Qual a penalidade por atraso na devolução..." sobrou: QUAL, BIBLIOTECA
+```
+
+A sobra de `['QUAL']` na pergunta com asma é indistinguível da sobra de `m01`. Pior: em
+"quantas faltas e me conta uma piada" **não sobra nada**, porque "piada" e "conta" não estão no
+léxico e nem chegam a virar símbolo.
+
+Fica registrado como limitação conhecida: **o núcleo responde o que reconhece e não tem como
+saber que metade da pergunta ficou sem resposta.** Encaminhar o resíduo ao plano B foi
+descartado justamente por falta desse sinal — dispararia em 39 das 50 perguntas simples.
+
+**3. O gold-set continua sendo de perguntas simples.** Medir a capacidade nova exige itens
+multi-pergunta e uma métrica própria, ao lado da cobertura atual e não no lugar dela.

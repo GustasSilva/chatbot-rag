@@ -22,6 +22,21 @@ from .sintatico import AnalisadorSintatico
 NAO_ENTENDI = "Não entendi a sua pergunta. Pode reformular?"
 
 
+def _compor(respondidas: list) -> str:
+    """Junta as respostas; havendo mais de uma, rotula cada qual pela sua intenção.
+
+    Com uma só o texto sai limpo, como sempre saiu. O rótulo existe porque duas respostas
+    seguidas não dizem sozinhas qual delas responde o quê. Quem exibe tira o rótulo antes
+    de procurar o destaque dentro do trecho (``apresentacao._SEM_ROTULO``).
+    """
+    if len(respondidas) == 1:
+        return respondidas[0][1].destaque
+    return "\n\n".join(
+        f"[{reconhecimento.intencao}] {resposta.destaque}"
+        for reconhecimento, resposta in respondidas
+    )
+
+
 class Origem(Enum):
     """De onde veio a resposta: a medida de cobertura do núcleo, resposta a resposta."""
 
@@ -110,7 +125,7 @@ class Dialogo:
 
         return RespostaDialogo(
             pergunta=pergunta,
-            texto="\n\n".join(resposta.destaque for _, resposta in respondidas),
+            texto=_compor(respondidas),
             origem=Origem.NUCLEO,
             trechos=tuple(trechos),
             # O destaque de cada intenção sai do 1º trecho dela: são esses que embasam.

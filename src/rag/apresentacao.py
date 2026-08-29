@@ -6,8 +6,13 @@ interfaces (navegador e terminal) mostrarem a mesma coisa do mesmo jeito.
 from __future__ import annotations
 
 import random
+import re
 
 from .corpus import sem_acentos
+
+# Rótulo "[intencao] " que o controlador põe quando a resposta reúne mais de uma
+# intenção: sai antes de procurar o destaque dentro do trecho.
+_SEM_ROTULO = re.compile(r"^\[[a-z_]+\]\s*")
 
 RECUSA = "Não encontrei essa informação nos documentos."
 # O modelo às vezes acrescenta ao final ("...nos documentos fornecidos"), então o
@@ -71,7 +76,7 @@ def janela(texto: str, destaque: str = "", n: int = 320) -> str:
     # estiver neste trecho.
     inicio = -1
     for parte in destaque.split("\n\n"):
-        alvo = " ".join(parte.split())
+        alvo = " ".join(_SEM_ROTULO.sub("", parte).split())
         if alvo and (inicio := inteiro.find(alvo)) >= 0:
             break
     abertura = max(0, inicio - 40) if inicio >= 0 else 0
