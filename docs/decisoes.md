@@ -611,3 +611,100 @@ descartado justamente por falta desse sinal — dispararia em 39 das 50 pergunta
 
 **3. O gold-set continua sendo de perguntas simples.** Medir a capacidade nova exige itens
 multi-pergunta e uma métrica própria, ao lado da cobertura atual e não no lugar dela.
+
+---
+
+## 23. A decodificação restrita: o que foi, e por que está registrada aqui
+
+**Não está em uso.** O código foi removido em `ed509a1` (28/08/2026), na redução do projeto ao
+produto. Esta seção guarda a explicação, para o capítulo de projeto não depender de arqueologia
+no histórico do Git.
+
+### O que era
+
+A intervenção do trabalho **até o pivô de 13/08/2026**: gramática e autômato aplicados à
+**saída** do modelo, e não à entrada do aluno. Hoje vale como resultado preliminar.
+
+A diferença com o que roda hoje é de garantia. O gerador atual **pede** a citação no prompt
+("cite a fonte entre colchetes, por exemplo [1]"), e o modelo obedece na maioria das vezes. Na
+decodificação restrita, a cada token gerado um autômato dizia quais tokens mantinham a saída
+dentro da linguagem, e os demais tinham o logit posto em `-inf`. Citar fora do formato não era
+improvável: era **impossível**, porque o caminho não existia no autômato.
+
+Ela implementava o mesmo contrato `Gerador` do backend Ollama, então plugava no `ChatbotRAG`
+sem tocar em nada da recuperação.
+
+### Como funcionava, na cadeia clássica gramática → autômato → tradução
+
+Da docstring de `gramatica_citacao.py`, preservada literalmente:
+
+- **Gramática (regular).** A resposta é texto livre no qual toda ocorrência de `[` abre uma
+  citação bem-formada `[n]`, com `n` inteiro em `1..K` (`K` = nº de trechos no contexto), e a
+  geração só pode terminar depois de ao menos uma citação válida.
+- **Autômato (AFD).** Reconhece essa linguagem com um autômato finito determinístico. O número
+  é casado por um *autômato de prefixos* sobre o conjunto finito `{"1", ..., "K"}`, o que
+  elimina becos sem saída por construção: todo prefixo válido alcança um número válido.
+- **Tradução (máscara).** Na decodificação, o AFD diz, a cada passo, quais caracteres — logo,
+  quais *tokens* — mantêm a saída dentro da linguagem; os demais têm o logit posto em `-inf`.
+
+O autômato era **puro Python**, independente da LLM e da `llama_cpp`, e por isso testável
+isoladamente (99 linhas de teste em `tests/test_gramatica_citacao.py`).
+
+### O degrau seguinte, também implementado: subir de classe na hierarquia
+
+`json_estruturado.py` trocava a gramática **regular** por uma **livre de contexto**:
+
+> Enquanto a citação `[n]` é uma linguagem regular reconhecida por um AFD feito à mão, um objeto
+> JSON é livre de contexto: o aninhamento de `{}`/`[]` exige uma **pilha** — um autômato de
+> pilha — para casar aberturas e fechamentos.
+
+O formato forçado era `{"resposta": "<texto>", "fontes": [<n>, ...]}`, com ao menos um `n`. Aqui
+o autômato de pilha não era escrito à mão: autorava-se o **esquema**, e o motor de gramática da
+`llama.cpp` o realizava.
+
+Isso dá ao trabalho um exemplo próprio de **dois níveis distintos da hierarquia de Chomsky
+aplicados ao mesmo problema**, com a razão da diferença explícita: o que exige memória de pilha
+e o que não exige.
+
+### O benefício
+
+A limitação que o produto tem hoje, e que está registrada no README:
+
+> o plano B às vezes cita um índice diferente do da fonte real, e a tela reporta isso fielmente
+
+É exatamente a classe de falha que a decodificação restrita eliminava **por construção**.
+Garantia de formato, não probabilidade de formato.
+
+E o enquadramento vale para o capítulo: **gramática e autômato foram aplicados aos dois lados do
+modelo** — hoje sobre a entrada do aluno (`rag.compilador`), antes sobre a saída do gerador. O
+modelo de linguagem não é uma peça acoplada ao fim de um sistema; ele foi cercado dos dois
+lados por técnica de compilador, e o trabalho escolheu um dos lados como núcleo.
+
+### O que NÃO se preservou, e é preciso saber
+
+O `LINHA-DO-TEMPO.md` do TCC registra a técnica como "implementada, **medida** e integrada". O
+experimento existia (`scripts/estudo/exp_gramatica.py`) e media as coisas certas:
+
+- taxa de **citação bem-formada** com e sem restrição, sobre as mesmas 50 perguntas e os mesmos
+  contextos recuperados;
+- **quantas vezes a máscara bloqueou o token de maior logit do modelo** — a prova de que o
+  autômato de fato interveio na decodificação, e não apenas acompanhou.
+
+Mas o script **só imprimia na tela; nunca gravou arquivo**. Não há saída dele em `outputs/`, e
+os números não estão em nenhum relatório. **Para citar resultado numérico da decodificação
+restrita no TCC, será preciso reexecutar**, o que exige `llama-cpp-python` e o GGUF do modelo.
+
+Sem isso, o que se pode afirmar com honestidade é a técnica, o desenho do experimento e o que
+ele media — não a magnitude do ganho.
+
+### Onde está o código
+
+No histórico, em `ed509a1^`:
+
+```
+git show ed509a1^:src/rag/ia/gramatica_citacao.py    # 227 linhas, o autômato
+git show ed509a1^:src/rag/ia/llamacpp.py             # 229 linhas, o gerador
+git show ed509a1^:src/rag/ia/json_estruturado.py     #  77 linhas, o nível livre de contexto
+git show ed509a1^:scripts/estudo/exp_gramatica.py    # 106 linhas, o experimento
+git show ed509a1^:tests/test_gramatica_citacao.py    #  99 linhas
+```
