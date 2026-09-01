@@ -41,7 +41,7 @@ Disso saem três propriedades que um chatbot baseado só em modelo de linguagem 
        v
   "frequência obrigatória em cada disciplina, aulas dadas"  + {disciplina: Cálculo}
        |
-       |  compilador/base_conhecimento.py    consulta -> trecho do Manual   (BM25)
+       |  compilador/base_conhecimento.py    consulta -> trecho do Manual   (BM25 + reranker)
        v
   3 trechos + a frase que responde
        |
@@ -64,18 +64,21 @@ o Manual do Aluno UNIP 2026 dividido em 173 trechos.
 |---|---|
 | Perguntas reconhecidas pelo núcleo | **44/50 = 88%** |
 | Trecho correto entre os recuperados | **43/44 = 98%** |
-| Intenção errada (falso positivo) | **0** |
+| Reconheceu mas trouxe o trecho errado | 1 (é 0 sem o reranker) |
 | Empates na gramática | **0/50** |
 | Frase destacada exata | 30/44 = 68% |
 | Recusa fora de escopo (31 adversariais) | **31/31 = 100%** |
 | Robustez a paráfrase | 23/25 |
-| Tempo de resposta | **~1,2 s** pelo núcleo · ~19 s pelo plano B |
-| Testes | **98**, todos passando |
+| Testes | **81**, todos passando |
 
 Os números acima são do **caminho do produto**, BM25 mais reranker. Rodando só com BM25
-(`COBERTURA_RAPIDA=1`), a recuperação sobe para 44/44 e o destaque cai para 26/44: o reranker
-troca um acerto de recuperação por quatro de destaque. A troca compensa e por isso ele fica,
-mas a tabela precisa ser a do caminho que o aluno usa, e não a do modo rápido.
+(`COBERTURA_RAPIDA=1`), a recuperação sobe para 44/44, o falso positivo some e o destaque cai
+para 26/44. O reranker fica **não por essa troca**, que é discutível, e sim porque é a única
+fonte da medida que o guardrail consome; a comparação completa está adiante e em §24.
+
+**Tempo de resposta:** não é reprodutível o bastante para entrar como número. Três medições
+da mesma pergunta pelo núcleo deram 1,4 s, 3,1 s e 10,5 s, porque o custo é dominado pela
+passagem do reranker e varia com a quantidade de candidatos. O plano B fica na casa dos 20 s.
 
 Duas observações honestas sobre a tabela. A **frase destacada** é o ponto fraco conhecido: o
 trecho certo é recuperado em 98% dos casos, mas a sentença exata que responde é acertada em
@@ -126,13 +129,39 @@ no regular. O argumento completo está em [`docs/decisoes.md`](docs/decisoes.md)
 
 O reconhecimento é **guloso**, uma varredura da esquerda para a direita por regra, e é
 **exato** porque a classe de gramáticas foi restringida: `Gramatica.de_notacao` rejeita
-símbolo repetido em dois elementos da mesma regra, que é a condição da prova (§3). Quando
-mais de uma regra casa, vence a de mais símbolos obrigatórios, o que é *maximal munch*
-contado em símbolos e não em elementos (§5).
+símbolo repetido em dois elementos da mesma regra, que é a condição da prova (§3).
 
-Três validações falham alto na importação, e não em produção: símbolo fora do léxico (o
-análogo do identificador não declarado), regra composta só de opcionais, e intenção sem ação
-correspondente na tabela semântica.
+Quando mais de uma regra casa, o desempate é por **três critérios sucessivos** (§21):
+
+1. **cobertura**: vence a regra que cobre mais símbolos *distintos* da pergunta, que é
+   *maximal munch* contado em símbolos e não em elementos;
+2. **compacidade**: empatando, vence a de menor dispersão, com os símbolos mais próximos
+   entre si, o que impede combinar símbolos de perguntas diferentes;
+3. **exigência**: empatando ainda, vence a que exige mais símbolos obrigatórios.
+
+A ordem de declaração resolve o resto, então a mesma entrada dá sempre o mesmo resultado.
+O critério antigo era só o terceiro, e ele deixava `como_trancar` nunca disparar: empatava
+com `matricula_ingressante` em obrigatórios e perdia por vir depois na tabela.
+
+### Mais de uma intenção na mesma pergunta
+
+O símbolo inicial da gramática é `pergunta := regra+`, e não `regra` (§22). `analisar_todas`
+reconhece a regra vencedora, **retira da sequência os símbolos que a satisfizeram junto com
+as demais ocorrências deles**, e recomeça sobre o que restou, até o limite de três intenções:
+
+```python
+sintatico.analisar_todas(tokens, maximo=3)   # [Reconhecimento, ...]
+sintatico.analisar(tokens)                   # só a principal, usada na medição de cobertura
+```
+
+Cada intenção vira uma consulta e uma resposta próprias, rotuladas, com as fontes reunidas
+numa lista só.
+
+Validações que falham alto na importação, e não em produção: símbolo fora do léxico (o
+análogo do identificador não declarado), regra composta só de opcionais, símbolo repetido em
+dois elementos da mesma regra, intenção sem ação correspondente e ação sem regra que a
+acione. Há ainda duas no léxico, para variante ambígua e para palavra que esteja ao mesmo
+tempo no vocabulário e na lista de ruído.
 
 **As regras derivam dos títulos de seção do Manual, não das 50 perguntas.** Os títulos foram
 extraídos do PDF pelos atributos de fonte, porque o documento não tem marcadores nem sumário.
@@ -164,7 +193,7 @@ resposta.origem      # Origem.NUCLEO | Origem.PLANO_B | Origem.NAO_ENTENDIDA
 | **Controlador** | `rag.compilador.dialogo` | Orquestra as fases e decide o plano B. Marca a origem de cada resposta |
 | **Corpus** | `rag.corpus` | Carrega o PDF, normaliza e divide em trechos com sobreposição |
 | **Recuperação** | `rag.recuperacao` | **BM25 Okapi do zero** com índice invertido, e o cross-encoder de segundo estágio |
-| **Plano B** | `rag.ia` | Chatbot RAG com guardrail e piso de score, sobre Ollama |
+| **Plano B** | `rag.ia` | Chatbot RAG com guardrail e piso de score, sobre Ollama. É o único que recebe o histórico da conversa |
 | **Medição** | `rag.goldset` | Carrega o conjunto de perguntas de referência e resolve a relevância de cada trecho |
 | **Montagem** | `rag.pipeline` | `montar_assistente(cfg)` monta o produto inteiro: é a única chamada que um ponto de entrada precisa fazer |
 | **Parâmetros** | `rag.config` | Uma estrutura imutável com todos os valores fixos do trabalho |
@@ -179,11 +208,47 @@ escondido dentro de função:
 grep -rhoE "^\s*(import|from) [a-z_.]+" src/rag/compilador/*.py | awk '{print $2}' | grep -v "^\." | sort -u
 ```
 
-A recuperação do produto é **BM25 mais reranker**. Quem consulta o Manual é a consulta
-canônica, já escrita nas palavras do documento, e nesse caminho o BM25 basta: a medição que
-levou a essa escolha está em [`docs/decisoes.md`](docs/decisoes.md) §10. O cross-encoder
-permanece porque o **piso de score** de −3,2, que é o guardrail do plano B, depende do
-escore dele.
+### O que cada camada de recuperação paga
+
+A recuperação do produto é **BM25 mais reranker**, e as duas foram medidas separadamente
+(§24, scripts em `scripts/estudo/`):
+
+| | núcleo (44 reconhecidas) | plano B (top-5, 50 perguntas) | guardrail (31 adversariais) |
+|---|---|---|---|
+| **só BM25** | 44/44 · 0 falso positivo · destaque 26/44 | 45/50 | **2/31** |
+| **BM25 + reranker** | 43/44 · 1 falso positivo · destaque 30/44 | **49/50** | **31/31** |
+
+O reranker **não paga o próprio custo no núcleo**: ali a consulta já é canônica, escrita nas
+palavras do documento, e casamento de palavra-chave basta. Ele paga nos outros dois: leva a
+recuperação do plano B de 45 para 49, e é a **única** fonte da medida que o piso de −3,2
+consome. Um piso sobre a pontuação do BM25 recusa 2 das 31 adversariais, porque as duas
+populações se sobrepõem por inteiro (legítima mais fraca 4,45, adversarial mais forte 12,69).
+
+A arquitetura que a medição recomenda é tirar o reranker do percurso do núcleo e mantê-lo no
+plano B, o que são duas linhas em `pipeline.py`. **Não feito**, para não invalidar os números
+já publicados no texto do TCC.
+
+O próprio compilador serve de **primeiro estágio do guardrail**: recusar quando a pergunta não
+dispara símbolo de assunto algum pega 20 das 31 adversariais, sem custo nas legítimas, e falha
+exatamente na categoria ambígua ("horário da cantina" dispara `HORARIO`). Medido, **não
+implementado**.
+
+### O plano B e a conversa
+
+O núcleo opera sempre sobre a mensagem isolada. O plano B é o único que recebe os últimos
+quatro turnos, e quando há histórico ele faz **duas** chamadas ao modelo:
+
+```python
+consulta = gerador.reescrever_consulta(pergunta, historico)  # 1ª: pergunta autônoma -> busca
+resultados = recuperador.buscar(consulta, top_k)
+if resultados[0].score < piso_score:
+    return RECUSA                                            # o modelo não é chamado
+return gerador.gerar(pergunta, contextos, historico)         # 2ª: a redação
+```
+
+A primeira resolve referências elípticas ("e as presenciais?") para que a **recuperação**
+funcione; quem vai para a geração é a pergunta original. `tests/test_dialogo.py` verifica que
+o histórico não chega ao núcleo.
 
 ## Como rodar
 
@@ -194,7 +259,7 @@ python -m venv .venv
 # Windows:  .venv\Scripts\activate     |  Linux/Mac:  source .venv/bin/activate
 pip install -e ".[dev]"
 
-pytest                                        # 75 testes, rápidos, sem baixar modelo
+pytest                                        # 81 testes, rápidos, sem baixar modelo
 ```
 
 Para **reproduzir as medições**, e não só usar o projeto, instale o ambiente exato em que elas
@@ -305,9 +370,10 @@ web/index.html         a tela do produto: HTML, CSS e JS num arquivo so
 
 scripts/produto/       o assistente e as medicoes em uso (4)
 scripts/goldsets/      construcao do conjunto de referencia (1)
+scripts/estudo/        medicoes que sustentam decisoes de arquitetura (3)
 scripts/LEIA-ME.md     o que cada script faz
 
-tests/                 75 testes
+tests/                 81 testes
 docs/decisoes.md       o porque de cada decisao do nucleo, com as medicoes
 data/goldsets/         o conjunto de referencia validado (JSON)
 data/raw/              corpora brutos, fora do git
