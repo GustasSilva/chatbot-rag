@@ -708,3 +708,108 @@ git show ed509a1^:src/rag/ia/json_estruturado.py     #  77 linhas, o nível livr
 git show ed509a1^:scripts/estudo/exp_gramatica.py    # 106 linhas, o experimento
 git show ed509a1^:tests/test_gramatica_citacao.py    #  99 linhas
 ```
+
+---
+
+## 24. BM25 e reordenador: o que cada um paga (01/09/2026)
+
+A pergunta que motivou estas medições: o cross-encoder é componente pronto de 117,6 milhões
+de parâmetros, e num TCC cuja contribuição é o front-end de compilador ele precisa justificar
+a própria presença. Mediu-se, então, **onde cada camada de recuperação paga o próprio custo**,
+em vez de decidir por preferência.
+
+Scripts em `scripts/estudo/`; as saídas vão para `outputs/`, que não é versionado, e por isso
+os números ficam registrados aqui.
+
+### 24.1 As três medições
+
+**Núcleo** (sobre as 44 perguntas que a gramática reconhece, `cobertura_nucleo.py`):
+
+| | só BM25 | BM25 + reordenador |
+|---|---|---|
+| chunk-gold entre os 3 trechos | **44/44** | 43/44 |
+| falso positivo (trecho errado) | **0** | 1 |
+| trecho-fonte no destaque | 26/44 | **30/44** |
+
+**Caminho auxiliar** (recuperação top-5 sobre as 50 perguntas, `quanto_o_reordenador_faz.py`):
+
+| | acerto |
+|---|---|
+| só BM25 | 45/50 |
+| BM25 + reordenador | **49/50** |
+
+**Guardrail** (31 adversariais, `piso_sem_reordenador.py`):
+
+| | recusadas |
+|---|---|
+| piso sobre a medida do reordenador (−3,2) | **31/31** |
+| piso sobre a pontuação do BM25 | **2/31** |
+
+As duas populações de pontuação do BM25 **se sobrepõem por inteiro**: a legítima mais fraca
+vale 4,45 e a adversarial mais forte vale 12,69. Não existe corte. O melhor compromisso
+possível (7,88) ainda perde 7 legítimas e deixa vazar 10 adversariais.
+
+### 24.2 A leitura
+
+O reordenador **não paga o próprio custo no núcleo**: piora a recuperação em uma pergunta,
+introduz o falso positivo que é o modo de falha perigoso, e ganha 4 no destaque. A razão é
+que o núcleo lhe entrega uma consulta canônica já escrita no vocabulário do documento, e
+casamento de palavra-chave basta para isso.
+
+Ele **paga com folga nas outras duas**: leva a recuperação do caminho auxiliar de 45 para 49,
+e é a única fonte da medida que o guardrail consome. O caminho auxiliar recebe a pergunta
+crua do aluno, que é o caso difícil.
+
+**Decisão: manter.** A arquitetura que as medições recomendam é tirá-lo do percurso do núcleo
+e mantê-lo no caminho auxiliar, o que são duas linhas em `pipeline.py`. Não foi feito porque
+implicaria refazer os números já escritos no Capítulo 3, e o ganho líquido é pequeno.
+
+### 24.3 O compilador como primeiro estágio do guardrail
+
+Testou-se se o próprio front-end serve de detector de escopo, pelo critério mais simples:
+**a pergunta dispara algum símbolo de ASSUNTO do Manual?**
+
+| categoria adversarial | n | pega |
+|---|---|---|
+| outro domínio, saúde | 4 | 4 |
+| outro domínio, geral | 5 | 5 |
+| brincadeiras/casual | 5 | 5 |
+| injeção / subversão | 5 | 4 |
+| dados pessoais | 4 | 1 |
+| **ambíguas** | 8 | **1** |
+| | 31 | **20** |
+
+Custo nas legítimas: **zero**. As 6 perguntas do gold-set que a gramática não reconhece
+disparam todas ao menos um assunto (ressalva: n=6, base pequena).
+
+Isso desenha um guardrail de dois estágios, com o primeiro sendo componente próprio:
+
+1. **compilador**: sem assunto do Manual, recusa. 20/31.
+2. **cross-encoder**: o resíduo, 11 casos, dos quais 8 são a categoria ambígua.
+
+**Não implementado ainda.** É barato e reduz o papel do componente pronto, que é a posição
+mais defensável dele.
+
+### 24.4 Critério léxico para a categoria ambígua: medido e rejeitado
+
+Hipótese: barrar a pergunta que contenha palavra ausente de todo o Manual. "Cantina",
+"wi-fi" e "estacionamento" não ocorrem no documento.
+
+Do lado adversarial funciona: **26/31 barradas**, incluindo 6 das 8 ambíguas.
+
+Do lado legítimo destrói: **35 das 50 perguntas do gold-set seriam recusadas por engano**.
+O aluno escreve "percentual", "solicita", "peço", "acontece", "posso", e o Manual escreve
+de outro modo. Sem lematização, cada variação morfológica vira palavra estrangeira.
+
+O critério falha pela mesma razão que motiva o trabalho inteiro: a distância entre a língua
+do aluno e a do documento. O compilador resolve isso para os 89 símbolos mapeados, por 268
+grafias; para vocabulário arbitrário não há mapeamento.
+
+### 24.5 O que isso dá ao texto
+
+A Seção 3.4 do Capítulo 3 afirma que o reordenador permanece porque o guardrail consome a
+medida dele. Falta o número. Uma frase converte a afirmação em medição:
+
+> Retirá-lo levaria a recuperação do caminho auxiliar de 49/50 para 45/50 e a recusa de
+> perguntas fora de escopo de 31/31 para 2/31, porque a pontuação do BM25 não separa
+> pergunta legítima de adversarial.
