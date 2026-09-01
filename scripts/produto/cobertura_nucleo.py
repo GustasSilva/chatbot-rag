@@ -20,8 +20,8 @@ Ressalva de leitura: medir cobertura nas mesmas perguntas que serviram para escr
 derive as regras dos tópicos do Manual e deixe parte das perguntas de fora ao escrever.
 
 Uso:
-    python scripts/produto/cobertura_nucleo.py       # pilha do produto (BM25 + reranker)
-    COBERTURA_RAPIDA=1 python scripts/produto/cobertura_nucleo.py   # só BM25, sem carregar modelo
+    python scripts/produto/cobertura_nucleo.py       # o núcleo do produto: só BM25
+    COBERTURA_REORDENADOR=1 python scripts/produto/cobertura_nucleo.py   # a variante medida
 """
 from __future__ import annotations
 
@@ -41,21 +41,26 @@ CAMINHO_GOLD = "data/goldsets/institucional.json"
 CAMINHO_CSV = "outputs/cobertura_nucleo.csv"
 
 
-def _montar_recuperador(cfg, rapido: bool):
-    """Recuperador do produto (BM25 + reranker) ou só BM25, para o laço de feedback."""
+def _montar_recuperador(cfg, com_reordenador: bool):
+    """O núcleo do produto consulta só com BM25 (``docs/decisoes.md`` §24).
+
+    ``COBERTURA_REORDENADOR=1`` monta a variante com o cross-encoder por cima, que é a
+    comparação que sustentou a separação: ali a recuperação cai para 43/44, aparece um
+    falso positivo e o destaque sobe para 30/44.
+    """
     indice = indexar_manual(cfg)
-    if rapido:
-        return indice, montar_esparsa(indice, cfg)
-    return indice, montar_recuperador_produto(indice, cfg)
+    if com_reordenador:
+        return indice, montar_recuperador_produto(indice, cfg)
+    return indice, montar_esparsa(indice, cfg)
 
 
 def main() -> int:
-    rapido = bool(os.environ.get("COBERTURA_RAPIDA"))
+    com_reordenador = bool(os.environ.get("COBERTURA_REORDENADOR"))
     cfg = Config()
     itens = carregar_goldset(CAMINHO_GOLD)
 
-    print("Carregando indice" + ("" if rapido else " e modelos") + "...", flush=True)
-    indice, recuperador = _montar_recuperador(cfg, rapido)
+    print("Carregando indice" + (" e modelos" if com_reordenador else "") + "...", flush=True)
+    indice, recuperador = _montar_recuperador(cfg, com_reordenador)
     relevancia = construir_relevancia(
         itens, indice.chunks, indice.textos_doc, cfg.limiar_relevancia
     )

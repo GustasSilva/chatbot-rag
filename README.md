@@ -41,7 +41,7 @@ Disso saem três propriedades que um chatbot baseado só em modelo de linguagem 
        v
   "frequência obrigatória em cada disciplina, aulas dadas"  + {disciplina: Cálculo}
        |
-       |  compilador/base_conhecimento.py    consulta -> trecho do Manual   (BM25 + reranker)
+       |  compilador/base_conhecimento.py    consulta -> trecho do Manual   (BM25, sem reranker)
        v
   3 trechos + a frase que responde
        |
@@ -63,18 +63,25 @@ o Manual do Aluno UNIP 2026 dividido em 173 trechos.
 | Medida | Valor |
 |---|---|
 | Perguntas reconhecidas pelo núcleo | **44/50 = 88%** |
-| Trecho correto entre os recuperados | **43/44 = 98%** |
-| Reconheceu mas trouxe o trecho errado | 1 (é 0 sem o reranker) |
+| Trecho correto entre os recuperados | **44/44 = 100%** |
+| Reconheceu mas trouxe o trecho errado | **0** |
 | Empates na gramática | **0/50** |
-| Frase destacada exata | 30/44 = 68% |
+| Frase destacada exata | 26/44 · **26/32 = 81%** nos casos alcançáveis |
 | Recusa fora de escopo (31 adversariais) | **31/31 = 100%** |
 | Robustez a paráfrase | 23/25 |
 | Testes | **81**, todos passando |
 
-Os números acima são do **caminho do produto**, BM25 mais reranker. Rodando só com BM25
-(`COBERTURA_RAPIDA=1`), a recuperação sobe para 44/44, o falso positivo some e o destaque cai
-para 26/44. O reranker fica **não por essa troca**, que é discutível, e sim porque é a única
-fonte da medida que o guardrail consome; a comparação completa está adiante e em §24.
+O núcleo consulta o Manual **só com o BM25** (§25). Com o cross-encoder por cima
+(`COBERTURA_REORDENADOR=1`) a recuperação cai para 43/44, aparece o único falso positivo e o
+destaque sobe para 30/44: ele troca uma falha de correção por quatro de apresentação, e a
+troca foi desfeita.
+
+**A frase destacada, decomposta.** Das 44, o critério acerta 26, erra a frase em 6 casos em que
+o trecho certo estava em primeiro lugar, e perde 12 em que o trecho certo está entre os três
+devolvidos mas **não** no primeiro, que é o único que o destaque examina. Nenhuma é
+inalcançável por cruzar fronteira de frase. Sobre os casos em que acertar é possível, o
+critério acerta **26/32**. Era isso que o reordenador comprava: não frase melhor, e sim o
+trecho certo promovido à primeira posição.
 
 **Tempo de resposta:** não é reprodutível o bastante para entrar como número. Três medições
 da mesma pergunta pelo núcleo deram 1,4 s, 3,1 s e 10,5 s, porque o custo é dominado pela
@@ -224,9 +231,9 @@ recuperação do plano B de 45 para 49, e é a **única** fonte da medida que o 
 consome. Um piso sobre a pontuação do BM25 recusa 2 das 31 adversariais, porque as duas
 populações se sobrepõem por inteiro (legítima mais fraca 4,45, adversarial mais forte 12,69).
 
-A arquitetura que a medição recomenda é tirar o reranker do percurso do núcleo e mantê-lo no
-plano B, o que são duas linhas em `pipeline.py`. **Não feito**, para não invalidar os números
-já publicados no texto do TCC.
+**Aplicado em 01/09** (§25): o núcleo consulta só com BM25 e o cross-encoder ficou no plano B.
+O guardrail foi reexecutado depois da separação e continua em 31/31, com as seis categorias
+intactas, como se esperava, porque o portão do núcleo é a gramática e não a busca.
 
 O próprio compilador serve de **primeiro estágio do guardrail**: recusar quando a pergunta não
 dispara símbolo de assunto algum pega 20 das 31 adversariais, sem custo nas legítimas, e falha
@@ -292,7 +299,9 @@ núcleo responde normalmente**, e o que a gramática não reconhece devolve a me
 entendimento: é a demonstração de que o assistente funciona com a IA desligada.
 
 Na primeira execução o cross-encoder (470 MB) é baixado do HuggingFace. Depois disso ele sai do
-cache local, e a partida não depende mais de rede.
+cache local, e a partida não depende mais de rede. **Ele só é carregado se o plano B for
+montado**: `montar_assistente(com_plano_b=False)` não toca no modelo, e a medição de cobertura
+também não.
 
 **4. As medições**
 
@@ -302,11 +311,12 @@ python scripts/produto/institucional_guardrail.py     # guardrail adversarial, 3
 python scripts/produto/institucional_acuracia.py      # acurácia de resposta, 50 perguntas (exige Ollama)
 ```
 
-A cobertura tem um modo rápido, que pula o cross-encoder e roda em segundos:
+A cobertura roda em segundos, porque o núcleo não carrega modelo nenhum. Para medir a variante
+com o cross-encoder por cima, que é a comparação da §25:
 
 ```bash
-COBERTURA_RAPIDA=1 python scripts/produto/cobertura_nucleo.py     # bash
-$env:COBERTURA_RAPIDA=1; python scripts/produto/cobertura_nucleo.py   # PowerShell
+COBERTURA_REORDENADOR=1 python scripts/produto/cobertura_nucleo.py     # bash
+$env:COBERTURA_REORDENADOR=1; python scripts/produto/cobertura_nucleo.py   # PowerShell
 ```
 
 Para reconstruir o conjunto de perguntas de referência a partir do PDF (só é preciso quando o

@@ -813,3 +813,91 @@ medida dele. Falta o número. Uma frase converte a afirmação em medição:
 > Retirá-lo levaria a recuperação do caminho auxiliar de 49/50 para 45/50 e a recusa de
 > perguntas fora de escopo de 31/31 para 2/31, porque a pontuação do BM25 não separa
 > pergunta legítima de adversarial.
+
+---
+
+## 25. O reordenador sai do núcleo (01/09/2026)
+
+Aplicada a separação que a §24 recomendava. `montar_assistente` passa a montar o BM25 uma vez,
+entregá-lo à `BaseConhecimento`, e a envolvê-lo no cross-encoder **só** para o plano B.
+
+```python
+esparsa = montar_esparsa(indice, cfg)
+base = BaseConhecimento(esparsa, indice.chunks, cfg.top_k_nucleo)
+plano_b = montar_plano_b(montar_reordenado(indice, cfg, base=esparsa), ...)
+```
+
+`montar_recuperador_produto` virou apelido de `montar_reordenado`, que aceita a base pronta e
+não reindexa. Em `cobertura_nucleo.py`, a variável de ambiente trocou de sentido: o padrão
+agora **é** o produto, e `COBERTURA_REORDENADOR=1` monta a variante para comparação.
+
+### O que mudou no núcleo
+
+| | antes | depois |
+|---|---|---|
+| reconhecidas | 44/50 | 44/50 |
+| chunk-gold entre os três | 43/44 | **44/44** |
+| falso positivo | 1 | **0** |
+| trecho-fonte no destaque | 30/44 | 26/44 |
+
+A troca é deliberada: elimina uma falha de **correção**, aquela em que o sistema reconhece a
+intenção e responde com confiança a partir do trecho errado, ao custo de quatro falhas de
+**apresentação**, em que o trecho certo é exibido com a frase errada em destaque. Num trabalho
+cuja tese é que a resposta é o texto do documento, verificável pelo aluno, a direção certa é
+essa.
+
+### Duas tentativas de recuperar o destaque, ambas falhas
+
+**Ponderar os termos por IDF.** Era ideia pendente desde a §9: o critério em uso conta
+sobreposição bruta, então "de" e "em" pesam o mesmo que "frequência". Quatro variantes medidas
+sobre as mesmas 44:
+
+| critério | acerto |
+|---|---|
+| sobreposição bruta (em uso) | 26/44 |
+| ponderado por IDF | 26/44 |
+| IDF dividido pela raiz do tamanho | 26/44 |
+| cobertura da consulta, ponderada por IDF | 26/44 |
+
+Idênticos. A ponderação não altera a **ordem** entre as frases candidatas, então o problema não
+está no peso dos termos. Ideia encerrada.
+
+**Procurar a frase nos três trechos devolvidos, e não só no primeiro.** Piora: **24/44**. Uma
+frase de um trecho errado captura mais termos da consulta e rouba a escolha.
+
+### Onde o destaque realmente falha
+
+Decomposição das 44, com recuperação BM25:
+
+| | |
+|---|---|
+| acertou | 26 |
+| errou a frase, mas o primeiro trecho continha a certa | 6 |
+| o trecho-fonte não cabe inteiro no primeiro trecho devolvido | 12 |
+| inalcançável por cruzar fronteira de frase | **0** |
+
+**Sobre os casos em que o acerto é possível, o critério acerta 26/32, ou 81%.** Os 12 restantes
+não são falha de destaque: são casos em que o trecho certo está entre os três devolvidos mas
+não em primeiro lugar, e o destaque só examina o primeiro.
+
+Isso explica o que o reordenador comprava. Ele não escolhia frase melhor: **promovia o trecho
+certo para a primeira posição**, e daí o mesmo critério acertava. O ganho de 26 para 30 era de
+ordenação, não de destaque.
+
+Fica registrado como limitação conhecida, e a decomposição acima é o número honesto a
+apresentar, em lugar de 26/44 sem qualificação.
+
+### O guardrail não mudou
+
+Reexecutado depois da separação, pelo caminho do produto: **31/31**, com as seis categorias
+intactas e nenhuma recusa em redação alternativa. Era o resultado a confirmar, porque o portão
+do núcleo é a gramática e não a busca, mas a verificação não foi presumida.
+
+| categoria | recusadas |
+|---|---|
+| outro domínio, saúde | 4/4 |
+| outro domínio, geral | 5/5 |
+| brincadeiras e casual | 5/5 |
+| ambíguas | 8/8 |
+| dados pessoais | 4/4 |
+| injeção | 5/5 |

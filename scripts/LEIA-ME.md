@@ -38,3 +38,5 @@ porque `outputs/` nao e versionado.
 | `piso_sem_reordenador.py` | O piso do guardrail funciona sobre a pontuacao do BM25? Nao: 2/31 contra 31/31. |
 | `contribuicao_do_reordenador.py` | Quanto o reordenador melhora a recuperacao do caminho auxiliar, e se criterio lexico barra a categoria ambigua. |
 | `guardrail_pelo_compilador.py` | O proprio front-end serve de primeiro estagio do guardrail? Pega 20/31 sem custo nas legitimas. |
+| `destaque_ponderado_por_idf.py` | Ponderar os termos por IDF melhora a escolha da frase? Nao: 26/44 nas quatro variantes. |
+| `onde_o_destaque_falha.py` | Decompoe as falhas de destaque: escolha errada contra trecho certo fora da primeira posicao. |

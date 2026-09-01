@@ -49,14 +49,23 @@ def montar_esparsa(indice: IndiceCorpus, cfg: Config) -> RecuperadorBM25:
     return RecuperadorBM25(indice.chunks, cfg.k1, cfg.b, cfg.dobrar_acentos)
 
 
-def montar_recuperador_produto(indice: IndiceCorpus, cfg: Config) -> Recuperador:
-    """A recuperação do produto: BM25 com o cross-encoder por cima."""
+def montar_reordenado(
+    indice: IndiceCorpus, cfg: Config, base: RecuperadorBM25 | None = None
+) -> Recuperador:
+    """BM25 com o cross-encoder por cima. É a recuperação do plano B.
+
+    ``base`` evita reindexar quando o BM25 já foi montado para o núcleo.
+    """
     return Reranker(
-        base=montar_esparsa(indice, cfg),
+        base=base or montar_esparsa(indice, cfg),
         chunks=indice.chunks,
         modelo=cfg.modelo_reranker,
         top_k_entrada=cfg.top_k_reranker,
     )
+
+
+# Nome antigo, mantido porque os scripts de medição o chamam.
+montar_recuperador_produto = montar_reordenado
 
 
 def montar_plano_b(
@@ -80,10 +89,22 @@ def montar_assistente(
 
     ``com_plano_b=False`` deixa o assistente sem modelo de linguagem nenhum, que é a
     demonstração de que quem entende a pergunta é o compilador.
+
+    O núcleo consulta o Manual **só com o BM25**, e o cross-encoder fica no plano B. As três
+    medições que levaram a essa separação estão em ``docs/decisoes.md`` §24: no núcleo o
+    reordenador troca um acerto de recuperação por quatro de destaque e introduz o único
+    falso positivo; no plano B ele leva a recuperação de 45/50 a 49/50 e é a única fonte da
+    medida que o piso de score consome.
     """
     cfg = cfg or Config()
     indice = indexar_manual(cfg)
-    recuperador = montar_recuperador_produto(indice, cfg)
-    plano_b = montar_plano_b(recuperador, indice, cfg, saudar) if com_plano_b else None
-    base = BaseConhecimento(recuperador, indice.chunks, cfg.top_k_nucleo)
+
+    esparsa = montar_esparsa(indice, cfg)
+    base = BaseConhecimento(esparsa, indice.chunks, cfg.top_k_nucleo)
+
+    plano_b = None
+    if com_plano_b:
+        plano_b = montar_plano_b(
+            montar_reordenado(indice, cfg, base=esparsa), indice, cfg, saudar
+        )
     return Dialogo.de_manual(base, plano_b, cfg.max_intencoes)
