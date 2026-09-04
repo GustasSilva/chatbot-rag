@@ -75,7 +75,11 @@
 
   /* A resposta do núcleo é um EXTRATO do Manual: fica na voz do documento, serifada.
      A do plano B foi REDIGIDA, então usa a voz da interface. A diferença é de espécie. */
-  .extrato { font-family: var(--serif); font-size: 1.18rem; line-height: 1.5; margin: 0; }
+  /* pre-line: a resposta de mais de uma intencao vem com linha em branco entre elas
+     (ver _compor, em dialogo.py). Sem isto o HTML colapsa a quebra e as respostas
+     saem coladas num paragrafo so. */
+  .extrato { font-family: var(--serif); font-size: 1.18rem; line-height: 1.5; margin: 0;
+             white-space: pre-line; }
   .redacao { font-size: 1rem; margin: 0; }
   .redacao ul, .redacao ol { padding-left: 1.2rem; }
 
