@@ -901,3 +901,46 @@ do núcleo é a gramática e não a busca, mas a verificação não foi presumid
 | ambíguas | 8/8 |
 | dados pessoais | 4/4 |
 | injeção | 5/5 |
+
+
+## 26. O tempo de resposta nao tinha script (03/09/2026)
+
+Ao conferir os 7 ms que a interface exibiu numa primeira requisicao, descobriu-se que
+**nenhum script do projeto media tempo**. `perf_counter` so aparecia no `servidor.py`, para o
+numero por requisicao; nenhum CSV de `outputs/` tinha coluna de tempo; esta secao nao
+registrava a medicao. Os valores que a monografia publicava eram reais mas irreproduziveis, o
+mesmo defeito ja conhecido do experimento de enriquecimento da consulta.
+
+`scripts/produto/tempo_resposta.py` passou a produzi-los. Ele cronometra exatamente o trecho
+que o `servidor.py` cronometra, a chamada a `Dialogo.responder`, classifica cada pergunta pelo
+percurso que de fato tomou e grava `outputs/tempo_resposta.csv` pergunta a pergunta.
+
+| percurso | perguntas | mediana | minimo | maximo |
+|---|---|---|---|---|
+| nucleo | 44 | 0,7 ms | 0,3 ms | 1,2 ms |
+| recusa pelo piso | 31 | 1.171 ms | 1.010 ms | 6.395 ms |
+| geracao | 6 | 12.082 ms | 5.455 ms | 17.418 ms |
+
+**A recusa reproduziu quase exatamente** o valor da medicao avulsa antiga, 1.171 contra 1.155
+ms de mediana. A geracao variou dentro do esperado para um modelo nao deterministico. O nucleo
+saiu de 2 ms para 0,7 ms, o que separa os percursos por mais de quatro ordens de grandeza.
+
+Duas armadilhas ficaram no script. **O aquecimento precisa cobrir os tres percursos**: a
+primeira versao so aquecia o nucleo e a recusa, nenhum dos dois chama o modelo, e a primeira
+geracao pegou o Ollama frio e devolveu erro 500. E **o modelo precisa estar carregado** antes
+de rodar, que e o passo 2 do `COMO-RODAR.md`.
+
+## 27. A resposta de duas intencoes saia colada (03/09/2026)
+
+`_compor` junta as respostas de intencoes diferentes com linha em branco, mas `.extrato` nao
+declarava `white-space` e `elemento` usa `textContent`: o HTML colapsava a quebra e as duas
+respostas apareciam num paragrafo so. `white-space: pre-line` na regra resolve. Nenhum dos 173
+trechos do Manual tem quebra de linha no texto, entao a mudanca nao afeta a resposta de
+intencao unica.
+
+Medido de passagem, ao escolher a pergunta que ilustra o mecanismo na monografia:
+**832 dos 903 pares possiveis de intencao funcionam**, mas so entre assuntos distintos. Par do
+mesmo assunto colapsa em uma intencao, porque o consumo iterado retira da sequencia todas as
+ocorrencias dos simbolos que a regra vencedora usou. "O que e o trancamento e por quanto tempo
+pode ser concedido" resolve-se numa intencao so; "o que e o trancamento e como peco
+transferencia" resolve-se em duas.

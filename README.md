@@ -309,6 +309,7 @@ também não.
 python scripts/produto/cobertura_nucleo.py            # quanto o núcleo responde sem IA
 python scripts/produto/institucional_guardrail.py     # guardrail adversarial, 31 perguntas fora de escopo
 python scripts/produto/institucional_acuracia.py      # acurácia de resposta, 50 perguntas (exige Ollama)
+python scripts/produto/tempo_resposta.py               # tempo por percurso, 81 perguntas (exige Ollama)
 ```
 
 A cobertura roda em segundos, porque o núcleo não carrega modelo nenhum. Para medir a variante
@@ -378,7 +379,7 @@ src/rag/apresentacao.py  saudacao, recusa e o recorte dos trechos citados
 servidor.py            servidor da biblioteca padrao que serve web/index.html
 web/index.html         a tela do produto: HTML, CSS e JS num arquivo so
 
-scripts/produto/       o assistente e as medicoes em uso (4)
+scripts/produto/       o assistente e as medicoes em uso (5)
 scripts/goldsets/      construcao do conjunto de referencia (1)
 scripts/estudo/        medicoes que sustentam decisoes de arquitetura (3)
 scripts/LEIA-ME.md     o que cada script faz

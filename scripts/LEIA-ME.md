@@ -17,6 +17,7 @@ O assistente do Manual do Aluno e as medições que o sustentam. É o que está 
 | `cobertura_nucleo.py` | Cobertura do núcleo de compilador sobre o gold-set institucional. |
 | `institucional_acuracia.py` | Acurácia de resposta e de recuperação. |
 | `institucional_guardrail.py` | Teste adversarial: taxa de recusa fora de escopo. |
+| `tempo_resposta.py` | Tempo por percurso, com o sistema carregado. Exige o modelo já aquecido. |
 
 ## `goldsets/`
 
