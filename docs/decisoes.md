@@ -944,3 +944,44 @@ mesmo assunto colapsa em uma intencao, porque o consumo iterado retira da sequen
 ocorrencias dos simbolos que a regra vencedora usou. "O que e o trancamento e por quanto tempo
 pode ser concedido" resolve-se numa intencao so; "o que e o trancamento e como peco
 transferencia" resolve-se em duas.
+
+## 28. O aquecimento do servidor nao aquecia nada (10/09/2026)
+
+O `servidor.py` faz uma pergunta descartavel antes de servir, e o comentario ao lado dela
+dizia: "Primeira inferencia do cross-encoder custa alguns segundos. Pagando aqui, a primeira
+pergunta de quem abre a tela ja responde no tempo normal (~1,3 s)."
+
+Duas coisas estavam erradas nisso, e a segunda so apareceu ao medir.
+
+**A pergunta escolhida nao passa pelo cross-encoder.** "quantas faltas posso ter?" e
+reconhecida pela gramatica (intencao `limite_faltas`), logo percorre o nucleo, que desde
+01/09 usa so o BM25 (§25). O aquecimento nunca tocou no modelo que o comentario dizia
+aquecer.
+
+**E nao ha o que aquecer.** A hipotese era que o primeiro aluno a fazer uma pergunta fora do
+escopo pagaria a primeira inferencia. Medido, nao paga. Subindo o servidor e mandando quatro
+perguntas fora do escopo seguidas, sem aquecimento nenhum:
+
+| ordem | ms |
+|---|---|
+| 1a | 1.185 |
+| 2a | 1.236 |
+| 3a | 1.323 |
+| 4a | 1.539 |
+
+A primeira e a mais **rapida**, nao a mais lenta. O mesmo vale pelo nucleo: 1 ms na primeira,
+2 ms nas seguintes. Com o aquecimento ligado os numeros sao os mesmos, 1.177 ms na primeira
+recusa contra 1.185 sem ele.
+
+A explicacao esta em `montar_reordenado`: o `CrossEncoder` e construido ali, dentro do
+`montar_assistente`, e a construcao ja carrega e inicializa o modelo. Quando a chamada de
+aquecimento acontece, o custo de carga ja foi pago.
+
+**Decisao: a chamada fica, com outra justificativa.** Ela nao aquece, mas verifica: se uma
+tabela do compilador ou o PDF do Manual estiverem quebrados, o servidor falha na partida e
+nao na pergunta do primeiro aluno. O comentario foi reescrito para dizer isso, e para
+registrar a medicao acima, de modo que ninguem volte a supor o custo que nao existe.
+
+**Alternativa descartada:** acrescentar uma segunda pergunta de aquecimento, fora do escopo,
+para exercitar o cross-encoder. Foi o que se cogitou antes de medir. Custaria cerca de 1,2 s
+em toda partida para nao resolver problema nenhum.

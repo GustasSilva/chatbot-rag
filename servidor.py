@@ -30,8 +30,16 @@ PORTA = 8000
 def montar_dialogo() -> Dialogo:
     """Núcleo de compilador respondendo do Manual, com o chatbot RAG como plano B."""
     dialogo = montar_assistente()
-    # Primeira inferência do cross-encoder custa alguns segundos. Pagando aqui, a primeira
-    # pergunta de quem abre a tela já responde no tempo normal (~1,3 s).
+    # Uma pergunta descartável antes de abrir a porta: se uma tabela do compilador ou o PDF
+    # do Manual estiverem quebrados, o servidor falha aqui e não na pergunta do primeiro
+    # aluno. É verificação de partida, não aquecimento de modelo.
+    #
+    # O comentário anterior dizia pagar aqui a primeira inferência do cross-encoder. Não
+    # paga, por duas razões medidas em 10/09/2026 (docs/decisoes.md §28): esta pergunta é
+    # reconhecida pela gramática e percorre o núcleo, que desde 01/09 não usa o
+    # cross-encoder; e o custo de carga já foi pago dentro do montar_assistente. Com e sem
+    # esta chamada, a primeira pergunta dá o mesmo: 1 ms pelo núcleo, cerca de 1,2 s pela
+    # recusa.
     dialogo.responder("quantas faltas posso ter?")
     return dialogo
 
