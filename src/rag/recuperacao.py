@@ -14,14 +14,12 @@ calculado sobre o escore dele.
 from __future__ import annotations
 
 import math
-import re
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
-from .corpus import Chunk, sem_acentos
-
-_PALAVRA = re.compile(r"\w+", re.UNICODE)
+from .config import Config
+from .corpus import PALAVRA, Chunk, IndiceCorpus, sem_acentos
 
 
 @dataclass(frozen=True)
@@ -59,7 +57,7 @@ def tokenizar(texto: str, dobrar_acentos: bool = False) -> list[str]:
     texto = texto.lower()
     if dobrar_acentos:
         texto = sem_acentos(texto)
-    return _PALAVRA.findall(texto)
+    return PALAVRA.findall(texto)
 
 
 class RecuperadorBM25(Recuperador):
@@ -158,3 +156,23 @@ class Reranker(Recuperador):
             (candidatos[i].chunk_id, float(scores[i])) for i in range(len(candidatos))
         ]
         return ordenar_para_resultados(recombinados, k)
+
+
+def montar_esparsa(indice: IndiceCorpus, cfg: Config) -> RecuperadorBM25:
+    """Só o BM25. É ele que executa a consulta canônica do núcleo, e a etapa 2 do percurso."""
+    return RecuperadorBM25(indice.chunks, cfg.k1, cfg.b, cfg.dobrar_acentos)
+
+
+def montar_reordenado(
+    indice: IndiceCorpus, cfg: Config, base: RecuperadorBM25 | None = None
+) -> Recuperador:
+    """BM25 com o cross-encoder por cima. É a recuperação do plano B.
+
+    ``base`` evita reindexar quando o BM25 já foi montado para o núcleo.
+    """
+    return Reranker(
+        base=base or montar_esparsa(indice, cfg),
+        chunks=indice.chunks,
+        modelo=cfg.modelo_reranker,
+        top_k_entrada=cfg.top_k_reranker,
+    )

@@ -16,9 +16,8 @@ import sys
 import unicodedata
 from pathlib import Path
 
-from rag.compilador.dialogo import Origem
+from rag.compilador.dialogo import Dialogo, Origem
 from rag.config import Config
-from rag.pipeline import montar_assistente
 
 
 ADVERSARIAIS = {
@@ -98,7 +97,7 @@ def main() -> int:
     # uma regra genérica demais pode responder o que o piso de score recusaria. Testar só o
     # ChatbotRAG deixaria esse vazamento invisível.
     # ``saudar=False`` mantém o comportamento medido: nenhum atalho antes da recuperação.
-    dialogo = montar_assistente(cfg, saudar=False)
+    dialogo = Dialogo.montar(cfg, saudar=False)
 
     total = sum(len(v) for v in ADVERSARIAIS.values())
     print(f"Guardrail adversarial institucional | {total} perguntas | modelo={cfg.modelo_llm}\n")

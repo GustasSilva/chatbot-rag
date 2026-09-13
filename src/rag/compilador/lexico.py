@@ -11,10 +11,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from ..corpus import sem_acentos
-
-# Uma "palavra" para o scanner: letras e dígitos. O resto é separador e não gera token.
-_PALAVRA = re.compile(r"\w+", re.UNICODE)
+from ..corpus import PALAVRA, sem_acentos
 
 
 class TipoToken(Enum):
@@ -85,7 +82,7 @@ class AnalisadorLexico:
         self._lexico = lexico
 
     def analisar(self, texto: str, descartar_ruido: bool = True) -> list[Token]:
-        tokens = [self._classificar(casamento) for casamento in _PALAVRA.finditer(texto)]
+        tokens = [self._classificar(casamento) for casamento in PALAVRA.finditer(texto)]
         if descartar_ruido:
             return [token for token in tokens if token.tipo is not TipoToken.RUIDO]
         return tokens

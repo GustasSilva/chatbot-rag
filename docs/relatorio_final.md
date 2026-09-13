@@ -57,7 +57,7 @@ trecho no rank 2, a híbrida o perdia). Por isso **híbrida ≈ esparsa**, não 
 Chat livre sobre o Manual do Aluno, perfil de guardrail **institucional** (mais brando que o de
 saúde) e um **piso de score** de reranker.
 
-Recuperação do produto: **BM25 + reranker** (`pipeline.montar_recuperador_produto`). Difere da
+Recuperação do produto: **BM25 + reranker** (`recuperacao.montar_reordenado`). Difere da
 configuração vencedora do estudo comparativo (híbrida + reranker) por uma razão medida: quem
 consulta o Manual passou a ser a **consulta canônica** montada pelo front-end de compilador,
 escrita nas palavras do próprio documento — e nesse caminho BM25 puro e híbrida+reranker deram

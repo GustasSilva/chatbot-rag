@@ -22,7 +22,9 @@ import unicodedata
 
 from rag.config import Config
 from rag.goldset import carregar_goldset, construir_relevancia
-from rag.pipeline import indexar_manual, montar_plano_b, montar_recuperador_produto
+from rag.corpus import indexar_manual
+from rag.ia import montar_plano_b
+from rag.recuperacao import montar_reordenado
 
 CAMINHO_GOLD = "data/goldsets/institucional.json"
 
@@ -40,7 +42,7 @@ def main() -> int:
     indice = indexar_manual(cfg)
     relevancia = construir_relevancia(itens, indice.chunks, indice.textos_doc,
                                       cfg.limiar_relevancia)
-    rer = montar_recuperador_produto(indice, cfg)
+    rer = montar_reordenado(indice, cfg)
     # ``saudar=False`` mantém o comportamento medido: nenhum atalho antes da recuperação.
     chatbot = montar_plano_b(rer, indice, cfg, saudar=False)
 

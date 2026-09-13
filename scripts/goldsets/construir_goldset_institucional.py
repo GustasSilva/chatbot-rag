@@ -12,9 +12,8 @@ from __future__ import annotations
 import sys
 
 from rag.config import Config
-from rag.corpus import carregar_pdf
+from rag.corpus import carregar_pdf, construir_indice
 from rag.goldset import ItemGold, carregar_goldset, construir_relevancia, salvar_goldset
-from rag.pipeline import construir_indice
 
 GOLD_BASE = "data/goldsets/manual_aluno.json"
 CAMINHO_GOLD = "data/goldsets/institucional.json"

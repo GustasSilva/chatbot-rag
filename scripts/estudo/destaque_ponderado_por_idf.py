@@ -15,9 +15,9 @@ from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_
 from rag.compilador.lexico import AnalisadorLexico
 from rag.compilador.sintatico import AnalisadorSintatico
 from rag.config import Config
+from rag.corpus import indexar_manual
 from rag.goldset import carregar_goldset
-from rag.pipeline import indexar_manual, montar_esparsa
-from rag.recuperacao import tokenizar
+from rag.recuperacao import montar_esparsa, tokenizar
 
 cfg = Config()
 indice = indexar_manual(cfg)

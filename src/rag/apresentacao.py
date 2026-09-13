@@ -8,10 +8,13 @@ from __future__ import annotations
 import random
 import re
 
-from .corpus import sem_acentos
+from .corpus import sem_acentos, so_alfanumerico
 
-# Rótulo "[intencao] " que o controlador põe quando a resposta reúne mais de uma
-# intenção: sai antes de procurar o destaque dentro do trecho.
+# Rótulo que o controlador põe em cada resposta quando reúne mais de uma intenção, e a
+# expressão que o retira antes de procurar o destaque dentro do trecho. Os dois ficam juntos
+# de propósito: se o formato mudasse num lado e não no outro, a janela da fonte deixaria de
+# centrar na frase que respondeu e nada acusaria o erro. Quem escreve é ``dialogo._compor``.
+ROTULO = "[{}] "
 _SEM_ROTULO = re.compile(r"^\[[a-z_]+\]\s*")
 
 RECUSA = "Não encontrei essa informação nos documentos."
@@ -54,8 +57,7 @@ def resposta_saudacao() -> str:
 
 def eh_saudacao(texto: str) -> bool:
     """True só quando a mensagem é APENAS saudação: com pergunta junto, segue o pipeline."""
-    limpo = "".join(c if c.isalnum() or c.isspace() else " " for c in sem_acentos(texto.lower()))
-    resto = " " + " ".join(limpo.split()) + " "
+    resto = " " + so_alfanumerico(sem_acentos(texto.lower())) + " "
     achou = False
     for frase in _SAUDACOES:
         alvo = f" {frase} "

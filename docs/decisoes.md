@@ -985,3 +985,121 @@ registrar a medicao acima, de modo que ninguem volte a supor o custo que nao exi
 **Alternativa descartada:** acrescentar uma segunda pergunta de aquecimento, fora do escopo,
 para exercitar o cross-encoder. Foi o que se cogitou antes de medir. Custaria cerca de 1,2 s
 em toda partida para nao resolver problema nenhum.
+
+---
+
+## 29. Leitura do codigo: quatro consolidacoes e o controlador como orquestrador (11-12/09/2026)
+
+Duas rodadas de trabalho sobre **legibilidade**, nao sobre comportamento. O criterio de aceite
+foi o mesmo nas duas: uma impressao digital de 129 perguntas (as 50 do gold-set, as 31
+adversariais, 25 de parafrase, casos de negacao, multi-intencao, saudacoes e entradas vazias),
+gravando para cada uma os tokens com tipo e posicao, `analisar` e `analisar_todas`, a consulta
+canonica, a resposta, as fontes e o recorte exibido, mais os 173 trechos com offsets, as 77
+regras compiladas elemento por elemento e o top-5 do BM25 em seis consultas. **Identica byte a
+byte antes e depois de cada mudanca**, com os 81 testes passando e a cobertura em 44/50 · 44/44
+· 26/44 · 0 falso positivo.
+
+### 29.1 O que o grafo de chamadas mostrou
+
+Medido com AST e com `sys.setprofile` sobre o assistente montado:
+
+| | |
+|---|---|
+| fan-in de cada fase, no produto | **1**: quem chama todas e o `Dialogo.responder` |
+| fan-in de `AnalisadorLexico.analisar` no total | 23, dos quais **17 testes e 5 scripts** |
+| uma pergunta reconhecida | 24 funcoes nomeadas, 8 arquivos, pilha de 8 niveis |
+| uma pergunta fora de escopo | 12 funcoes, 4 arquivos, morre na fase 2 |
+| `sintatico.py` | 11 funcoes, **8 privadas**, a maior concentracao do projeto |
+
+A leitura: o percurso do produto e linear, e a dispersao aparente vem de teste e medicao
+entrando no meio da pipeline de proposito, que e o que permite medir cobertura sem LLM. O que
+era emaranhado de verdade era **profundidade**, concentrada em `sintatico.py` e na normalizacao
+de texto espalhada por quatro arquivos.
+
+### 29.2 As quatro consolidacoes
+
+1. **A cadeia do casamento.** `_procurar`, `_casar_livre` e `_proxima_palavra_chave` foram
+   absorvidas por quem as chamava. O modulo foi de 11 para 8 funcoes e a cadeia de 6 funcoes
+   para 3. O preco esta em `_casar`, que foi de 32 para 60 linhas e de 11 para 20 pontos de
+   decisao. `_casar_adjacentes` ficou de fora da fusao: como funcao a parte ela desiste
+   devolvendo `None`, e embutida precisaria de um sinalizador para sair de dois lacos
+   encaixados.
+2. **A normalizacao de texto.** A expressao `r"\w+"` estava escrita duas vezes, em
+   `lexico.py` e em `recuperacao.py`. Passou a ser `corpus.PALAVRA`, uma definicao so, e o que
+   estava solto dentro de `eh_saudacao` virou `corpus.so_alfanumerico`. O docstring de
+   `corpus.py` passou a ser o mapa de quem normaliza o que, com as duas nocoes de token do
+   projeto (`PALAVRA` para o lexico e o BM25, `_TOKEN` para o janelamento) lado a lado.
+3. **O apelido `montar_recuperador_produto`.** Segundo nome de `montar_reordenado`, chamado em
+   tres scripts. Apagado, com as chamadas renomeadas.
+4. **O rotulo `[intencao]`.** O formato era montado em `dialogo._compor` e removido por uma
+   regex em `apresentacao._SEM_ROTULO`, ligados so por uma mencao em docstring. Passaram a
+   ficar juntos, em `apresentacao.ROTULO`. A direcao da dependencia e obrigatoria: o contrario
+   fecharia ciclo, porque `dialogo` importa `ia`, que importa `apresentacao`.
+
+### 29.3 O controlador virou o orquestrador de ponta a ponta
+
+O `Dialogo` orquestrava do token a resposta, mas o percurso completo estava partido em tres
+arquivos: `pipeline.py` montava, `dialogo.py` respondia e cada ponto de entrada fazia a sua
+entrega. Nao havia arquivo que se lesse de cima a baixo como o sistema inteiro.
+
+`montar_assistente` **saiu** de `pipeline.py` e virou `Dialogo.montar`, sem copia. A etapa de
+entrega, que estava escrita duas vezes, virou `Dialogo.atender`, que devolve um `Atendimento`.
+
+E dai o `pipeline.py` ficou sem razao de existir: cinco funcoes de uma linha cada, montando
+pecas que pertencem a outros modulos. **Foi dissolvido e apagado**, com cada degrau voltando
+para o modulo dono da peca: `IndiceCorpus`, `construir_indice` e `indexar_manual` para
+`corpus.py`; `montar_esparsa` e `montar_reordenado` para `recuperacao.py`; `montar_plano_b` para
+`ia.py`. Os nomes das funcoes nao mudaram, so o modulo de onde vem, e o ganho aparece no
+orquestrador, em que cada chamada agora nomeia o modulo que cuida do assunto.
+
+A alternativa era mover as cinco para dentro do `dialogo.py`, o que tambem apagaria o
+`pipeline.py`. Foi descartada: poria a indexacao do corpus e a construcao do gerador dentro do
+pacote `compilador`, quebrando a fronteira que o README afirma, de que o pacote nao importa
+nada alem da biblioteca padrao, com excecao do controlador.
+
+Os dois niveis de saida existem porque tem publicos diferentes, e a separacao e proposital:
+
+| | devolve | quem usa |
+|---|---|---|
+| `responder` | `RespostaDialogo`: o que o controlador **decidiu** | as medicoes, sem apresentacao no caminho |
+| `atender` | `Atendimento`: o que a interface **mostra**, com fontes recortadas e tempo | servidor e chat de terminal |
+
+`responder` nao foi tocado, e e por isso que nenhuma medicao mudou. O docstring de
+`compilador/dialogo.py` passou a narrar as seis etapas na ordem de execucao, e e o arquivo para
+ler primeiro.
+
+Os metodos de `Dialogo` ficaram na ordem em que executam, e nao na ordem convencional de
+Python: `montar`, `de_manual`, `__init__`, `atender`, `responder`, `_recorrer_ao_plano_b`. O
+`__init__` so guarda o que as duas primeiras montaram, e esta declarado depois delas de
+proposito, porque o arquivo existe para ser lido de cima a baixo. O docstring da classe diz isso.
+
+**Nao virou ciclo de import.** `dialogo` passou a importar `..corpus`, `..recuperacao` e `..ia`,
+e nenhum dos tres importa o controlador. Nenhum import pesado novo entra na carga, porque o
+`torch` do cross-encoder e o `fitz` do PDF ja eram importados dentro das funcoes que os usam.
+
+### 29.4 Verificado
+
+Alem da impressao digital: o payload JSON do servidor foi comparado campo a campo com o que o
+codigo antigo produzia, nas mesmas perguntas, e o recorte de 110 caracteres do terminal tambem.
+O servidor foi subido de verdade e respondeu por HTTP a uma pergunta de uma intencao e a outra
+de duas, com as mesmas cinco chaves e origem `NUCLEO` nas duas. Os quatro pontos de entrada
+importam e compilam.
+
+### 29.5 O que foi medido e decidido NAO fazer
+
+Tres mecanismos foram testados por ablacao, reescrevendo a notacao das 77 regras e trocando a
+funcao de casamento em memoria, sem alterar o repositorio:
+
+| ablacao | resultado | decisao |
+|---|---|---|
+| sem `+` (adjacencia) | 44/50 · 44/44 · 26/44 · 0 FP · 0/31 adversariais · 77/77 regras vencem a propria entrada. Numa sonda de 17 frases de negacao, uma mudou, e para melhor | **manter**: o desempate do §22 tornou o operador redundante, mas ele paga no texto, sustentando o argumento de regularidade do §2 |
+| sem `!` (exclusao) | identico; muda uma frase com duas perguntas juntas | **manter**: e guarda local, sobrevive a regra nova, e custa um campo e um ramo |
+| sem `&` (ordem livre) | gold-set intacto, mas **2 parafrases de 25 perdidas** ("e permitido faltar quantas vezes?" e "a colacao de grau e obrigatoria?" deixam de ser reconhecidas) | **manter**: e o mecanismo que o gold-set nao mede e a parafrase mede, como a §13 registrou |
+| casamento sem ordem nenhuma | reconhecimento **sobe para 46/50**, 46/46 de recuperacao, 0/31 de vazamento, 0 espurias | **nao agora**: mudaria os numeros publicados do Cap. 5 e enfraqueceria a afirmacao de que a ordem e a da pergunta. Cabe no Cap. 6, como trabalho futuro com numero medido |
+
+O primeiro achado merece registro proprio: **a adjacencia e a exclusao ficaram redundantes sem
+ninguem notar.** Foram criadas em §4 para resolver dois empates, quando o desempate era so por
+numero de obrigatorios. O critério de dispersao, acrescentado em §22 por outro motivo, passou a
+resolver os mesmos dois casos por margem estrita. Um mecanismo posterior e mais geral absorveu
+dois anteriores e mais especificos, o que e exatamente o que se espera de projeto de compilador,
+e nenhuma medicao acusaria isso, porque nenhuma piorou.

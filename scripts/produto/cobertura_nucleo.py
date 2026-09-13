@@ -30,12 +30,13 @@ import os
 import sys
 
 from rag.config import Config
+from rag.corpus import indexar_manual
 from rag.goldset import carregar_goldset, construir_relevancia
 from rag.compilador.base_conhecimento import BaseConhecimento
 from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS, SEMANTICA_MANUAL
 from rag.compilador.lexico import AnalisadorLexico, simbolos
 from rag.compilador.sintatico import AnalisadorSintatico
-from rag.pipeline import indexar_manual, montar_esparsa, montar_recuperador_produto
+from rag.recuperacao import montar_esparsa, montar_reordenado
 
 CAMINHO_GOLD = "data/goldsets/institucional.json"
 CAMINHO_CSV = "outputs/cobertura_nucleo.csv"
@@ -50,7 +51,7 @@ def _montar_recuperador(cfg, com_reordenador: bool):
     """
     indice = indexar_manual(cfg)
     if com_reordenador:
-        return indice, montar_recuperador_produto(indice, cfg)
+        return indice, montar_reordenado(indice, cfg)
     return indice, montar_esparsa(indice, cfg)
 
 

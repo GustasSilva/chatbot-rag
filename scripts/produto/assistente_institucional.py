@@ -18,9 +18,7 @@ from __future__ import annotations
 
 import sys
 
-from rag.apresentacao import fontes_de
-from rag.compilador.dialogo import Origem
-from rag.pipeline import montar_assistente
+from rag.compilador.dialogo import Dialogo, Origem
 
 SAIR = {"sair", "exit", "quit"}
 RODAPE_ORIGEM = {
@@ -35,7 +33,7 @@ DISCLAIMER = (
 
 def main() -> int:
     print("Carregando indice e modelos (pode levar alguns segundos)...", flush=True)
-    dialogo = montar_assistente()
+    dialogo = Dialogo.montar()
 
     print("\n" + "=" * 72)
     print("  Assistente do Manual do Aluno")
@@ -55,16 +53,15 @@ def main() -> int:
         if pergunta.lower() in SAIR:
             break
 
-        resp = dialogo.responder(pergunta, historico=historico)
-        historico = (historico + [(pergunta, resp.texto)])[-4:]  # últimos 4 turnos
-        print(f"\nAssistente> {resp.texto}")
+        atendimento = dialogo.atender(pergunta, historico, n_janela=110)
+        historico = (historico + [(pergunta, atendimento.texto)])[-4:]  # últimos 4 turnos
+        print(f"\nAssistente> {atendimento.texto}")
         # Sem fonte não houve consulta ao Manual (recusa do piso, saudação, não entendi):
         # nesses casos nem o rodapé de origem nem as fontes fazem sentido.
-        fontes = fontes_de(resp, n=110)
-        if fontes:
-            print(f"  {RODAPE_ORIGEM[resp.origem]}")
+        if atendimento.fontes:
+            print(f"  {RODAPE_ORIGEM[atendimento.origem]}")
             print("\nFontes (trechos consultados; * = citado na resposta):")
-            for f in fontes:
+            for f in atendimento.fontes:
                 print(f"  {'*' if f['citada'] else ' '}[{f['n']}] {f['texto']}")
             print("  (confirme no Manual oficial antes de decidir algo importante)")
         print()

@@ -179,14 +179,23 @@ Por isso a medição de cobertura não é *in sample* (§8).
 Montar o assistente inteiro é uma chamada, e desligar a inteligência artificial é um argumento:
 
 ```python
-from rag.pipeline import montar_assistente
+from rag.compilador.dialogo import Dialogo
 
-dialogo = montar_assistente()                      # núcleo + plano B
-dialogo = montar_assistente(com_plano_b=False)     # só o compilador, sem modelo nenhum
+dialogo = Dialogo.montar()                      # núcleo + plano B
+dialogo = Dialogo.montar(com_plano_b=False)     # só o compilador, sem modelo nenhum
 
+# o que o controlador decide (é o que as medições consomem)
 resposta = dialogo.responder("Quantas faltas posso ter?")
-resposta.origem      # Origem.NUCLEO | Origem.PLANO_B | Origem.NAO_ENTENDIDA
+resposta.origem          # Origem.NUCLEO | Origem.PLANO_B | Origem.NAO_ENTENDIDA
+
+# o que a interface mostra: o mesmo, com as fontes recortadas e o tempo medido
+atendimento = dialogo.atender("Quantas faltas posso ter?")
+atendimento.sem_ia       # True quando a gramática respondeu sozinha
+atendimento.fontes       # trechos numerados e recortados para a tela
 ```
+
+`rag.compilador.dialogo` é o arquivo para ler primeiro: o percurso inteiro está lá, em ordem de
+execução, em seis etapas comentadas, da leitura do PDF até a entrega na tela.
 
 
 | Camada | Módulo | Papel |
@@ -197,12 +206,11 @@ resposta.origem      # Origem.NUCLEO | Origem.PLANO_B | Origem.NAO_ENTENDIDA
 | | `rag.compilador.semantico` | Traduz a intenção na consulta canônica e colhe os campos |
 | | `rag.compilador.base_conhecimento` | Executa a consulta contra o Manual e destaca a frase que responde |
 | | `rag.compilador.intencoes` | Só dados: léxico, gramática e ações, sem lógica |
-| **Controlador** | `rag.compilador.dialogo` | Orquestra as fases e decide o plano B. Marca a origem de cada resposta |
+| **Controlador** | `rag.compilador.dialogo` | O percurso inteiro em ordem de execução: `Dialogo.montar()` monta as seis etapas e `atender()` serve uma pergunta. Decide o plano B e marca a origem de cada resposta |
 | **Corpus** | `rag.corpus` | Carrega o PDF, normaliza e divide em trechos com sobreposição |
 | **Recuperação** | `rag.recuperacao` | **BM25 Okapi do zero** com índice invertido, e o cross-encoder de segundo estágio |
 | **Plano B** | `rag.ia` | Chatbot RAG com guardrail e piso de score, sobre Ollama. É o único que recebe o histórico da conversa |
 | **Medição** | `rag.goldset` | Carrega o conjunto de perguntas de referência e resolve a relevância de cada trecho |
-| **Montagem** | `rag.pipeline` | `montar_assistente(cfg)` monta o produto inteiro: é a única chamada que um ponto de entrada precisa fazer |
 | **Parâmetros** | `rag.config` | Uma estrutura imutável com todos os valores fixos do trabalho |
 | **Exibição** | `rag.apresentacao` | Saudação, recusa e o recorte dos trechos, igual na tela e no terminal |
 
@@ -300,7 +308,7 @@ entendimento: é a demonstração de que o assistente funciona com a IA desligad
 
 Na primeira execução o cross-encoder (470 MB) é baixado do HuggingFace. Depois disso ele sai do
 cache local, e a partida não depende mais de rede. **Ele só é carregado se o plano B for
-montado**: `montar_assistente(com_plano_b=False)` não toca no modelo, e a medição de cobertura
+montado**: `Dialogo.montar(com_plano_b=False)` não toca no modelo, e a medição de cobertura
 também não.
 
 **4. As medições**
@@ -365,7 +373,8 @@ src/rag/compilador/    O NUCLEO, sem modelo e sem peso treinado
     semantico.py         fase 3: preenche campos e monta a consulta canonica
     intencoes.py         os dados: 77 regras, vocabulario e acoes do Manual
     base_conhecimento.py executa a consulta no Manual e destaca a frase que responde
-    dialogo.py           o controlador: decide entre nucleo e plano B
+    dialogo.py           O ARQUIVO PARA LER PRIMEIRO: o controlador, e o percurso
+                         inteiro em seis etapas na ordem em que executam
 
 src/rag/ia.py          A INTELIGENCIA ARTIFICIAL, em papel secundario:
                        o gerador sobre Ollama e o chatbot RAG com o piso de score
@@ -373,7 +382,6 @@ src/rag/recuperacao.py BM25 do zero e o reranker; infraestrutura usada pelos doi
 src/rag/corpus.py      o texto de onde as respostas saem: PDF, normalizacao e trechos
 src/rag/goldset.py     carga do conjunto de perguntas de referencia
 src/rag/config.py      todos os parametros fixos, numa dataclass congelada
-src/rag/pipeline.py    montar_assistente(): do PDF ao assistente pronto
 src/rag/apresentacao.py  saudacao, recusa e o recorte dos trechos citados
 
 servidor.py            servidor da biblioteca padrao que serve web/index.html

@@ -11,7 +11,8 @@ sys.path.insert(0, "src")
 
 from rag.config import Config
 from rag.goldset import carregar_goldset
-from rag.pipeline import indexar_manual, montar_esparsa
+from rag.corpus import indexar_manual
+from rag.recuperacao import montar_esparsa
 
 sys.path.insert(0, "scripts/produto")
 from institucional_guardrail import ADVERSARIAIS

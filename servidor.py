@@ -19,9 +19,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from rag.apresentacao import fontes_de
 from rag.compilador.dialogo import Dialogo
-from rag.pipeline import montar_assistente
 
 PAGINA = Path(__file__).parent / "web" / "index.html"
 PORTA = 8000
@@ -29,7 +27,7 @@ PORTA = 8000
 
 def montar_dialogo() -> Dialogo:
     """Núcleo de compilador respondendo do Manual, com o chatbot RAG como plano B."""
-    dialogo = montar_assistente()
+    dialogo = Dialogo.montar()
     # Uma pergunta descartável antes de abrir a porta: se uma tabela do compilador ou o PDF
     # do Manual estiverem quebrados, o servidor falha aqui e não na pergunta do primeiro
     # aluno. É verificação de partida, não aquecimento de modelo.
@@ -37,7 +35,7 @@ def montar_dialogo() -> Dialogo:
     # O comentário anterior dizia pagar aqui a primeira inferência do cross-encoder. Não
     # paga, por duas razões medidas em 10/09/2026 (docs/decisoes.md §28): esta pergunta é
     # reconhecida pela gramática e percorre o núcleo, que desde 01/09 não usa o
-    # cross-encoder; e o custo de carga já foi pago dentro do montar_assistente. Com e sem
+    # cross-encoder; e o custo de carga já foi pago dentro do Dialogo.montar. Com e sem
     # esta chamada, a primeira pergunta dá o mesmo: 1 ms pelo núcleo, cerca de 1,2 s pela
     # recusa.
     dialogo.responder("quantas faltas posso ter?")
@@ -70,19 +68,18 @@ class Assistente(BaseHTTPRequestHandler):
             return self._json(400, {"erro": "escreva uma pergunta"})
         historico = [tuple(par) for par in pedido.get("historico") or []]
 
-        inicio = time.perf_counter()
         try:
             with self.cadeado:
-                resposta = self.dialogo.responder(pergunta, historico=historico or None)
+                atendimento = self.dialogo.atender(pergunta, historico)
         except RuntimeError as erro:  # gerador local fora do ar, modelo ausente
             return self._json(503, {"erro": str(erro)})
 
         self._json(200, {
-            "texto": resposta.texto,
-            "origem": resposta.origem.name,
-            "intencoes": list(resposta.intencoes),
-            "ms": round((time.perf_counter() - inicio) * 1000),
-            "fontes": fontes_de(resposta),
+            "texto": atendimento.texto,
+            "origem": atendimento.origem.name,
+            "intencoes": list(atendimento.intencoes),
+            "ms": atendimento.ms,
+            "fontes": atendimento.fontes,
         })
 
     def _json(self, codigo: int, dados: dict) -> None:

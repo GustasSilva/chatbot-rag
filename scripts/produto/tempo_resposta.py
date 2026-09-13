@@ -47,10 +47,9 @@ import urllib.request
 from pathlib import Path
 
 from rag.apresentacao import RECUSA
-from rag.compilador.dialogo import Origem
+from rag.compilador.dialogo import Dialogo, Origem
 from rag.config import Config
 from rag.goldset import carregar_goldset
-from rag.pipeline import montar_assistente
 
 RAIZ = Path(__file__).resolve().parents[2]
 CAMINHO_GOLD = "data/goldsets/institucional.json"
@@ -145,7 +144,7 @@ class PorChamadaDireta:
 
     def __init__(self) -> None:
         print("Carregando índice e modelo...", flush=True)
-        self._dialogo = montar_assistente(Config(), com_plano_b=True)
+        self._dialogo = Dialogo.montar(Config(), com_plano_b=True)
 
     def cronometrar(self, pergunta: str) -> tuple[str, float]:
         inicio = time.perf_counter()

@@ -15,9 +15,9 @@ sys.path.insert(0, "src")
 sys.path.insert(0, "scripts/produto")
 
 from rag.config import Config
+from rag.corpus import indexar_manual
 from rag.goldset import carregar_goldset, construir_relevancia
-from rag.pipeline import indexar_manual, montar_esparsa, montar_recuperador_produto
-from rag.recuperacao import tokenizar
+from rag.recuperacao import montar_esparsa, montar_reordenado, tokenizar
 
 from institucional_guardrail import ADVERSARIAIS
 
@@ -27,7 +27,7 @@ itens = carregar_goldset("data/goldsets/institucional.json")
 relev = construir_relevancia(itens, indice.chunks, indice.textos_doc, cfg.limiar_relevancia)
 
 bm25 = montar_esparsa(indice, cfg)
-rer = montar_recuperador_produto(indice, cfg)
+rer = montar_reordenado(indice, cfg)
 
 print("=" * 72)
 print("A) RECUPERACAO DO CAMINHO AUXILIAR (top-%d, pergunta crua)" % cfg.top_k_contexto)

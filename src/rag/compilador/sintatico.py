@@ -24,7 +24,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from .gramatica import Elemento, Gramatica, Juncao, Regra
+from .gramatica import Gramatica, Juncao, Regra
 from .lexico import Token, TipoToken
 
 
@@ -130,6 +130,11 @@ def _casar(regra: Regra, tokens: Sequence[Token]) -> tuple[int, ...] | None:
 
     São TODAS as posições consumidas, o que faz de ``casados`` e ``sobra`` uma partição de fato
     e dá ao desempate a medida de quanto cada regra cobre da pergunta.
+
+    Cada elemento é procurado a partir de ``proximo``, porque a ordem da regra é a ordem da
+    frase, e de uma das duas formas que a notação admite: os símbolos de um ``&`` valem em
+    qualquer ordem, e os demais formam cadeia que começa numa das alternativas e segue pelos
+    extras adjacentes.
     """
     presentes = {t.valor for t in tokens if t.tipo is TipoToken.PALAVRA_CHAVE}
     indices: list[int] = []
@@ -139,17 +144,40 @@ def _casar(regra: Regra, tokens: Sequence[Token]) -> tuple[int, ...] | None:
             if presentes & elemento.alternativas:
                 return None  # o símbolo proibido apareceu: a regra inteira é descartada
             continue
-        achado = _procurar(elemento, tokens, proximo)
+
+        conjuntos = (elemento.alternativas, *elemento.extras)
+        achado: tuple[int, int] | None = None
+        if elemento.extras and elemento.juncao is Juncao.LIVRE:
+            # Ordem livre: serve à pergunta cuja ordem varia sem mudar o sentido ("quantas
+            # faltas posso ter" x "é permitido faltar quantas vezes"). Pega a ocorrência mais
+            # à esquerda de cada símbolo, que consome o mínimo da frase e preserva a exatidão
+            # do guloso. -1 marca o símbolo ausente, e basta um para o elemento não casar.
+            posicoes = [
+                next((i for i in range(proximo, len(tokens))
+                      if _satisfaz(tokens[i], conjunto)), -1)
+                for conjunto in conjuntos
+            ]
+            if -1 not in posicoes:
+                achado = (min(posicoes), max(posicoes))
+        else:
+            for i in range(proximo, len(tokens)):
+                if not _satisfaz(tokens[i], elemento.alternativas):
+                    continue
+                fim = _casar_adjacentes(elemento.extras, tokens, i)
+                if fim is not None:
+                    achado = (i, fim)
+                    break
+
         if achado is None:
             if elemento.opcional:
                 continue
             return None
+
         inicio, fim = achado
         # Todas as posições que o elemento ocupa, e não só a primeira: com '&' e '+' ele cobre
         # mais de uma, e é isso que o desempate por consumo precisa contar. O filtro por
         # ``conjuntos`` evita levar junto uma palavra-chave que caiu no meio do intervalo sem
         # pertencer ao elemento.
-        conjuntos = (elemento.alternativas, *elemento.extras)
         indices.extend(
             i
             for i in range(inicio, fim + 1)
@@ -157,41 +185,6 @@ def _casar(regra: Regra, tokens: Sequence[Token]) -> tuple[int, ...] | None:
         )
         proximo = fim + 1  # a ordem da regra é a ordem da frase
     return tuple(indices)
-
-
-def _procurar(
-    elemento: Elemento, tokens: Sequence[Token], inicio: int
-) -> tuple[int, int] | None:
-    """Par (primeira, última) das posições que satisfazem o elemento inteiro."""
-    if elemento.extras and elemento.juncao is Juncao.LIVRE:
-        return _casar_livre(elemento, tokens, inicio)
-    for i in range(inicio, len(tokens)):
-        if not _satisfaz(tokens[i], elemento.alternativas):
-            continue
-        fim = _casar_adjacentes(elemento.extras, tokens, i)
-        if fim is not None:
-            return i, fim
-    return None
-
-
-def _casar_livre(
-    elemento: Elemento, tokens: Sequence[Token], inicio: int
-) -> tuple[int, int] | None:
-    """Todos os símbolos do elemento presentes, em qualquer ordem.
-
-    Serve à pergunta cuja ordem varia sem mudar o sentido ("quantas faltas posso ter" x "é
-    permitido faltar quantas vezes"). Pega a ocorrência mais à esquerda de cada símbolo, que
-    consome o mínimo da frase e preserva a exatidão do guloso.
-    """
-    posicoes = []
-    for conjunto in (elemento.alternativas, *elemento.extras):
-        posicao = next(
-            (i for i in range(inicio, len(tokens)) if _satisfaz(tokens[i], conjunto)), None
-        )
-        if posicao is None:
-            return None
-        posicoes.append(posicao)
-    return min(posicoes), max(posicoes)
 
 
 def _casar_adjacentes(
@@ -204,18 +197,18 @@ def _casar_adjacentes(
     """
     atual = posicao
     for conjunto in extras:
-        seguinte = _proxima_palavra_chave(tokens, atual + 1)
+        seguinte = next(
+            (
+                i
+                for i in range(atual + 1, len(tokens))
+                if tokens[i].tipo is TipoToken.PALAVRA_CHAVE
+            ),
+            None,
+        )
         if seguinte is None or not _satisfaz(tokens[seguinte], conjunto):
             return None
         atual = seguinte
     return atual
-
-
-def _proxima_palavra_chave(tokens: Sequence[Token], inicio: int) -> int | None:
-    for i in range(inicio, len(tokens)):
-        if tokens[i].tipo is TipoToken.PALAVRA_CHAVE:
-            return i
-    return None
 
 
 def _satisfaz(token: Token, simbolos: frozenset[str]) -> bool:

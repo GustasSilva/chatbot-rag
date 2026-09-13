@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 
 from .apresentacao import RECUSA, eh_saudacao, resposta_saudacao
 from .config import Config
-from .corpus import Chunk
+from .corpus import Chunk, IndiceCorpus
 from .recuperacao import Recuperador
 
 # Turnos anteriores da conversa: (pergunta, resposta).
@@ -194,3 +194,17 @@ class ChatbotRAG:
             return RespostaGerada(RECUSA, [])
         contextos = [self._por_id[r.chunk_id] for r in resultados]
         return self._gerador.gerar(pergunta, contextos, historico=historico)
+
+
+def montar_plano_b(
+    recuperador: Recuperador, indice: IndiceCorpus, cfg: Config, saudar: bool = True
+) -> ChatbotRAG:
+    """O chatbot RAG que responde o que a gramática não reconhece. É a etapa 3 do percurso."""
+    return ChatbotRAG(
+        recuperador,
+        indice.chunks,
+        GeradorOllama.de_config(cfg),
+        cfg.top_k_contexto,
+        piso_score=cfg.piso_score,
+        saudar=saudar,
+    )
