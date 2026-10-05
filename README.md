@@ -64,7 +64,8 @@ o Manual do Aluno UNIP 2026 dividido em 173 trechos.
 |---|---|
 | Perguntas reconhecidas pelo núcleo | **44/50 = 88%** |
 | Trecho correto entre os recuperados | **44/44 = 100%** |
-| Reconheceu mas trouxe o trecho errado | **0** |
+| Nenhum dos três trechos com a resposta | **0** |
+| Frase destacada responde à pergunta (conferida à mão) | 29/44 = 66% |
 | Empates na gramática | **0/50** |
 | Frase destacada exata | 26/44 · **26/32 = 81%** nos casos alcançáveis |
 | Recusa fora de escopo (31 adversariais) | **31/31 = 100%** |
@@ -83,22 +84,24 @@ inalcançável por cruzar fronteira de frase. Sobre os casos em que acertar é p
 critério acerta **26/32**. Era isso que o reordenador comprava: não frase melhor, e sim o
 trecho certo promovido à primeira posição.
 
-**Tempo de resposta:** não é reprodutível o bastante para entrar como número. Três medições
-da mesma pergunta pelo núcleo deram 1,4 s, 3,1 s e 10,5 s, porque o custo é dominado pela
-passagem do reranker e varia com a quantidade de candidatos. O plano B fica na casa dos 20 s.
+**Tempo de resposta** (`scripts/produto/tempo_resposta.py`, pelo servidor, mediana): núcleo
+**2 ms**, recusa pelo piso cerca de **1,4 s**, geração pelo plano B cerca de **9,5 s**. Os dois
+últimos variam com a carga da máquina (já mediram 5,1 s e 14,5 s); o do núcleo, não. Enquanto
+o reranker fazia parte do núcleo, a mesma pergunta chegou a levar 1,4 s, 3,1 s e 10,5 s,
+conforme a carga da máquina; tirá-lo do núcleo (§25) é o que tornou esse tempo estável.
 
-Duas observações honestas sobre a tabela. A **frase destacada** é o ponto fraco conhecido: o
-trecho certo é recuperado em 98% dos casos, mas a sentença exata que responde é acertada em
-68%. Quatro critérios alternativos foram implementados e medidos, e todos ficaram piores; a
-tabela está em [`docs/decisoes.md`](docs/decisoes.md) §9. E o **teste adversarial** roda pelo
+Duas observações sobre a tabela. A **frase destacada** é o ponto fraco conhecido, decomposto
+acima; os critérios alternativos medidos estão em [`docs/decisoes.md`](docs/decisoes.md) §9. E o
+**teste adversarial** roda pelo
 `Dialogo`, ou seja, pelo mesmo caminho do produto: uma resposta de origem `NUCLEO` numa
 pergunta adversarial conta como vazamento por definição, independente do texto. Quando o
 teste ainda instanciava o plano B direto, ele era cego para o núcleo e deixou passar um
 vazamento real ([`docs/decisoes.md`](docs/decisoes.md) §14).
 
-O **plano B** tem medição própria, das mesmas 50 perguntas: recupera o trecho certo em 98% e
-responde com o conteúdo correto em 92%, com os erros concentrados na geração e não na
-recuperação. O A/B do prompt, a ressalva de que o piso de score foi calibrado nas mesmas 50
+O **plano B** tem medição própria, das mesmas 50 perguntas (`institucional_acuracia.py`):
+recupera o trecho certo em 49/50, não recusa nenhuma, cita o trecho certo em 39/50 e responde
+com o conteúdo correto em 46/50, conferido à mão contra o gabarito e o Manual. Os erros ficam na
+redação, e não na recuperação. O A/B do prompt, a ressalva de que o piso de score foi calibrado nas mesmas 50
 perguntas e a visão consolidada de produto e estudo estão em
 [`docs/relatorio_institucional.md`](docs/relatorio_institucional.md) e
 [`docs/relatorio_final.md`](docs/relatorio_final.md).
@@ -387,9 +390,9 @@ src/rag/apresentacao.py  saudacao, recusa e o recorte dos trechos citados
 servidor.py            servidor da biblioteca padrao que serve web/index.html
 web/index.html         a tela do produto: HTML, CSS e JS num arquivo so
 
-scripts/produto/       o assistente e as medicoes em uso (5)
+scripts/produto/       o assistente e as medicoes em uso (7)
 scripts/goldsets/      construcao do conjunto de referencia (1)
-scripts/estudo/        medicoes que sustentam decisoes de arquitetura (3)
+scripts/estudo/        medicoes que sustentam decisoes de arquitetura (6)
 scripts/LEIA-ME.md     o que cada script faz
 
 tests/                 81 testes

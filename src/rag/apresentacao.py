@@ -24,12 +24,12 @@ _INICIO_RECUSA = "não encontrei essa informação"
 
 RESPOSTAS_SAUDACAO = (
     "Olá! Sou o assistente (não-oficial) do Manual do Aluno da UNIP. Posso ajudar com dúvidas "
-    "sobre a vida acadêmica — matrícula, faltas, provas, aproveitamento de estudos e afins. Em "
+    "sobre a vida acadêmica, como matrícula, faltas, provas e aproveitamento de estudos. Em "
     "que posso ajudar?",
     "Oi! Este é o assistente (não-oficial) do Manual do Aluno da UNIP. Pergunte à vontade sobre "
     "matrícula, faltas, provas, trancamento e outros temas acadêmicos.",
-    "Olá, tudo bem? Tiro dúvidas sobre o Manual do Aluno da UNIP — faltas, provas, rematrícula, "
-    "aproveitamento de estudos e afins. O que você quer saber?",
+    "Olá, tudo bem? Tiro dúvidas sobre o Manual do Aluno da UNIP: faltas, provas, rematrícula, "
+    "aproveitamento de estudos e outros temas. O que você quer saber?",
     "Oi, que bom te ver! Sou o assistente (não-oficial) do Manual do Aluno. Sobre qual assunto "
     "da vida acadêmica você precisa de ajuda?",
 )

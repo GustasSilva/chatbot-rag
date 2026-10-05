@@ -133,6 +133,9 @@ saía em ~4 parágrafos quase idênticos). Afeta **só o perfil institucional** 
   v2 estão em `outputs/institucional_respostas.txt` para nova revisão. Os sinais objetivos
   (recuperação 98%, recusa 0%, citação 80%) e sondas manuais indicam conteúdo equivalente, mas o
   número de conteúdo não foi re-cravado.
+- **Resolvido em 05/10/2026:** as 50 respostas v2 foram conferidas à mão contra o gabarito e o
+  Manual: 46/50 corretas; n10 e n19 acertam o essencial mas trazem condição de outra norma;
+  n04 (recuperação falhou) e n17 ("Sim" seguido de abono, contraditória) estão erradas.
 
 ## Enquadramento (produto × ciência)
 

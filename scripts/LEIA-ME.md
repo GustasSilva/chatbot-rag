@@ -41,3 +41,5 @@ porque `outputs/` nao e versionado.
 | `guardrail_pelo_compilador.py` | O proprio front-end serve de primeiro estagio do guardrail? Pega 20/31 sem custo nas legitimas. |
 | `destaque_ponderado_por_idf.py` | Ponderar os termos por IDF melhora a escolha da frase? Nao: 26/44 nas quatro variantes. |
 | `onde_o_destaque_falha.py` | Decompoe as falhas de destaque: escolha errada contra trecho certo fora da primeira posicao. |
+| `adversarial_sem_piso.py` | O modelo recusa sozinho, sem o piso? 27/31, inclusive as 5 de subversao; responde a 4. |
+| `titulos_de_secao.py` | Lista os titulos de secao do Manual pela fonte do PDF, que nao tem sumario eletronico. Foi dessa lista que as 77 regras foram escritas (§8). |

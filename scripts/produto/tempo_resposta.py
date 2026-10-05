@@ -12,10 +12,10 @@ Três percursos saem da mesma bateria, separados pelo que aconteceu com cada per
   o piso de pontuação barrou a pergunta **antes** de chamar o modelo;
 - **geração**: nenhuma regra reconheceu, o piso deixou passar e o modelo redigiu a resposta.
 
-A carga do índice e do reordenador fica fora da conta, e uma pergunta de cada percurso roda
-antes da medição para aquecer. Sem esse aquecimento a primeira pergunta paga um custo que não
-se repete, e foi o que produziu os 7 ms que a interface mostrou na primeira execução de uma
-sessão.
+A carga do índice e do reordenador fica fora da conta, porque acontece na partida do servidor.
+Uma pergunta de cada percurso roda antes da medição. No núcleo e na recusa ela não muda o
+resultado, porque a primeira pergunta não é mais lenta que as seguintes (``docs/decisoes.md``
+§28); na geração, é ela que garante o modelo de linguagem já carregado na memória.
 
 Por que pelo servidor, e não chamando o ``Dialogo.responder`` direto: o mesmo percurso do
 núcleo apura 2 ms medido aqui e 0,7 ms medido por chamada direta. A diferença é do contexto
