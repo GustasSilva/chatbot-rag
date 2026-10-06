@@ -139,7 +139,8 @@ no regular. O argumento completo está em [`docs/decisoes.md`](docs/decisoes.md)
 
 O reconhecimento é **guloso**, uma varredura da esquerda para a direita por regra, e é
 **exato** porque a classe de gramáticas foi restringida: `Gramatica.de_notacao` rejeita
-símbolo repetido em dois elementos da mesma regra, que é a condição da prova (§3).
+símbolo repetido em dois elementos da mesma regra e elemento opcional que não seja o último,
+que são as duas condições da prova (§3).
 
 Quando mais de uma regra casa, o desempate é por **três critérios sucessivos** (§21):
 
@@ -277,7 +278,7 @@ python -m venv .venv
 # Windows:  .venv\Scripts\activate     |  Linux/Mac:  source .venv/bin/activate
 pip install -e ".[dev]"
 
-pytest                                        # 81 testes, rápidos, sem baixar modelo
+pytest                                        # 83 testes, rápidos, sem baixar modelo
 ```
 
 Para **reproduzir as medições**, e não só usar o projeto, instale o ambiente exato em que elas
@@ -395,7 +396,7 @@ scripts/goldsets/      construcao do conjunto de referencia (1)
 scripts/estudo/        medicoes que sustentam decisoes de arquitetura (6)
 scripts/LEIA-ME.md     o que cada script faz
 
-tests/                 81 testes
+tests/                 83 testes
 docs/decisoes.md       o porque de cada decisao do nucleo, com as medicoes
 data/goldsets/         o conjunto de referencia validado (JSON)
 data/raw/              corpora brutos, fora do git

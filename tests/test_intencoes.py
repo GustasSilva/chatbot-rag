@@ -102,6 +102,19 @@ def test_regra_so_de_opcionais_falha_alto():
         Gramatica.de_notacao({"teste": "FALTA? DISCIPLINA?"}, LEXICO_FALSO)
 
 
+def test_opcional_antes_de_outro_elemento_falha_alto():
+    """Com 'DISCIPLINA? FALTA', o guloso gastaria a disciplina dita depois da falta no opcional
+    e perderia a falta: a outra metade da condição que torna o casamento exato."""
+    with pytest.raises(ValueError, match="opcional antes"):
+        Gramatica.de_notacao({"teste": "DISCIPLINA? FALTA"}, LEXICO_FALSO)
+
+
+def test_opcional_no_fim_aceita_exclusao_depois():
+    """A exclusão não consome símbolo, então pode vir depois do opcional."""
+    regra = Gramatica.de_notacao({"t": "FALTA DISCIPLINA? !PRAZO"}, LEXICO_FALSO).regras[0]
+    assert regra.obrigatorios == 1
+
+
 def test_gramatica_do_manual_compila_e_usa_o_lexico_do_manual():
     assert len(GRAMATICA_MANUAL.regras) == len(REGRAS)
     definidos = LEXICO_MANUAL.simbolos_definidos

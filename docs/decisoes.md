@@ -46,6 +46,22 @@ mínimo ao pegar a primeira ocorrência de cada símbolo.
 Por isso a cadeia adjacente é modelada como **um elemento** com vários símbolos, e não como
 elementos separados: como par atômico, o argumento de troca continua valendo.
 
+**Segunda condição (06/10/2026): o opcional só no último elemento.** Elementos disjuntos não
+bastam quando há elemento obrigatório depois de um opcional. Em `MATRICULA? TRANCAR`, a pergunta
+"trancar a matrícula" pertence à linguagem da regra, mas o guloso acha a matrícula depois de
+"trancar", gasta essa posição no opcional e não encontra mais o `TRANCAR`. As 12 regras do
+Manual que usam `?` já o tinham no último elemento, e `Gramatica.de_notacao` passou a rejeitar
+o contrário (a exclusão pode vir depois, porque não consome símbolo).
+
+Uma consequência que vale registrar: com o casamento por subsequência, o `?` no fim **não muda
+a linguagem** reconhecida pela regra, porque o `Σ*` final já absorve o símbolo opcional
+(`COMO TRANCAR MATRICULA?` reconhece o mesmo que `COMO TRANCAR`). O que ele muda é o que a regra
+**consome**. Em "Como faço a renovação da matrícula?", `RENOVACAO MATRICULA?` consome a
+matrícula; sem o `?`, ela sobra junto com o "como" e o consumo iterado dispara
+`matricula_ingressante` (`COMO MATRICULA`), uma segunda resposta que ninguém pediu. Retirar
+todos os `?` não altera nenhum reconhecimento nas 123 perguntas dos três conjuntos (referência,
+adversarial e sondagem): o efeito aparece em perguntas que combinam o assunto com outro marcador.
+
 ## 4. Adjacência e exclusão: os dois casos que as motivaram
 
 Ambos medidos no gold-set, e em ambos a pergunta é clara para um leitor humano — o empate era

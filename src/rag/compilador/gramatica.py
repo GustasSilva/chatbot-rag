@@ -12,7 +12,8 @@ Espaço separa os elementos e a ordem importa; ``?`` opcional; ``|`` símbolos e
 posição; ``+`` adjacência; ``&`` ordem livre; ``!`` exclusão.
 
 ``de_notacao`` compila e confere contra o léxico, rejeitando símbolo fora do léxico (o análogo
-do identificador não declarado), regra só de opcionais e símbolo repetido em dois elementos.
+do identificador não declarado), regra só de opcionais, símbolo repetido em dois elementos e
+elemento opcional que não seja o último.
 Por que cada mecanismo existe, com as medições: ``docs/decisoes.md`` §2 a §5.
 """
 from __future__ import annotations
@@ -132,6 +133,19 @@ class Gramatica:
             if repetidos:
                 raise ValueError(
                     f"regra '{intencao}' repete simbolo em elementos diferentes: {repetidos}"
+                )
+            # Opcional só no fim (a exclusão não consome símbolo, então pode vir depois): com
+            # um elemento obrigatório depois do opcional, o guloso pode gastar no opcional a
+            # posição de que o seguinte precisava e deixar de casar (decisoes.md §3).
+            elementos = regra.elementos
+            if any(
+                elemento.opcional
+                and any(not seguinte.excluido for seguinte in elementos[i + 1:])
+                for i, elemento in enumerate(elementos)
+            ):
+                raise ValueError(
+                    f"regra '{intencao}' tem elemento opcional antes de outro elemento: "
+                    "o '?' so vale no ultimo"
                 )
             regras.append(regra)
 
