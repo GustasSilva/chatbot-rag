@@ -1,25 +1,8 @@
-"""O texto de onde as respostas saem: PDF, normalização e divisão em trechos.
+"""O Manual em texto: extração do PDF, normalização e divisão em trechos de 180 palavras.
 
-A normalização é canônica e anterior ao chunking: colapsa qualquer sequência de espaço em
-branco num único espaço, deixando o corpus como uma cadeia contínua. É isso que permite ao
-gold-set guardar o trecho-fonte como subcadeia exata, e mudar aqui invalida as medições feitas.
-
-**Todas as decisões de normalização do sistema ficam neste módulo**, porque são poucas e cada
-camada acima usa uma combinação delas. São duas noções de "pedaço de texto" e três de escrita:
-
-- :data:`PALAVRA` (``\\w+``) é o que conta como palavra para a análise léxica e para o BM25.
-  Serem a mesma expressão é proposital: o destaque do núcleo usa o tokenizador da busca, para
-  destacar não discordar de recuperar (``decisoes.md`` §9);
-- ``_TOKEN`` (``\\S+``) é o que conta como token no janelamento em trechos, onde só importa
-  contar, e não segmentar;
-- :func:`sem_acentos` dobra o acento, :func:`limpar_texto` colapsa espaço em branco e
-  :func:`so_alfanumerico` troca pontuação por espaço.
-
-Quem usa o quê: ``lexico.normalizar`` = minúsculas + ``sem_acentos``; ``recuperacao.tokenizar``
-= minúsculas + ``PALAVRA``, com ``sem_acentos`` opcional; ``apresentacao.eh_saudacao`` =
-minúsculas + ``sem_acentos`` + ``so_alfanumerico``.
-
-O corpus em uso é o Manual do Aluno; o PDF fica em ``data/raw/``, fora do Git.
+A normalização vem antes da divisão e deixa o texto como uma cadeia contínua, o que permite
+achar qualquer passagem pela posição. ``PALAVRA`` é o que conta como palavra na análise léxica
+e na busca.
 """
 from __future__ import annotations
 

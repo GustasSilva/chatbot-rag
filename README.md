@@ -29,23 +29,23 @@ Disso saem três propriedades que um chatbot baseado só em modelo de linguagem 
 ```
 "Quantas faltas posso ter em Cálculo?"
        |
-       |  compilador/lexico.py          texto  ->  tokens tipados
+       |  nucleo/fase1_lexica.py          texto  ->  tokens tipados
        v
   [QUANTIDADE] [FALTA] [PODER]   ("ter", "em" = ruído · "Cálculo" = desconhecido)
        |
-       |  compilador/sintatico.py       tokens ->  intenção          (segundo compilador/gramatica.py)
+       |  nucleo/fase2_sintatica.py       tokens ->  intenção          (segundo nucleo/gramatica.py)
        v
   intenção = limite_faltas
        |
-       |  compilador/semantico.py       intenção -> consulta canônica
+       |  nucleo/fase3_semantica.py       intenção -> consulta canônica
        v
   "frequência obrigatória em cada disciplina, aulas dadas"  + {disciplina: Cálculo}
        |
-       |  compilador/base_conhecimento.py    consulta -> trecho do Manual   (BM25, sem reranker)
+       |  nucleo/base_conhecimento.py    consulta -> trecho do Manual   (BM25, sem reranker)
        v
   3 trechos + a frase que responde
        |
-       |  compilador/dialogo.py         respondeu? senão, plano B
+       |  nucleo/controlador.py         respondeu? senão, plano B
        v
   resposta com origem NÚCLEO
 ```
@@ -102,9 +102,8 @@ O **plano B** tem medição própria, das mesmas 50 perguntas (`institucional_ac
 recupera o trecho certo em 49/50, não recusa nenhuma, cita o trecho certo em 39/50 e responde
 com o conteúdo correto em 46/50, conferido à mão contra o gabarito e o Manual. Os erros ficam na
 redação, e não na recuperação. O A/B do prompt, a ressalva de que o piso de score foi calibrado nas mesmas 50
-perguntas e a visão consolidada de produto e estudo estão em
-[`docs/relatorio_institucional.md`](docs/relatorio_institucional.md) e
-[`docs/relatorio_final.md`](docs/relatorio_final.md).
+perguntas e a visão consolidada do produto estão em
+[`docs/relatorio_institucional.md`](docs/relatorio_institucional.md).
 
 ## A gramática de intenções
 
@@ -183,7 +182,7 @@ Por isso a medição de cobertura não é *in sample* (§8).
 Montar o assistente inteiro é uma chamada, e desligar a inteligência artificial é um argumento:
 
 ```python
-from rag.compilador.dialogo import Dialogo
+from core_chatbot.nucleo.controlador import Dialogo
 
 dialogo = Dialogo.montar()                      # núcleo + plano B
 dialogo = Dialogo.montar(com_plano_b=False)     # só o compilador, sem modelo nenhum
@@ -198,33 +197,33 @@ atendimento.sem_ia       # True quando a gramática respondeu sozinha
 atendimento.fontes       # trechos numerados e recortados para a tela
 ```
 
-`rag.compilador.dialogo` é o arquivo para ler primeiro: o percurso inteiro está lá, em ordem de
+`core_chatbot.nucleo.controlador` é o arquivo para ler primeiro: o percurso inteiro está lá, em ordem de
 execução, em seis etapas comentadas, da leitura do PDF até a entrega na tela.
 
 
 | Camada | Módulo | Papel |
 |---|---|---|
-| **Núcleo (compilador)** | `rag.compilador.lexico` | Tokeniza, normaliza a escrita e traduz variantes em símbolos. É a tabela de símbolos do reconhecedor: fixa, carregada antes da análise, e é contra ela que cada símbolo usado numa regra é validado |
-| | `rag.compilador.gramatica` | A notação das regras e o compilador dela, com as validações |
-| | `rag.compilador.sintatico` | Reconhece a intenção, ou devolve `None` e aciona o plano B |
-| | `rag.compilador.semantico` | Traduz a intenção na consulta canônica e colhe os campos |
-| | `rag.compilador.base_conhecimento` | Executa a consulta contra o Manual e destaca a frase que responde |
-| | `rag.compilador.intencoes` | Só dados: léxico, gramática e ações, sem lógica |
-| **Controlador** | `rag.compilador.dialogo` | O percurso inteiro em ordem de execução: `Dialogo.montar()` monta as seis etapas e `atender()` serve uma pergunta. Decide o plano B e marca a origem de cada resposta |
-| **Corpus** | `rag.corpus` | Carrega o PDF, normaliza e divide em trechos com sobreposição |
-| **Recuperação** | `rag.recuperacao` | **BM25 Okapi do zero** com índice invertido, e o cross-encoder de segundo estágio |
-| **Plano B** | `rag.ia` | Chatbot RAG com guardrail e piso de score, sobre Ollama. É o único que recebe o histórico da conversa |
-| **Medição** | `rag.goldset` | Carrega o conjunto de perguntas de referência e resolve a relevância de cada trecho |
-| **Parâmetros** | `rag.config` | Uma estrutura imutável com todos os valores fixos do trabalho |
-| **Exibição** | `rag.apresentacao` | Saudação, recusa e o recorte dos trechos, igual na tela e no terminal |
+| **Núcleo (compilador)** | `core_chatbot.nucleo.fase1_lexica` | Tokeniza, normaliza a escrita e traduz variantes em símbolos. É a tabela de símbolos do reconhecedor: fixa, carregada antes da análise, e é contra ela que cada símbolo usado numa regra é validado |
+| | `core_chatbot.nucleo.gramatica` | A notação das regras e o compilador dela, com as validações |
+| | `core_chatbot.nucleo.fase2_sintatica` | Reconhece a intenção, ou devolve `None` e aciona o plano B |
+| | `core_chatbot.nucleo.fase3_semantica` | Traduz a intenção na consulta canônica e colhe os campos |
+| | `core_chatbot.nucleo.base_conhecimento` | Executa a consulta contra o Manual e destaca a frase que responde |
+| | `core_chatbot.nucleo.tabelas_do_manual` | Só dados: léxico, gramática e ações, sem lógica |
+| **Controlador** | `core_chatbot.nucleo.controlador` | O percurso inteiro em ordem de execução: `Dialogo.montar()` monta as seis etapas e `atender()` serve uma pergunta. Decide o plano B e marca a origem de cada resposta |
+| **Corpus** | `core_chatbot.corpus` | Carrega o PDF, normaliza e divide em trechos com sobreposição |
+| **Recuperação** | `core_chatbot.recuperacao` | **BM25 Okapi do zero** com índice invertido, e o cross-encoder de segundo estágio |
+| **Plano B** | `core_chatbot.caminho_auxiliar` | Chatbot RAG com guardrail e piso de score, sobre Ollama. É o único que recebe o histórico da conversa |
+| **Medição** | `core_chatbot.goldset` | Carrega o conjunto de perguntas de referência e resolve a relevância de cada trecho |
+| **Parâmetros** | `core_chatbot.config` | Uma estrutura imutável com todos os valores fixos do trabalho |
+| **Exibição** | `core_chatbot.apresentacao` | Saudação, recusa e o recorte dos trechos, igual na tela e no terminal |
 
-O pacote `rag.compilador`, com exceção do controlador, **não importa nada além da biblioteca
+O pacote `core_chatbot.nucleo`, com exceção do controlador, **não importa nada além da biblioteca
 padrão**: só `re`, `dataclasses`, `enum` e `collections.abc`. Nenhum gerador de parser, nenhuma
 biblioteca de processamento de linguagem. É verificável por `grep`, inclusive contra `import`
 escondido dentro de função:
 
 ```bash
-grep -rhoE "^\s*(import|from) [a-z_.]+" src/rag/compilador/*.py | awk '{print $2}' | grep -v "^\." | sort -u
+grep -rhoE "^\s*(import|from) [a-z_.]+" src/core_chatbot/nucleo/*.py | awk '{print $2}' | grep -v "^\." | sort -u
 ```
 
 ### O que cada camada de recuperação paga
@@ -266,7 +265,7 @@ return gerador.gerar(pergunta, contextos, historico)         # 2ª: a redação
 ```
 
 A primeira resolve referências elípticas ("e as presenciais?") para que a **recuperação**
-funcione; quem vai para a geração é a pergunta original. `tests/test_dialogo.py` verifica que
+funcione; quem vai para a geração é a pergunta original. `tests/test_controlador.py` verifica que
 o histórico não chega ao núcleo.
 
 ## Como rodar
@@ -297,7 +296,7 @@ Sem ele, tudo abaixo falha com `FileNotFoundError`. Coloque o PDF em:
 data/raw/manual_aluno_unip_2026.pdf
 ```
 
-O nome do arquivo é o padrão de `rag.config.Config.caminho_manual`; para usar outro, mude lá.
+O nome do arquivo é o padrão de `core_chatbot.config.Config.caminho_manual`; para usar outro, mude lá.
 
 **3. O produto**
 
@@ -370,23 +369,21 @@ A assimetria e proposital: **o nucleo e uma pasta com sete arquivos; a IA inteir
 so.** A forma do diretorio ja diz onde esta a intervencao.
 
 ```
-src/rag/compilador/    O NUCLEO, sem modelo e sem peso treinado
-    lexico.py            fase 1: tokeniza, normaliza e canoniza sinonimos
-    gramatica.py         fase 2: a notacao das regras de intencao e a compilacao dela
-    sintatico.py         fase 2: casa os simbolos com as regras
-    semantico.py         fase 3: preenche campos e monta a consulta canonica
-    intencoes.py         os dados: 77 regras, vocabulario e acoes do Manual
-    base_conhecimento.py executa a consulta no Manual e destaca a frase que responde
-    dialogo.py           O ARQUIVO PARA LER PRIMEIRO: o controlador, e o percurso
-                         inteiro em seis etapas na ordem em que executam
-
-src/rag/ia.py          A INTELIGENCIA ARTIFICIAL, em papel secundario:
-                       o gerador sobre Ollama e o chatbot RAG com o piso de score
-src/rag/recuperacao.py BM25 do zero e o reranker; infraestrutura usada pelos dois
-src/rag/corpus.py      o texto de onde as respostas saem: PDF, normalizacao e trechos
-src/rag/goldset.py     carga do conjunto de perguntas de referencia
-src/rag/config.py      todos os parametros fixos, numa dataclass congelada
-src/rag/apresentacao.py  saudacao, recusa e o recorte dos trechos citados
+src/core_chatbot/
+    nucleo/                  O NUCLEO, sem modelo e sem peso treinado
+        tabelas_do_manual.py     as tres tabelas: simbolos, 77 regras e consultas do Manual
+        fase1_lexica.py          fase 1: normaliza a escrita e troca palavras por simbolos
+        fase2_sintatica.py       fase 2: casa os simbolos com as regras
+        fase3_semantica.py       fase 3: troca a intencao pela consulta e colhe os campos
+        gramatica.py             a notacao das regras e a compilacao dela
+        base_conhecimento.py     executa a consulta no Manual e destaca a frase
+        controlador.py           LER PRIMEIRO: monta o assistente e decide o percurso
+    caminho_auxiliar.py      O MODELO DE LINGUAGEM, em papel auxiliar, com o piso de pontuacao
+    recuperacao.py           BM25 do zero e o reordenador; usado pelos dois caminhos
+    corpus.py                o Manual em texto: PDF, normalizacao e trechos
+    config.py                todos os parametros, num lugar so
+    apresentacao.py          saudacao, recusa e o recorte dos trechos citados
+    goldset.py               o conjunto de perguntas de referencia e a relevancia
 
 servidor.py            servidor da biblioteca padrao que serve web/index.html
 web/index.html         a tela do produto: HTML, CSS e JS num arquivo so

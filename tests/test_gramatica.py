@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import pytest
 
-from rag.compilador.gramatica import Gramatica, Juncao, compilar_elementos
-from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS
-from rag.compilador.lexico import Lexico
+from core_chatbot.nucleo.gramatica import Gramatica, Juncao, compilar_elementos
+from core_chatbot.nucleo.tabelas_do_manual import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS
+from core_chatbot.nucleo.fase1_lexica import Lexico
 
 LEXICO_FALSO = Lexico.de_grupos(
     grupos={

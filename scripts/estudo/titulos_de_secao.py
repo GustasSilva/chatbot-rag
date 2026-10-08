@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import fitz  # PyMuPDF
 
-from rag.config import Config
+from core_chatbot.config import Config
 
 # A família larga em negrito: só os títulos a usam. As variantes condensadas ficam de fora,
 # porque o corpo as emprega para destacar termos no meio do parágrafo.

@@ -1,15 +1,11 @@
-"""Recuperação de trechos do corpus: a infraestrutura que o núcleo e o plano B compartilham.
+"""Recuperação de trechos, usada pelos dois caminhos.
 
-O BM25 é escrito do zero, com índice invertido e IDF Okapi::
+BM25 sobre índice invertido, escrito do zero, e o reordenador, adotado pronto, que relê os
+melhores candidatos do BM25 no caminho auxiliar::
 
     score(d, Q) = Soma_{t em Q}  IDF(t) . ( f(t,d) . (k1 + 1) )
                                  -----------------------------------------
                                  f(t,d) + k1 . (1 - b + b . |d| / avgdl)
-
-O reranker é um cross-encoder, que lê a pergunta e o candidato JUNTOS: mais preciso e mais
-caro. Implementa a mesma interface do BM25, e por isso o envolve sem que nada em volta mude.
-Permanece no produto por um motivo prático: o **piso de score** que recusa fora de escopo é
-calculado sobre o escore dele.
 """
 from __future__ import annotations
 
@@ -116,12 +112,7 @@ class RecuperadorBM25(Recuperador):
 
 
 def _carregar_cross_encoder(modelo: str):
-    """Carrega o cross-encoder, preferindo o que já está em disco.
-
-    A biblioteca consulta o repositório remoto mesmo com o modelo baixado, e uma queda de
-    rede derruba a montagem inteira do assistente. Aqui a rede só entra quando o modelo
-    ainda não está em cache, que é a primeira execução da máquina.
-    """
+    """Carrega o modelo do disco; a rede só entra na primeira execução da máquina."""
     from sentence_transformers import CrossEncoder  # import tardio: puxa o torch
 
     try:

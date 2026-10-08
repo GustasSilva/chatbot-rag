@@ -1,20 +1,13 @@
-"""A notação em que as regras de intenção são escritas, e sua compilação.
+"""A notação das regras de intenção e a sua compilação, conferida contra a tabela de símbolos.
 
-O alfabeto aqui **não é o caractere**: é o símbolo canônico produzido pela análise léxica
-(``FALTA``, ``TRANCAR``, ``QUANTIDADE``). Cada regra é uma sequência desses símbolos e nomeia
-uma intenção. A regra casa como subsequência, ignorando os tokens entre os seus símbolos, e
-ainda assim denota uma linguagem regular. As regras do Manual estão em ``intencoes``::
+O alfabeto é o símbolo da fase 1, e não o caractere. Espaço separa os elementos, na ordem da
+frase; ``?`` opcional, ``|`` alternativa, ``+`` adjacência, ``&`` ordem livre, ``!`` exclusão::
 
-    limite_faltas     := QUANTIDADE FALTA DISCIPLINA?
-    prazo_rematricula := QUANDO|PRAZO MATRICULA
+    limite_faltas := QUANTIDADE&FALTA&PODER|OBRIGATORIO|DISCIPLINA
+    como_trancar  := COMO TRANCAR MATRICULA?
 
-Espaço separa os elementos e a ordem importa; ``?`` opcional; ``|`` símbolos equivalentes na
-posição; ``+`` adjacência; ``&`` ordem livre; ``!`` exclusão.
-
-``de_notacao`` compila e confere contra o léxico, rejeitando símbolo fora do léxico (o análogo
-do identificador não declarado), regra só de opcionais, símbolo repetido em dois elementos e
-elemento opcional que não seja o último.
-Por que cada mecanismo existe, com as medições: ``docs/decisoes.md`` §2 a §5.
+Na carga, recusa símbolo fora da tabela, regra só de opcionais, símbolo repetido em dois
+elementos e elemento obrigatório depois de um opcional.
 """
 from __future__ import annotations
 
@@ -22,7 +15,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from .lexico import Lexico
+from .fase1_lexica import Lexico
 
 _OPCIONAL = "?"
 _ALTERNATIVA = "|"
@@ -58,7 +51,7 @@ class Regra:
 
     @property
     def obrigatorios(self) -> int:
-        """Quantos símbolos a pergunta precisa conter: o peso da regra no desempate (§5)."""
+        """Quantos símbolos a pergunta precisa conter: o peso da regra no desempate."""
         return sum(
             1 + len(elemento.extras)
             for elemento in self.elementos
@@ -67,7 +60,7 @@ class Regra:
 
 
 def compilar_elementos(notacao: str) -> tuple[Elemento, ...]:
-    """Traduz a notação de uma regra ("QUANTIDADE FALTA DISCIPLINA?") para elementos."""
+    """Traduz a notação de uma regra ("COMO TRANCAR MATRICULA?") para elementos."""
     elementos: list[Elemento] = []
     for parte in notacao.split():
         excluido = parte.startswith(_EXCLUSAO)
@@ -134,9 +127,7 @@ class Gramatica:
                 raise ValueError(
                     f"regra '{intencao}' repete simbolo em elementos diferentes: {repetidos}"
                 )
-            # Opcional só no fim (a exclusão não consome símbolo, então pode vir depois): com
-            # um elemento obrigatório depois do opcional, o guloso pode gastar no opcional a
-            # posição de que o seguinte precisava e deixar de casar (decisoes.md §3).
+            # Opcional só no fim (a exclusão pode vir depois, porque não consome símbolo).
             elementos = regra.elementos
             if any(
                 elemento.opcional

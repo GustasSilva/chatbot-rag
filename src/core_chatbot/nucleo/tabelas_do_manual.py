@@ -1,21 +1,16 @@
-"""Vocabulário e intenções do Manual do Aluno: os dados do front-end de compilador.
+"""As três tabelas do Manual do Aluno: símbolos, regras e consultas.
 
-Só definição, sem lógica, e é essa separação que permite ampliar o assistente sem tocar em
-código. Três tabelas, na ordem em que o compilador as usa: **léxico** (palavra do aluno →
-símbolo), **gramática** (símbolos → intenção) e **ações** (intenção → consulta ao Manual).
-Cada uma é conferida contra a anterior na construção, então erro de definição estoura na
-importação, e não em produção.
-
-Um símbolo nomeia um assunto, não uma palavra: ``FALTA`` cobre "faltas", "ausências" e
-"frequência", que apontam para a mesma regra do Manual.
+Só dados, sem lógica: adaptar o assistente a outro documento é reescrever este arquivo.
+Cada tabela é conferida contra as outras quando o arquivo é carregado.
 """
 from __future__ import annotations
 
 from .gramatica import Gramatica
-from .lexico import Lexico, TipoToken
-from .semantico import Acao, AnalisadorSemantico, Campo
+from .fase1_lexica import Lexico, TipoToken
+from .fase3_semantica import Acao, AnalisadorSemantico, Campo
 
-# Marcadores: que TIPO de resposta o aluno quer. Separam "o que é trancamento" de "como trancar".
+# Tabela 1, a de símbolos.
+# Marcadores: que tipo de resposta o aluno quer. Separam "o que é trancamento" de "como trancar".
 MARCADORES: dict[str, list[str]] = {
     "QUAL": ["qual", "quais"],
     "COMO": ["como"],
@@ -136,7 +131,7 @@ ASSUNTOS: dict[str, list[str]] = {
 
 GRUPOS: dict[str, list[str]] = {**MARCADORES, **ASSUNTOS}
 
-# Ruído: o análogo do espaço em branco de um compilador, reconhecido para ser descartado.
+# Lista de descarte: palavras de função, descartadas como o compilador descarta espaços.
 # Palavra que não está aqui nem no léxico vira DESCONHECIDO e segue (pode ser disciplina).
 RUIDO: list[str] = [
     # artigos e preposições
@@ -163,12 +158,11 @@ RUIDO: list[str] = [
 LEXICO_MANUAL = Lexico.de_grupos(GRUPOS, RUIDO)
 
 
-# Gramática de intenções; a notação está em ``gramatica``. As regras derivam dos TÍTULOS DE
-# SEÇÃO do Manual, e não das perguntas do gold-set, senão a cobertura seria in-sample. Regra
-# de um símbolo só é reservada a termo inequívoco (decisoes.md §6 e §8).
+# Tabela 2, a gramática de intenções (notação em ``gramatica.py``), escrita a partir dos
+# títulos de seção do Manual. Regra de um símbolo só, apenas para termo inequívoco.
 REGRAS: dict[str, str] = {
     # --- frequência, notas e avaliação ---
-    # o 3º símbolo separa a norma do caso do aluno (decisoes.md §6)
+    # o 3º símbolo separa a norma do caso do aluno
     "limite_faltas":            "QUANTIDADE&FALTA&PODER|OBRIGATORIO|DISCIPLINA",
     # vencem limite_faltas por número de obrigatórios; o Manual trata os dois fatos separados
     "limite_atleta":            "QUANTIDADE ALUNO ATLETA ABONO",
@@ -190,7 +184,7 @@ REGRAS: dict[str, str] = {
     "como_trancar":             "COMO TRANCAR MATRICULA?",
     "prazo_trancamento":        "QUANTIDADE|PRAZO TRANCAR MATRICULA?",
     "como_cancelar":            "COMO CANCELAR MATRICULA",
-    # A adjacência prende a negação ao assunto que ela nega (decisoes.md §4).
+    # A adjacência prende a negação ao assunto que ela nega.
     "consequencia_sem_trancar": "CONSEQUENCIA NEGACAO+TRANCAR",
     "consequencia_sem_matricula": "CONSEQUENCIA NEGACAO+MATRICULA",
     "renovacao_matricula":      "RENOVACAO MATRICULA?",
@@ -217,7 +211,7 @@ REGRAS: dict[str, str] = {
     "inscricao_disciplinas":    "INSCRICAO DISCIPLINA",
     "plano_de_ensino":          "PLANO ENSINO",
 
-    # --- estágio: a exclusão é o que separa as duas (decisoes.md §4) ---
+    # --- estágio: a exclusão é o que separa as duas ---
     "estagio_nao_obrigatorio":  "ESTAGIO NEGACAO+OBRIGATORIO",
     "estagio_obrigatorio":      "QUE ESTAGIO OBRIGATORIO !NEGACAO",
     "vaga_estagio":             "LOCALIZAR ESTAGIO",
@@ -262,7 +256,7 @@ REGRAS: dict[str, str] = {
     "palestras_visitas":        "PALESTRA",
 
     # --- conduta e espaços ---
-    # a exclusão cede a vez à regra da biblioteca (decisoes.md §4)
+    # a exclusão cede a vez à regra da biblioteca
     "penalidades_disciplinares": "PENALIDADE !BIBLIOTECA !EMPRESTIMO",
     "proibicao_fumar":          "FUMAR",
     "armas":                    "ARMA",
@@ -274,8 +268,7 @@ REGRAS: dict[str, str] = {
 GRAMATICA_MANUAL = Gramatica.de_notacao(REGRAS, LEXICO_MANUAL)
 
 
-# Ações: a consulta que vai ao recuperador, escrita no vocabulário do Manual e não no do aluno.
-# Onde o trecho-fonte foi conferido, as palavras vêm dele (decisoes.md §7).
+# Tabela 3, as consultas: o texto que vai à busca, no vocabulário do Manual e não no do aluno.
 ACOES: dict[str, Acao] = {
     "limite_faltas": Acao(
         "frequência obrigatória em cada disciplina, aulas dadas",

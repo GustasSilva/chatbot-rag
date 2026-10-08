@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "pymupdf>=1.23",
     # >=5.6: e a partir dai que CrossEncoder aceita local_files_only, que o
-    # carregamento offline do reranker usa. Ver rag.recuperacao.
+    # carregamento offline do reranker usa. Ver core_chatbot.recuperacao.
     "sentence-transformers>=5.6",
 ]
 

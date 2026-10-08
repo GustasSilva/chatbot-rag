@@ -1,9 +1,4 @@
-"""Todos os parâmetros do assistente, num lugar só.
-
-Uma estrutura imutável com valores padrão. É o arquivo de parâmetros do trabalho, e por ser
-código o próprio interpretador confere nome e tipo de cada um, coisa que um YAML não faz.
-Mudar um valor aqui muda o comportamento de todos os pontos de entrada de uma vez.
-"""
+"""Todos os parâmetros do assistente, num lugar só: mudar um valor aqui vale para o sistema todo."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -35,8 +30,7 @@ class Config:
     temperatura: float = 0.0        # 0 para o comportamento ser reprodutível
     top_k_contexto: int = 5         # trechos que entram no prompt
     timeout_s: int = 120
-    # Recusa antes de gerar quando nem o melhor trecho atinge este escore do reranker.
-    # Calibrado contra o gold-set: nenhuma das 50 legítimas foi barrada (decisoes.md §11).
+    # Piso: recusa antes de chamar o modelo quando nem o melhor trecho alcança esta pontuação.
     piso_score: float = -3.2
 
     # ---- medição ----------------------------------------------------------------------

@@ -1,14 +1,14 @@
 """Testes da base de conhecimento — inclusive o caminho completo do núcleo, sem LLM."""
 from __future__ import annotations
 
-from rag.corpus import Chunk
-from rag.compilador.base_conhecimento import BaseConhecimento, destacar
-from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
-from rag.compilador.lexico import AnalisadorLexico
-from rag.compilador.semantico import Consulta
-from rag.compilador.sintatico import AnalisadorSintatico
-from rag.recuperacao import Recuperador, Resultado
-from rag.recuperacao import RecuperadorBM25
+from core_chatbot.corpus import Chunk
+from core_chatbot.nucleo.base_conhecimento import BaseConhecimento, destacar
+from core_chatbot.nucleo.tabelas_do_manual import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
+from core_chatbot.nucleo.fase1_lexica import AnalisadorLexico
+from core_chatbot.nucleo.fase3_semantica import Consulta
+from core_chatbot.nucleo.fase2_sintatica import AnalisadorSintatico
+from core_chatbot.recuperacao import Recuperador, Resultado
+from core_chatbot.recuperacao import RecuperadorBM25
 
 # Corpus minúsculo no estilo do Manual: BM25 é determinístico e não baixa modelo nenhum.
 CORPUS = [

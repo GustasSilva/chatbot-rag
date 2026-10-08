@@ -46,10 +46,10 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from rag.apresentacao import RECUSA
-from rag.compilador.dialogo import Dialogo, Origem
-from rag.config import Config
-from rag.goldset import carregar_goldset
+from core_chatbot.apresentacao import RECUSA
+from core_chatbot.nucleo.controlador import Dialogo, Origem
+from core_chatbot.config import Config
+from core_chatbot.goldset import carregar_goldset
 
 RAIZ = Path(__file__).resolve().parents[2]
 CAMINHO_GOLD = "data/goldsets/institucional.json"

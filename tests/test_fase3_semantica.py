@@ -3,16 +3,16 @@ from __future__ import annotations
 
 import pytest
 
-from rag.compilador.gramatica import Gramatica
-from rag.compilador.intencoes import (
+from core_chatbot.nucleo.gramatica import Gramatica
+from core_chatbot.nucleo.tabelas_do_manual import (
     ACOES,
     GRAMATICA_MANUAL,
     LEXICO_MANUAL,
     SEMANTICA_MANUAL,
 )
-from rag.compilador.lexico import AnalisadorLexico, Lexico, TipoToken
-from rag.compilador.semantico import Acao, AnalisadorSemantico, Campo
-from rag.compilador.sintatico import AnalisadorSintatico
+from core_chatbot.nucleo.fase1_lexica import AnalisadorLexico, Lexico, TipoToken
+from core_chatbot.nucleo.fase3_semantica import Acao, AnalisadorSemantico, Campo
+from core_chatbot.nucleo.fase2_sintatica import AnalisadorSintatico
 
 LEXICO_FALSO = Lexico.de_grupos(
     grupos={"QUANTIDADE": ["quantas"], "FALTA": ["faltas"], "DISCIPLINA": ["disciplina"]},

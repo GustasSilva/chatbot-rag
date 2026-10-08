@@ -1,11 +1,7 @@
-"""O plano B do assistente: recuperação alimentando um modelo de linguagem local.
+"""O caminho auxiliar: busca com reordenador, piso de pontuação e redação pelo modelo local.
 
-Só entra quando o pacote ``compilador`` não reconhece a pergunta. Traz o contrato ``Gerador``,
-o backend Ollama (modelo fixo, temperatura 0, para o comportamento ser reprodutível) e o
-``ChatbotRAG``, que liga a recuperação à geração.
-
-O **piso de score** do reranker é o guardrail: recusa a pergunta fora de escopo antes de gastar
-uma chamada ao modelo (``docs/decisoes.md`` §11).
+Só entra quando o núcleo não reconhece a pergunta. O piso recusa a pergunta fora do escopo
+antes de chamar o modelo; o que passa, o modelo redige a partir dos trechos e cita a fonte.
 """
 from __future__ import annotations
 

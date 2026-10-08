@@ -9,10 +9,10 @@ import sys
 
 sys.path.insert(0, "src")
 
-from rag.config import Config
-from rag.goldset import carregar_goldset
-from rag.corpus import indexar_manual
-from rag.recuperacao import montar_esparsa
+from core_chatbot.config import Config
+from core_chatbot.goldset import carregar_goldset
+from core_chatbot.corpus import indexar_manual
+from core_chatbot.recuperacao import montar_esparsa
 
 sys.path.insert(0, "scripts/produto")
 from institucional_guardrail import ADVERSARIAIS

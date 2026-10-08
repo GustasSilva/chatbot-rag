@@ -22,8 +22,8 @@ sys.path.insert(0, "scripts/produto")
 
 from institucional_guardrail import ADVERSARIAIS, _recusou_canonico, _recusou_outra  # noqa: E402
 
-from rag.compilador.dialogo import Dialogo  # noqa: E402
-from rag.config import Config  # noqa: E402
+from core_chatbot.nucleo.controlador import Dialogo  # noqa: E402
+from core_chatbot.config import Config  # noqa: E402
 
 SAIDA = "outputs/adversarial_sem_piso.txt"
 

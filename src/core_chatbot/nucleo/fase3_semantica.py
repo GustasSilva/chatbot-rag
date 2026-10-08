@@ -1,10 +1,7 @@
-"""Fase 3: traduz a intenção na consulta que vai ao Manual.
+"""Fase 3, análise semântica: troca a intenção pela consulta fixa, escrita no vocabulário do Manual.
 
-É o *lowering* de um compilador: a forma de superfície, cheia de variação, vira uma
-representação interna única. Cada intenção tem uma consulta fixa, escrita à mão no vocabulário
-do documento, e é ela que chega ao recuperador, nunca a frase do aluno. Os **campos** são os
-dados soltos que a regra não consumiu (nome de disciplina, número de dias) e não entram na
-consulta. Ver ``docs/decisoes.md`` §7.
+A busca recebe essa consulta, e nunca a frase do aluno. Os campos são dados que a regra não
+consumiu, como o nome de uma disciplina, e não entram na consulta.
 """
 from __future__ import annotations
 
@@ -12,8 +9,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
 from .gramatica import Gramatica
-from .lexico import TipoToken, Token
-from .sintatico import Reconhecimento
+from .fase1_lexica import TipoToken, Token
+from .fase2_sintatica import Reconhecimento
 
 
 @dataclass(frozen=True)
@@ -26,7 +23,7 @@ class Campo:
 
 @dataclass(frozen=True)
 class Acao:
-    """O que fazer com a intenção: a consulta canônica ao Manual e os campos a preencher."""
+    """A consulta de uma intenção e os campos que ela colhe."""
 
     consulta: str
     campos: tuple[Campo, ...] = ()
@@ -34,7 +31,7 @@ class Acao:
 
 @dataclass(frozen=True)
 class Consulta:
-    """A saída do front-end: pergunta canônica pronta para a base de conhecimento."""
+    """A saída do núcleo: o texto que vai à busca."""
 
     intencao: str
     texto: str
@@ -42,17 +39,14 @@ class Consulta:
 
 
 class AnalisadorSemantico:
-    """Traduz o reconhecimento em consulta, segundo a tabela de ações."""
+    """Traduz o reconhecimento em consulta, segundo a tabela de consultas."""
 
     def __init__(self, acoes: Mapping[str, Acao]) -> None:
         self._acoes = acoes
 
     @classmethod
     def de_tabela(cls, acoes: Mapping[str, Acao], gramatica: Gramatica) -> AnalisadorSemantico:
-        """Confere que a tabela cobre exatamente as intenções da gramática, nem mais nem menos.
-
-        Sem isso, uma regra nova casaria a pergunta e estouraria na hora de agir.
-        """
+        """Confere que cada intenção tem consulta e que nenhuma consulta sobra sem regra."""
         intencoes = {regra.intencao for regra in gramatica.regras}
         sem_acao = sorted(intencoes - acoes.keys())
         if sem_acao:
@@ -63,8 +57,7 @@ class AnalisadorSemantico:
         return cls(acoes)
 
     def analisar(self, reconhecimento: Reconhecimento) -> Consulta:
-        """Monta a consulta da intenção, preenchendo os campos que a sobra oferecer."""
-        acao = self._acoes[reconhecimento.intencao]  # de_tabela garante que a chave existe
+        acao = self._acoes[reconhecimento.intencao]
         campos = {}
         for campo in acao.campos:
             valor = _primeiro_valor(reconhecimento.sobra, campo.tipo)
@@ -74,5 +67,5 @@ class AnalisadorSemantico:
 
 
 def _primeiro_valor(sobra: Sequence[Token], tipo: TipoToken) -> str | None:
-    """O lexema do primeiro token do tipo pedido: como o aluno escreveu, que é o que se exibe."""
+    """A primeira palavra do tipo pedido, como o aluno a escreveu."""
     return next((token.lexema for token in sobra if token.tipo is tipo), None)

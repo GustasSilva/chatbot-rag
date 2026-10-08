@@ -1,8 +1,7 @@
-"""Fase 1: quebra a pergunta em símbolos tipados.
+"""Fase 1, análise léxica: troca cada palavra da pergunta por um símbolo tipado.
 
-Normaliza a escrita e traduz sinônimos para um símbolo único, de modo que a variação morre
-aqui. Descarta ruído como um scanner descarta espaço e comentário, e deixa passar a palavra
-desconhecida, que pode ser valor de campo. O vocabulário está em ``intencoes``.
+A palavra vai para minúsculas e sem acento e é procurada na tabela de símbolos. O ruído é
+descartado; a palavra desconhecida segue, porque pode ser um dado da pergunta.
 """
 from __future__ import annotations
 
@@ -15,35 +14,35 @@ from ..corpus import PALAVRA, sem_acentos
 
 
 class TipoToken(Enum):
-    PALAVRA_CHAVE = auto()  # está no léxico; ``valor`` é o símbolo canônico (ex.: FALTA)
-    NUMERO = auto()         # literal numérico
-    RUIDO = auto()          # irrelevante para a gramática; descartado por padrão
-    DESCONHECIDO = auto()   # fora do léxico; segue como possível valor de campo
+    PALAVRA_CHAVE = auto()  # está na tabela; ``valor`` é o símbolo (ex.: FALTA)
+    NUMERO = auto()
+    RUIDO = auto()          # palavra de função, descartada
+    DESCONHECIDO = auto()   # fora da tabela; pode virar campo
 
 
 @dataclass(frozen=True)
 class Token:
     tipo: TipoToken
-    valor: str    # símbolo canônico, ou a forma normalizada quando não há símbolo
-    lexema: str   # o texto exatamente como o aluno escreveu
-    inicio: int   # posição do lexema no texto original
+    valor: str    # o símbolo, ou a forma normalizada quando não há símbolo
+    lexema: str   # a palavra como o aluno escreveu
+    inicio: int   # posição na pergunta
 
 
 def normalizar(texto: str) -> str:
-    """Forma canônica de escrita: minúsculas e sem acento ("Ausências" -> "ausencias")."""
+    """Minúsculas e sem acento ("Ausências" -> "ausencias")."""
     return sem_acentos(texto.lower())
 
 
 @dataclass(frozen=True)
 class Lexico:
-    """Tabela de símbolos: forma normalizada -> símbolo canônico, mais as palavras de ruído."""
+    """A tabela de símbolos (grafia -> símbolo) e a lista de descarte."""
 
     simbolo_por_variante: Mapping[str, str]
     ruido: frozenset[str]
 
     @property
     def simbolos_definidos(self) -> frozenset[str]:
-        """Tudo que o léxico sabe produzir: o alfabeto da gramática de intenções."""
+        """O alfabeto da gramática de intenções."""
         return frozenset(self.simbolo_por_variante.values())
 
     @classmethod
@@ -52,10 +51,7 @@ class Lexico:
         grupos: Mapping[str, Sequence[str]],
         ruido: Iterable[str],
     ) -> Lexico:
-        """Inverte ``{símbolo: [variantes]}`` para o mapa de consulta, normalizando tudo.
-
-        Falha alto em definição inconsistente: silenciosa, vira bug difícil de achar depois.
-        """
+        """Monta a tabela a partir de ``{símbolo: [grafias]}``, recusando definição ambígua."""
         simbolo_por_variante: dict[str, str] = {}
         for simbolo, variantes in grupos.items():
             for variante in variantes:
@@ -76,7 +72,7 @@ class Lexico:
 
 
 class AnalisadorLexico:
-    """Varre a pergunta e devolve a sequência de tokens tipados."""
+    """Varre a pergunta e devolve a sequência de símbolos."""
 
     def __init__(self, lexico: Lexico) -> None:
         self._lexico = lexico
@@ -103,5 +99,5 @@ class AnalisadorLexico:
 
 
 def simbolos(tokens: Iterable[Token]) -> list[str]:
-    """Só os símbolos das palavras-chave, na ordem: a visão que a gramática enxerga."""
+    """Só os símbolos das palavras-chave, na ordem."""
     return [t.valor for t in tokens if t.tipo is TipoToken.PALAVRA_CHAVE]

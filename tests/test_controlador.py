@@ -1,11 +1,11 @@
 """Testes do controlador: quem responde o quê, e o que acontece com a IA desligada."""
 from __future__ import annotations
 
-from rag.corpus import Chunk
-from rag.ia import RespostaGerada
-from rag.compilador.base_conhecimento import BaseConhecimento
-from rag.compilador.dialogo import NAO_ENTENDI, Dialogo, Origem
-from rag.recuperacao import RecuperadorBM25
+from core_chatbot.corpus import Chunk
+from core_chatbot.caminho_auxiliar import RespostaGerada
+from core_chatbot.nucleo.base_conhecimento import BaseConhecimento
+from core_chatbot.nucleo.controlador import NAO_ENTENDI, Dialogo, Origem
+from core_chatbot.recuperacao import RecuperadorBM25
 
 CORPUS = [
     Chunk(0, "manual", "A frequência obrigatória, em cada disciplina, é de 75% das aulas "

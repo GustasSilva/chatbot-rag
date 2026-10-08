@@ -11,9 +11,9 @@ from __future__ import annotations
 
 import sys
 
-from rag.config import Config
-from rag.corpus import carregar_pdf, construir_indice
-from rag.goldset import ItemGold, carregar_goldset, construir_relevancia, salvar_goldset
+from core_chatbot.config import Config
+from core_chatbot.corpus import carregar_pdf, construir_indice
+from core_chatbot.goldset import ItemGold, carregar_goldset, construir_relevancia, salvar_goldset
 
 GOLD_BASE = "data/goldsets/manual_aluno.json"
 CAMINHO_GOLD = "data/goldsets/institucional.json"

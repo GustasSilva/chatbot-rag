@@ -20,11 +20,11 @@ import csv
 import sys
 import unicodedata
 
-from rag.config import Config
-from rag.goldset import carregar_goldset, construir_relevancia
-from rag.corpus import indexar_manual
-from rag.ia import montar_plano_b
-from rag.recuperacao import montar_reordenado
+from core_chatbot.config import Config
+from core_chatbot.goldset import carregar_goldset, construir_relevancia
+from core_chatbot.corpus import indexar_manual
+from core_chatbot.caminho_auxiliar import montar_plano_b
+from core_chatbot.recuperacao import montar_reordenado
 
 CAMINHO_GOLD = "data/goldsets/institucional.json"
 

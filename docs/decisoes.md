@@ -1119,3 +1119,31 @@ numero de obrigatorios. O critério de dispersao, acrescentado em §22 por outro
 resolver os mesmos dois casos por margem estrita. Um mecanismo posterior e mais geral absorveu
 dois anteriores e mais especificos, o que e exatamente o que se espera de projeto de compilador,
 e nenhuma medicao acusaria isso, porque nenhuma piorou.
+
+
+## Organização para a defesa (08/10/2026)
+
+Pedido do autor e da orientação: o código vai ser mostrado no editor durante a apresentação, então
+os nomes passaram a contar a história do trabalho. Só arquivos e pastas mudaram de nome; as classes
+(`Dialogo`, `ChatbotRAG`, `BaseConhecimento`...) ficaram como estavam, porque estão no texto do TCC
+e nas figuras. As seções anteriores deste documento usam os nomes antigos.
+
+| Antes | Agora |
+|---|---|
+| `src/rag/` | `src/core_chatbot/` |
+| `rag/compilador/` | `core_chatbot/nucleo/` |
+| `compilador/intencoes.py` | `nucleo/tabelas_do_manual.py` |
+| `compilador/lexico.py` | `nucleo/fase1_lexica.py` |
+| `compilador/sintatico.py` | `nucleo/fase2_sintatica.py` |
+| `compilador/semantico.py` | `nucleo/fase3_semantica.py` |
+| `compilador/dialogo.py` | `nucleo/controlador.py` |
+| `rag/ia.py` | `core_chatbot/caminho_auxiliar.py` |
+| `tests/test_dialogo.py`, `test_intencoes.py`, `test_lexico.py`, `test_sintatico.py`, `test_semantico.py`, `test_nucleo.py` | `test_controlador.py`, `test_gramatica.py`, `test_fase1_lexica.py`, `test_fase2_sintatica.py`, `test_fase3_semantica.py`, `test_busca_e_caminho_auxiliar.py` |
+
+Os comentários foram enxugados de 25% para 15% das linhas: cada arquivo ficou com uma docstring curta
+e os comentários de "porquê"; o histórico e as justificativas longas ficam aqui. A árvore sintática
+de cada arquivo, sem docstrings, foi comparada com a da etiqueta `antes-organizacao` e é idêntica.
+Saíram os dois relatórios da fase do estudo comparativo (anterior a 13/08), e os arquivos locais
+daquela fase (experimentos e documentos de saúde) foram movidos para fora do repositório.
+Conferido depois: 83 testes passando, `cobertura_nucleo.csv` idêntico byte a byte, imports de todos
+os scripts resolvendo e o servidor respondendo pelo núcleo.

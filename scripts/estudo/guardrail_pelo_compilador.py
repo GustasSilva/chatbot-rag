@@ -14,10 +14,10 @@ import sys
 sys.path.insert(0, "src")
 sys.path.insert(0, "scripts/produto")
 
-from rag.compilador.intencoes import ASSUNTOS, GRAMATICA_MANUAL, LEXICO_MANUAL
-from rag.compilador.lexico import AnalisadorLexico, simbolos
-from rag.compilador.sintatico import AnalisadorSintatico
-from rag.goldset import carregar_goldset
+from core_chatbot.nucleo.tabelas_do_manual import ASSUNTOS, GRAMATICA_MANUAL, LEXICO_MANUAL
+from core_chatbot.nucleo.fase1_lexica import AnalisadorLexico, simbolos
+from core_chatbot.nucleo.fase2_sintatica import AnalisadorSintatico
+from core_chatbot.goldset import carregar_goldset
 
 from institucional_guardrail import ADVERSARIAIS
 

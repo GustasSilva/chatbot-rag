@@ -29,14 +29,14 @@ import csv
 import os
 import sys
 
-from rag.config import Config
-from rag.corpus import indexar_manual
-from rag.goldset import carregar_goldset, construir_relevancia
-from rag.compilador.base_conhecimento import BaseConhecimento
-from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS, SEMANTICA_MANUAL
-from rag.compilador.lexico import AnalisadorLexico, simbolos
-from rag.compilador.sintatico import AnalisadorSintatico
-from rag.recuperacao import montar_esparsa, montar_reordenado
+from core_chatbot.config import Config
+from core_chatbot.corpus import indexar_manual
+from core_chatbot.goldset import carregar_goldset, construir_relevancia
+from core_chatbot.nucleo.base_conhecimento import BaseConhecimento
+from core_chatbot.nucleo.tabelas_do_manual import GRAMATICA_MANUAL, LEXICO_MANUAL, REGRAS, SEMANTICA_MANUAL
+from core_chatbot.nucleo.fase1_lexica import AnalisadorLexico, simbolos
+from core_chatbot.nucleo.fase2_sintatica import AnalisadorSintatico
+from core_chatbot.recuperacao import montar_esparsa, montar_reordenado
 
 CAMINHO_GOLD = "data/goldsets/institucional.json"
 CAMINHO_CSV = "outputs/cobertura_nucleo.csv"

@@ -9,14 +9,14 @@ import sys
 
 sys.path.insert(0, "src")
 
-from rag.compilador.base_conhecimento import BaseConhecimento, _FIM_DE_FRASE, destacar
-from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
-from rag.compilador.lexico import AnalisadorLexico
-from rag.compilador.sintatico import AnalisadorSintatico
-from rag.config import Config
-from rag.goldset import carregar_goldset
-from rag.corpus import indexar_manual
-from rag.recuperacao import montar_esparsa
+from core_chatbot.nucleo.base_conhecimento import BaseConhecimento, _FIM_DE_FRASE, destacar
+from core_chatbot.nucleo.tabelas_do_manual import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
+from core_chatbot.nucleo.fase1_lexica import AnalisadorLexico
+from core_chatbot.nucleo.fase2_sintatica import AnalisadorSintatico
+from core_chatbot.config import Config
+from core_chatbot.goldset import carregar_goldset
+from core_chatbot.corpus import indexar_manual
+from core_chatbot.recuperacao import montar_esparsa
 
 cfg = Config()
 indice = indexar_manual(cfg)

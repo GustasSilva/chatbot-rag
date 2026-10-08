@@ -16,8 +16,8 @@ import sys
 import unicodedata
 from pathlib import Path
 
-from rag.compilador.dialogo import Dialogo, Origem
-from rag.config import Config
+from core_chatbot.nucleo.controlador import Dialogo, Origem
+from core_chatbot.config import Config
 
 
 ADVERSARIAIS = {

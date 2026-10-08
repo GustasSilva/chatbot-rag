@@ -2,8 +2,8 @@
 
 Cobrem o BM25 escrito à mão, a divisão em trechos, a resolução de relevância do
 conjunto de referência e o plano B: guardrail, saudação, multiturno e piso de score.
-Os testes do núcleo de compilador estão nos arquivos por fase (léxico, sintático,
-semântico, base de conhecimento, diálogo).
+Os testes do núcleo estão nos arquivos por fase (fase1, fase2, fase3, base de
+conhecimento e controlador).
 """
 from __future__ import annotations
 
@@ -11,15 +11,15 @@ import re
 
 import pytest
 
-from rag.corpus import dividir_em_chunks
-from rag.corpus import limpar_texto
-from rag.goldset import GoldSetError, ItemGold, construir_relevancia
-from rag.recuperacao import RecuperadorBM25, tokenizar
+from core_chatbot.corpus import dividir_em_chunks
+from core_chatbot.corpus import limpar_texto
+from core_chatbot.goldset import GoldSetError, ItemGold, construir_relevancia
+from core_chatbot.recuperacao import RecuperadorBM25, tokenizar
 
 
 def _chunks_de(textos: list[str]):
     """Um chunk por texto (tamanho grande o bastante para não subdividir)."""
-    from rag.corpus import Chunk
+    from core_chatbot.corpus import Chunk
 
     return [
         Chunk(id=i, doc_id="d", texto=t, inicio_char=0, fim_char=len(t), indice_no_doc=i)
@@ -99,8 +99,8 @@ def test_relevancia_trecho_inexistente_falha():
 # ------------------------------- geração ----------------------------------- #
 def test_extrair_fontes_citadas():
     """Parser de citação: aceita [1], [1, 2] e [1,2]; ignora fora do intervalo."""
-    from rag.corpus import Chunk
-    from rag.ia import extrair_fontes_citadas
+    from core_chatbot.corpus import Chunk
+    from core_chatbot.caminho_auxiliar import extrair_fontes_citadas
 
     ctx = [
         Chunk(id=10, doc_id="d", texto="a", inicio_char=0, fim_char=1, indice_no_doc=0),
@@ -115,7 +115,7 @@ def test_extrair_fontes_citadas():
 
 def test_guardrail_contexto_vazio_recusa():
     """Sem contexto recuperado, o gerador recusa sem sequer chamar o LLM (não alucina)."""
-    from rag.ia import GeradorOllama
+    from core_chatbot.caminho_auxiliar import GeradorOllama
 
     g = GeradorOllama(modelo="inexistente")  # __init__ não conecta em lugar nenhum
     r = g.gerar("qualquer pergunta", [])
@@ -126,7 +126,7 @@ def test_guardrail_contexto_vazio_recusa():
 def test_eh_saudacao_dispara_so_em_saudacao_pura():
     """O detector é conservador: True só quando a mensagem é SÓ saudação; qualquer
     pergunta substantiva (inclusive fora de escopo) devolve False e segue para o pipeline."""
-    from rag.apresentacao import eh_saudacao
+    from core_chatbot.apresentacao import eh_saudacao
 
     for t in ["olá", "Oi!", "bom dia", "tudo bem?", "Olá, tudo bem?",
               "e aí, beleza?", "boa noite", "opa"]:
@@ -140,11 +140,11 @@ def test_eh_saudacao_dispara_so_em_saudacao_pura():
 def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
     """Com saudar=True, uma saudação pura devolve a mensagem amigável sem tocar no
     recuperador nem no gerador; sem saudar=True, segue o fluxo normal."""
-    from rag.corpus import Chunk
-    from rag.apresentacao import RESPOSTAS_SAUDACAO
-    from rag.ia import ChatbotRAG
-    from rag.ia import Gerador, RespostaGerada
-    from rag.recuperacao import Recuperador, Resultado
+    from core_chatbot.corpus import Chunk
+    from core_chatbot.apresentacao import RESPOSTAS_SAUDACAO
+    from core_chatbot.caminho_auxiliar import ChatbotRAG
+    from core_chatbot.caminho_auxiliar import Gerador, RespostaGerada
+    from core_chatbot.recuperacao import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="x", inicio_char=0, fim_char=1, indice_no_doc=0)
 
@@ -177,10 +177,10 @@ def test_saudacao_curto_circuita_sem_recuperar_nem_gerar():
 def test_multiturn_recupera_pela_pergunta_reescrita_e_gera_com_historico():
     """Com histórico, o ChatbotRAG recupera pela pergunta REESCRITA (autônoma) e passa o
     histórico ao gerador. Sem histórico, usa a pergunta original e não reescreve."""
-    from rag.corpus import Chunk
-    from rag.ia import ChatbotRAG
-    from rag.ia import Gerador, RespostaGerada
-    from rag.recuperacao import Recuperador, Resultado
+    from core_chatbot.corpus import Chunk
+    from core_chatbot.caminho_auxiliar import ChatbotRAG
+    from core_chatbot.caminho_auxiliar import Gerador, RespostaGerada
+    from core_chatbot.recuperacao import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="x", inicio_char=0, fim_char=1, indice_no_doc=0)
 
@@ -224,10 +224,10 @@ def test_multiturn_recupera_pela_pergunta_reescrita_e_gera_com_historico():
 def test_piso_score_recusa_antes_de_gerar():
     """O piso de score recusa fora-de-escopo (score baixo) SEM chamar o gerador; acima
     do piso, gera normalmente."""
-    from rag.corpus import Chunk
-    from rag.ia import ChatbotRAG
-    from rag.ia import Gerador, RespostaGerada
-    from rag.recuperacao import Recuperador, Resultado
+    from core_chatbot.corpus import Chunk
+    from core_chatbot.caminho_auxiliar import ChatbotRAG
+    from core_chatbot.caminho_auxiliar import Gerador, RespostaGerada
+    from core_chatbot.recuperacao import Recuperador, Resultado
 
     chunk = Chunk(id=1, doc_id="d", texto="conteúdo", inicio_char=0, fim_char=8, indice_no_doc=0)
 

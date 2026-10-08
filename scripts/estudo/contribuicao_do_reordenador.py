@@ -14,10 +14,10 @@ import sys
 sys.path.insert(0, "src")
 sys.path.insert(0, "scripts/produto")
 
-from rag.config import Config
-from rag.corpus import indexar_manual
-from rag.goldset import carregar_goldset, construir_relevancia
-from rag.recuperacao import montar_esparsa, montar_reordenado, tokenizar
+from core_chatbot.config import Config
+from core_chatbot.corpus import indexar_manual
+from core_chatbot.goldset import carregar_goldset, construir_relevancia
+from core_chatbot.recuperacao import montar_esparsa, montar_reordenado, tokenizar
 
 from institucional_guardrail import ADVERSARIAIS
 

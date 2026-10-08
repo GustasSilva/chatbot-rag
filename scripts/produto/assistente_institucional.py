@@ -1,6 +1,6 @@
 """Assistente do Manual do Aluno — chat livre (item 6 do plano): o produto demonstrável.
 
-REPL de input aberto. Quem responde é o **controlador** (`rag.compilador.dialogo`): o núcleo de
+REPL de input aberto. Quem responde é o **controlador** (`core_chatbot.nucleo.controlador`): o núcleo de
 compilador entende a pergunta (léxico → gramática de intenções → parser → semântica) e responde
 direto do Manual, **sem modelo de linguagem no caminho**; o que a gramática não reconhece cai no
 **plano B**, a pilha validada cientificamente — recuperação **BM25 + reranker**, **piso de
@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import sys
 
-from rag.compilador.dialogo import Dialogo, Origem
+from core_chatbot.nucleo.controlador import Dialogo, Origem
 
 SAIR = {"sair", "exit", "quit"}
 RODAPE_ORIGEM = {

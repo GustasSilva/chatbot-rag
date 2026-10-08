@@ -26,13 +26,13 @@ import sys
 import textwrap
 import time
 
-from rag.compilador.base_conhecimento import BaseConhecimento
-from rag.compilador.lexico import AnalisadorLexico, TipoToken
-from rag.compilador.semantico import AnalisadorSemantico
-from rag.compilador.sintatico import AnalisadorSintatico
-from rag.config import Config
-from rag.corpus import indexar_manual
-from rag.recuperacao import montar_esparsa
+from core_chatbot.nucleo.base_conhecimento import BaseConhecimento
+from core_chatbot.nucleo.fase1_lexica import AnalisadorLexico, TipoToken
+from core_chatbot.nucleo.fase3_semantica import AnalisadorSemantico
+from core_chatbot.nucleo.fase2_sintatica import AnalisadorSintatico
+from core_chatbot.config import Config
+from core_chatbot.corpus import indexar_manual
+from core_chatbot.recuperacao import montar_esparsa
 
 LARGURA = 78
 SAIR = {"sair", "exit", "quit"}
@@ -99,7 +99,7 @@ def bloco(texto: str, recuo: str = "      ") -> None:
 
 def montar_nucleo():
     """Etapas 1, 2 e 4 do controlador, sem o plano B: e o caminho que responde sem IA."""
-    from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
+    from core_chatbot.nucleo.tabelas_do_manual import GRAMATICA_MANUAL, LEXICO_MANUAL, SEMANTICA_MANUAL
 
     cfg = Config()
     indice = indexar_manual(cfg)

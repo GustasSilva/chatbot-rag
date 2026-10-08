@@ -10,10 +10,8 @@ import re
 
 from .corpus import sem_acentos, so_alfanumerico
 
-# Rótulo que o controlador põe em cada resposta quando reúne mais de uma intenção, e a
-# expressão que o retira antes de procurar o destaque dentro do trecho. Os dois ficam juntos
-# de propósito: se o formato mudasse num lado e não no outro, a janela da fonte deixaria de
-# centrar na frase que respondeu e nada acusaria o erro. Quem escreve é ``dialogo._compor``.
+# Rótulo de cada resposta quando há mais de uma intenção, e a expressão que o retira antes de
+# procurar o destaque no trecho. Ficam juntos para não divergirem.
 ROTULO = "[{}] "
 _SEM_ROTULO = re.compile(r"^\[[a-z_]+\]\s*")
 

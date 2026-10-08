@@ -18,13 +18,13 @@ Exige Ollama + o modelo só na parte 3. Uso: python scripts/produto/sondagem_for
 """
 from __future__ import annotations
 
-from rag.compilador.dialogo import Dialogo
-from rag.compilador.intencoes import GRAMATICA_MANUAL, LEXICO_MANUAL
-from rag.compilador.lexico import AnalisadorLexico
-from rag.compilador.sintatico import AnalisadorSintatico
-from rag.config import Config
-from rag.corpus import indexar_manual
-from rag.recuperacao import montar_reordenado
+from core_chatbot.nucleo.controlador import Dialogo
+from core_chatbot.nucleo.tabelas_do_manual import GRAMATICA_MANUAL, LEXICO_MANUAL
+from core_chatbot.nucleo.fase1_lexica import AnalisadorLexico
+from core_chatbot.nucleo.fase2_sintatica import AnalisadorSintatico
+from core_chatbot.config import Config
+from core_chatbot.corpus import indexar_manual
+from core_chatbot.recuperacao import montar_reordenado
 
 # A: mesmo assunto do gold-set, outra redação. B: assunto do Manual que o gold-set não cobre.
 LEGITIMAS = [
