@@ -21,18 +21,8 @@
     --sans: "Segoe UI", Corbel, system-ui, sans-serif;
     --mono: "Cascadia Mono", Consolas, "DejaVu Sans Mono", ui-monospace, monospace;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --papel: #0f1317;
-      --bloco: #171e25;
-      --tinta: #e4e9ee;
-      --tinta-suave: #94a0ab;
-      --linha: #262f38;
-      --manual: #6fb6e6;
-      --assistente: #d99f4e;
-      --neutro: #8b959f;
-    }
-  }
+  /* Sempre o tema claro: no projetor, fundo escuro com letra clara se le mal. */
+  :root { color-scheme: light; }
 
   * { box-sizing: border-box; }
   body {
