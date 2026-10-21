@@ -8,8 +8,10 @@
   :root {
     --papel: #f5f7f9;
     --bloco: #eaeef2;
-    --tinta: #12171c;
-    --tinta-suave: #59636e;
+    /* Todo texto em preto: no projetor, cinza e cor em letra pequena se leem mal. A cor da origem
+       fica na barra lateral e no icone. */
+    --tinta: #000;
+    --tinta-suave: #000;
     --linha: #d7dde4;
     --manual: #17608f;
     --assistente: #8f5406;
@@ -75,8 +77,9 @@
 
   .selo { display: flex; align-items: center; gap: .45rem; margin-top: .7rem;
           font-family: var(--mono); font-size: .72rem; letter-spacing: .04em;
-          text-transform: uppercase; color: var(--via); }
-  .selo .sep { color: var(--linha); }
+          text-transform: uppercase; color: var(--tinta); }
+  .selo .ico { color: var(--via); }
+  .selo .sep { color: var(--tinta); }
   .selo .tempo { color: var(--tinta-suave); font-variant-numeric: tabular-nums;
                  text-transform: none; letter-spacing: 0; }
 
@@ -91,7 +94,7 @@
   .trecho .rotulo { display: flex; align-items: center; gap: .3rem; font-family: var(--mono);
                     font-size: .72rem; color: var(--tinta-suave); margin-bottom: .3rem; }
   .trecho.usado { border-left-color: var(--manual); }
-  .trecho.usado .rotulo { color: var(--manual); }
+  .trecho.usado .rotulo .ico { color: var(--manual); }
   .trecho p { margin: 0; color: var(--tinta-suave); }
   .rodape-fontes { font-size: .8rem; color: var(--tinta-suave); margin: .9rem 0 0; }
 
@@ -109,7 +112,7 @@
   #caixa form { max-width: 44rem; margin: 0 auto; display: flex; gap: .6rem; }
   #pergunta { flex: 1; font-family: var(--sans); font-size: 1rem; color: var(--tinta);
               background: var(--bloco); border: 1px solid var(--linha); padding: .7rem .9rem; }
-  #pergunta::placeholder { color: var(--tinta-suave); }
+  #pergunta::placeholder { color: #59636e; }
   #enviar { display: flex; align-items: center; justify-content: center; width: 2.9rem;
             background: var(--manual); color: var(--papel); border: none; cursor: pointer;
             font-size: 1.1rem; }
