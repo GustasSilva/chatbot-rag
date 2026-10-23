@@ -10,7 +10,7 @@ from .fase1_lexica import Lexico, TipoToken
 from .fase3_semantica import Acao, AnalisadorSemantico, Campo
 
 # Tabela 1, a de símbolos.
-# Marcadores: que tipo de resposta o aluno quer. Separam "o que é trancamento" de "como trancar".
+# 12 Marcadores: que tipo de resposta o aluno quer. Separam "o que é trancamento" de "como trancar".
 MARCADORES: dict[str, list[str]] = {
     "QUAL": ["qual", "quais"],
     "COMO": ["como"],
@@ -30,7 +30,7 @@ MARCADORES: dict[str, list[str]] = {
     "CONSEQUENCIA": ["acontece", "consequência", "consequências"],
 }
 
-# Assuntos do Manual: o "sobre o que" da pergunta.
+# 77 Assuntos do Manual: o "sobre o que" da pergunta.
 ASSUNTOS: dict[str, list[str]] = {
     "FALTA": ["falta", "faltas", "faltar", "faltei", "ausência", "ausências",
               "frequência", "presença"],
@@ -159,7 +159,7 @@ LEXICO_MANUAL = Lexico.de_grupos(GRUPOS, RUIDO)
 
 
 # Tabela 2, a gramática de intenções (notação em ``gramatica.py``), escrita a partir dos
-# títulos de seção do Manual. Regra de um símbolo só, apenas para termo inequívoco.
+# 77 títulos de seção do Manual. Regra de um símbolo só, apenas para termo inequívoco.
 REGRAS: dict[str, str] = {
     # --- frequência, notas e avaliação ---
     # o 3º símbolo separa a norma do caso do aluno

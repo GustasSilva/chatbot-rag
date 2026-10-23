@@ -39,8 +39,6 @@ class AnalisadorSintatico:
         self, tokens: Sequence[Token], maximo: int = 3
     ) -> list[Reconhecimento]:
         """Consumo iterado: casa a melhor regra, retira os símbolos que ela usou e repete.
-
-        Retirar um símbolo leva junto as outras ocorrências dele ("colar grau" é uma menção só).
         O teto impede que sobras de uma mensagem longa casem regras em cadeia.
         """
         restantes = list(enumerate(tokens))  # (posição original, token)
